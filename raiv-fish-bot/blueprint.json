@@ -654,7 +654,26 @@
     {
      "flow": [
       {
-       "id": 41,
+       "id": 42,
+       "mapper": {
+        "body": "{\"method\":\"sendMessage\",\"chat_id\":{{1.message.chat.id}},\"text\":\"✅ Спасибо! Заказ принят.\\nМы свяжемся с вами, чтобы договориться о времени доставки.\\n\\nНовый заказ: /start\"}",
+        "status": 200,
+        "headers": [
+         {
+          "key": "Content-Type",
+          "value": "application/json"
+         }
+        ]
+       },
+       "module": "gateway:WebhookRespond",
+       "version": 1,
+       "metadata": {
+        "designer": {
+         "x": 1200,
+         "y": 1700
+        }
+       },
+       "parameters": {},
        "filter": {
         "name": "Получен телефон",
         "conditions": [
@@ -666,14 +685,17 @@
           }
          ]
         ]
-       },
+       }
+      },
+      {
+       "id": 41,
        "mapper": {
         "method": "POST",
         "bodyType": "assembled_body",
         "body_spec": [
          {
           "key": "chat_id",
-          "value": "-1003911949676"
+          "value": "-1004438320479"
          },
          {
           "key": "text",
@@ -695,28 +717,6 @@
        }
       },
       {
-       "id": 42,
-       "mapper": {
-        "body": "{\"method\":\"sendMessage\",\"chat_id\":{{1.message.chat.id}},\"text\":\"✅ Спасибо! Заказ принят.\\nМы свяжемся с вами, чтобы договориться о времени доставки.\\n\\nНовый заказ: /start\"}",
-        "status": 200,
-        "headers": [
-         {
-          "key": "Content-Type",
-          "value": "application/json"
-         }
-        ]
-       },
-       "module": "gateway:WebhookRespond",
-       "version": 1,
-       "metadata": {
-        "designer": {
-         "x": 1200,
-         "y": 1700
-        }
-       },
-       "parameters": {}
-      },
-      {
        "id": 43,
        "mapper": {
         "method": "POST",
@@ -724,7 +724,7 @@
         "body_spec": [
          {
           "key": "chat_id",
-          "value": "-1003911949676"
+          "value": "-1004438320479"
          },
          {
           "key": "text",

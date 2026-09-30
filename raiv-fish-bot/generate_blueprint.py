@@ -1,6 +1,6 @@
 import json
 CONN = 11456488  # RAIV_Fish Telegram Bot
-GROUP = "-1003911949676"
+GROUP = "-1004438320479"  # канал RAIVFISH
 HOOK = 3818163
 cats = [
  ("a","🐟 Икра вяленая (100 г)",[("Икра толстолоба","6",1),("Икра кеты","8.5",1),("Икра форели","8.5",1),("Икра судака","6.5",0),("Икра щуки","7",1),("Икра плотвы","7",0),("Икра минтая","6.5",0)]),
@@ -103,7 +103,8 @@ g1={"id":41,"filter":{"name":"Получен телефон","conditions":[[{"a"
 g2={"id":42,"mapper":{"body":"{\"method\":\"sendMessage\",\"chat_id\":{{1.message.chat.id}},\"text\":\"✅ Спасибо! Заказ принят.\\nМы свяжемся с вами, чтобы договориться о времени доставки.\\n\\nНовый заказ: /start\"}","status":200,"headers":[{"key":"Content-Type","value":"application/json"}]},"module":"gateway:WebhookRespond","version":1,"metadata":{"designer":{"x":1200,"y":y}},"parameters":{}}
 g3={"id":43,"mapper":{"method":"POST","bodyType":"assembled_body","body_spec":[{"key":"chat_id","value":GROUP},{"key":"text","value":"💬 Связаться с клиентом в Telegram 👇"},{"key":"reply_to_message_id","value":"{{41.body.result.message_id}}"},{"key":"reply_markup","value":"{\"inline_keyboard\":[[{\"text\":\"💬 Написать клиенту\",\"url\":\"tg://user?id={{1.message.from.id}}\"}]]}"}],"urlMethod":"sendMessage"},
  "module":"telegram:UniversalAPICall","onerror":[{"id":44,"mapper":None,"module":"builtin:Ignore","version":1,"metadata":{"designer":{"x":1500,"y":y+300}}}],"version":1,"metadata":{"designer":{"x":1500,"y":y}},"parameters":{"__IMTCONN__":CONN}}
-rts=[{"flow":[r]} for r in routes]+[{"flow":[addr]},{"flow":[g1,g2,g3]}]
+g2["filter"]=g1.pop("filter")
+rts=[{"flow":[r]} for r in routes]+[{"flow":[addr]},{"flow":[g2,g1,g3]}]
 bp={"name":"RAIV_Fish Bot — Заказы","metadata":{"instant":True,"version":1},"flow":[
  {"id":1,"mapper":{},"module":"gateway:CustomWebHook","version":1,"metadata":{"designer":{"x":0,"y":0}},"parameters":{"hook":HOOK,"maxResults":1}},
  {"id":2,"mapper":{"variables":variables,"scope":"roundtrip"},"module":"util:SetVariables","version":1,"metadata":{"designer":{"x":300,"y":0}},"parameters":{}},
