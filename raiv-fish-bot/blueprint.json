@@ -1,0 +1,914 @@
+{
+ "name": "RAIV_Fish Bot — Заказы",
+ "metadata": {
+  "instant": true,
+  "version": 1
+ },
+ "flow": [
+  {
+   "id": 1,
+   "mapper": {},
+   "module": "gateway:CustomWebHook",
+   "version": 1,
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   },
+   "parameters": {
+    "hook": 3818163,
+    "maxResults": 1
+   }
+  },
+  {
+   "id": 2,
+   "mapper": {
+    "variables": [
+     {
+      "name": "name",
+      "value": "{{switch(get(split(1.callback_query.data; \"|\"); 2); \"a1\"; \"Икра толстолоба\"; \"a2\"; \"Икра кеты\"; \"a3\"; \"Икра форели\"; \"a4\"; \"Икра судака\"; \"a5\"; \"Икра щуки\"; \"a6\"; \"Икра плотвы\"; \"a7\"; \"Икра минтая\"; \"b1\"; \"Плотва с икрой\"; \"b2\"; \"Чищенные тушки плотвы без головы (100% икра)\"; \"b3\"; \"Вобла с икрой (80% икра)\"; \"b4\"; \"Верховодка\"; \"b5\"; \"Лещ с икрой\"; \"b6\"; \"Лещ без икры\"; \"b7\"; \"Карась с икрой\"; \"b8\"; \"Щука потрошеная\"; \"b9\"; \"Форель вяленая потрошеная\"; \"b10\"; \"Судак потрошеный\"; \"b11\"; \"Чехонь\"; \"b12\"; \"Чехонь крупная с икрой 90%\"; \"b13\"; \"Бычок\"; \"b14\"; \"Корюшка с икрой (премиум)\"; \"b15\"; \"Окунь с икрой\"; \"b16\"; \"Юкола лосося\"; \"c1\"; \"Филе горбуши (соломка)\"; \"c2\"; \"Кальмар + лосось (соломка)\"; \"c3\"; \"Корюшка сушеная потрошеная\"; \"c4\"; \"Соломка леща\"; \"c5\"; \"Джерки лосося\"; \"c6\"; \"Ириска из лосося\"; \"c7\"; \"Стейк щуки\"; \"d1\"; \"Пятачки осьминога\"; \"d2\"; \"Паутинка кальмара «сладкий чили»\"; \"d3\"; \"Кальмар по-шанхайски\"; \"d4\"; \"Стружка кальмара\"; \"d5\"; \"Палочки патасу\"; \"d6\"; \"Филе голубого марлина\"; \"d7\"; \"Кальмар по-перуански\"; \"d8\"; \"Полосатик\"; \"d9\"; \"Стружка краба\"; \"d10\"; \"Анчоус\"; \"d11\"; \"Крабовые палочки\"; \"e1\"; \"Снеток в томате\"; \"e2\"; \"Лещ в томате\"; \"\")}}"
+     },
+     {
+      "name": "price",
+      "value": "{{switch(get(split(1.callback_query.data; \"|\"); 2); \"a1\"; \"6\"; \"a2\"; \"8.5\"; \"a3\"; \"8.5\"; \"a4\"; \"6.5\"; \"a5\"; \"7\"; \"a6\"; \"7\"; \"a7\"; \"6.5\"; \"b1\"; \"35\"; \"b2\"; \"49\"; \"b3\"; \"30\"; \"b4\"; \"35\"; \"b5\"; \"35\"; \"b6\"; \"20\"; \"b7\"; \"23\"; \"b8\"; \"25\"; \"b9\"; \"35\"; \"b10\"; \"30\"; \"b11\"; \"25\"; \"b12\"; \"35\"; \"b13\"; \"34\"; \"b14\"; \"60\"; \"b15\"; \"34\"; \"b16\"; \"67\"; \"c1\"; \"6\"; \"c2\"; \"4.9\"; \"c3\"; \"5.5\"; \"c4\"; \"3.5\"; \"c5\"; \"6\"; \"c6\"; \"6\"; \"c7\"; \"4.5\"; \"d1\"; \"40\"; \"d2\"; \"40\"; \"d3\"; \"40\"; \"d4\"; \"40\"; \"d5\"; \"40\"; \"d6\"; \"40\"; \"d7\"; \"40\"; \"d8\"; \"40\"; \"d9\"; \"40\"; \"d10\"; \"40\"; \"d11\"; \"40\"; \"e1\"; \"5\"; \"e2\"; \"5\"; \"0\")}}"
+     },
+     {
+      "name": "ulabel",
+      "value": "{{switch(substring(ifempty(get(split(1.callback_query.data; \"|\"); 2); \"x\"); 0; 1); \"a\"; \"€ / 100 г\"; \"c\"; \"€ / 100 г\"; \"e\"; \"€ / шт.\"; \"€ / кг\")}}"
+     },
+     {
+      "name": "qlabel",
+      "value": "{{replace(ifempty(get(split(1.callback_query.data; \"|\"); 3); \"\"); \".\"; \",\")}} {{switch(substring(ifempty(get(split(1.callback_query.data; \"|\"); 2); \"x\"); 0; 1); \"a\"; \"г\"; \"c\"; \"г\"; \"e\"; \"шт.\"; \"кг\")}}"
+     },
+     {
+      "name": "total",
+      "value": "{{parseNumber(switch(get(split(1.callback_query.data; \"|\"); 2); \"a1\"; \"6\"; \"a2\"; \"8.5\"; \"a3\"; \"8.5\"; \"a4\"; \"6.5\"; \"a5\"; \"7\"; \"a6\"; \"7\"; \"a7\"; \"6.5\"; \"b1\"; \"35\"; \"b2\"; \"49\"; \"b3\"; \"30\"; \"b4\"; \"35\"; \"b5\"; \"35\"; \"b6\"; \"20\"; \"b7\"; \"23\"; \"b8\"; \"25\"; \"b9\"; \"35\"; \"b10\"; \"30\"; \"b11\"; \"25\"; \"b12\"; \"35\"; \"b13\"; \"34\"; \"b14\"; \"60\"; \"b15\"; \"34\"; \"b16\"; \"67\"; \"c1\"; \"6\"; \"c2\"; \"4.9\"; \"c3\"; \"5.5\"; \"c4\"; \"3.5\"; \"c5\"; \"6\"; \"c6\"; \"6\"; \"c7\"; \"4.5\"; \"d1\"; \"40\"; \"d2\"; \"40\"; \"d3\"; \"40\"; \"d4\"; \"40\"; \"d5\"; \"40\"; \"d6\"; \"40\"; \"d7\"; \"40\"; \"d8\"; \"40\"; \"d9\"; \"40\"; \"d10\"; \"40\"; \"d11\"; \"40\"; \"e1\"; \"5\"; \"e2\"; \"5\"; \"0\"); \".\") * parseNumber(ifempty(get(split(1.callback_query.data; \"|\"); 3); \"0\"); \".\") / switch(substring(ifempty(get(split(1.callback_query.data; \"|\"); 2); \"x\"); 0; 1); \"a\"; 100; \"c\"; 100; 1)}}"
+     },
+     {
+      "name": "city",
+      "value": "{{switch(ifempty(get(split(1.callback_query.data; \"|\"); 4); \"0\"); \"1\"; \"Эдделак\"; \"2\"; \"Марне\"; \"3\"; \"Брунсбюттель\"; \"4\"; \"Хайде\"; \"Другое место\")}}"
+     }
+    ],
+    "scope": "roundtrip"
+   },
+   "module": "util:SetVariables",
+   "version": 1,
+   "metadata": {
+    "designer": {
+     "x": 300,
+     "y": 0
+    }
+   },
+   "parameters": {}
+  },
+  {
+   "id": 3,
+   "mapper": null,
+   "module": "builtin:BasicRouter",
+   "version": 1,
+   "metadata": {
+    "designer": {
+     "x": 600,
+     "y": 0
+    }
+   },
+   "routes": [
+    {
+     "flow": [
+      {
+       "id": 4,
+       "filter": {
+        "name": "Меню",
+        "conditions": [
+         [
+          {
+           "a": "{{1.message.text}}",
+           "o": "exist"
+          },
+          {
+           "a": "{{1.message.reply_to_message.message_id}}",
+           "o": "notexist"
+          }
+         ]
+        ]
+       },
+       "mapper": {
+        "body": "{\"method\": \"sendMessage\", \"chat_id\": {{1.message.chat.id}}, \"text\": \"Здравствуйте! 🐟 RAIV FISH — вяленая рыба и снеки.\\nВесь ассортимент и наличие внизу. То, что отмечено ❌, — нет в наличии.\\n\\n🐟 ИКРА ВЯЛЕНАЯ (100 Г)\\n• Икра толстолоба — 6 € / 100 г\\n• Икра кеты — 8,5 € / 100 г\\n• Икра форели — 8,5 € / 100 г\\n• Икра судака — 6,5 € / 100 г❌\\n• Икра щуки — 7 € / 100 г\\n• Икра плотвы — 7 € / 100 г❌\\n• Икра минтая — 6,5 € / 100 г❌\\n\\n🐠 РЫБА ВЯЛЕНАЯ (КГ)\\n• Плотва с икрой — 35 € / кг\\n• Чищенные тушки плотвы без головы (100% икра) — 49 € / кг\\n• Вобла с икрой (80% икра) — 30 € / кг\\n• Верховодка — 35 € / кг\\n• Лещ с икрой — 35 € / кг\\n• Лещ без икры — 20 € / кг❌\\n• Карась с икрой — 23 € / кг\\n• Щука потрошеная — 25 € / кг\\n• Форель вяленая потрошеная — 35 € / кг\\n• Судак потрошеный — 30 € / кг\\n• Чехонь — 25 € / кг\\n• Чехонь крупная с икрой 90% — 35 € / кг\\n• Бычок — 34 € / кг\\n• Корюшка с икрой (премиум) — 60 € / кг❌\\n• Окунь с икрой — 34 € / кг\\n• Юкола лосося — 67 € / кг\\n\\n🍢 РЫБНЫЕ СНЕКИ (100 Г)\\n• Филе горбуши (соломка) — 6 € / 100 г\\n• Кальмар + лосось (соломка) — 4,9 € / 100 г\\n• Корюшка сушеная потрошеная — 5,5 € / 100 г\\n• Соломка леща — 3,5 € / 100 г\\n• Джерки лосося — 6 € / 100 г\\n• Ириска из лосося — 6 € / 100 г\\n• Стейк щуки — 4,5 € / 100 г\\n\\n🦑 СНЕКИ К ПИВУ (КГ)\\n• Пятачки осьминога — 40 € / кг\\n• Паутинка кальмара «сладкий чили» — 40 € / кг\\n• Кальмар по-шанхайски — 40 € / кг\\n• Стружка кальмара — 40 € / кг\\n• Палочки патасу — 40 € / кг\\n• Филе голубого марлина — 40 € / кг\\n• Кальмар по-перуански — 40 € / кг\\n• Полосатик — 40 € / кг\\n• Стружка краба — 40 € / кг\\n• Анчоус — 40 € / кг\\n• Крабовые палочки — 40 € / кг\\n\\n🥫 КОНСЕРВЫ\\n• Снеток в томате — 5 € / шт.\\n• Лещ в томате — 5 € / шт.\\n\\n🚗 Доставка каждый день: Эдделак, Марне, Брунсбюттель, Хайде\\n💶 Оплата при получении\\n\\nВыберите раздел 👇\", \"reply_markup\": {\"inline_keyboard\": [[{\"text\": \"🐟 Икра вяленая (100 г)\", \"callback_data\": \"k|a|s\"}], [{\"text\": \"🐠 Рыба вяленая (кг)\", \"callback_data\": \"k|b|s\"}], [{\"text\": \"🍢 Рыбные снеки (100 г)\", \"callback_data\": \"k|c|s\"}], [{\"text\": \"🦑 Снеки к пиву (кг)\", \"callback_data\": \"k|d|s\"}], [{\"text\": \"🥫 Консервы\", \"callback_data\": \"k|e|s\"}]]}}",
+        "status": 200,
+        "headers": [
+         {
+          "key": "Content-Type",
+          "value": "application/json"
+         }
+        ]
+       },
+       "module": "gateway:WebhookRespond",
+       "version": 1,
+       "metadata": {
+        "designer": {
+         "x": 900,
+         "y": -900
+        }
+       },
+       "parameters": {}
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 5,
+       "filter": {
+        "name": "Разделы",
+        "conditions": [
+         [
+          {
+           "a": "{{get(split(1.callback_query.data; \"|\"); 1)}}",
+           "b": "m",
+           "o": "text:equal"
+          }
+         ]
+        ]
+       },
+       "mapper": {
+        "body": "{\"method\": \"editMessageText\", \"chat_id\": {{1.callback_query.message.chat.id}}, \"message_id\": {{1.callback_query.message.message_id}}, \"text\": \"Выберите раздел 👇\", \"reply_markup\": {\"inline_keyboard\": [[{\"text\": \"🐟 Икра вяленая (100 г)\", \"callback_data\": \"k|a|e\"}], [{\"text\": \"🐠 Рыба вяленая (кг)\", \"callback_data\": \"k|b|e\"}], [{\"text\": \"🍢 Рыбные снеки (100 г)\", \"callback_data\": \"k|c|e\"}], [{\"text\": \"🦑 Снеки к пиву (кг)\", \"callback_data\": \"k|d|e\"}], [{\"text\": \"🥫 Консервы\", \"callback_data\": \"k|e|e\"}]]}}",
+        "status": 200,
+        "headers": [
+         {
+          "key": "Content-Type",
+          "value": "application/json"
+         }
+        ]
+       },
+       "module": "gateway:WebhookRespond",
+       "version": 1,
+       "metadata": {
+        "designer": {
+         "x": 900,
+         "y": -700
+        }
+       },
+       "parameters": {}
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 6,
+       "filter": {
+        "name": "Раздел a",
+        "conditions": [
+         [
+          {
+           "a": "{{get(split(1.callback_query.data; \"|\"); 1)}}",
+           "b": "k",
+           "o": "text:equal"
+          },
+          {
+           "a": "{{get(split(1.callback_query.data; \"|\"); 2)}}",
+           "b": "a",
+           "o": "text:equal"
+          }
+         ]
+        ]
+       },
+       "mapper": {
+        "body": "{\"method\": \"{{if(get(split(1.callback_query.data; \"|\"); 3) = \"e\"; \"editMessageText\"; \"sendMessage\")}}\", \"chat_id\": {{1.callback_query.message.chat.id}}, \"message_id\": {{1.callback_query.message.message_id}}, \"text\": \"🐟 Икра вяленая (100 г)\\n\\nВыберите товар 👇\", \"reply_markup\": {\"inline_keyboard\": [[{\"text\": \"Икра толстолоба — 6 € / 100 г\", \"callback_data\": \"f|a1\"}], [{\"text\": \"Икра кеты — 8,5 € / 100 г\", \"callback_data\": \"f|a2\"}], [{\"text\": \"Икра форели — 8,5 € / 100 г\", \"callback_data\": \"f|a3\"}], [{\"text\": \"Икра щуки — 7 € / 100 г\", \"callback_data\": \"f|a5\"}], [{\"text\": \"⬅️ Все разделы\", \"callback_data\": \"m\"}]]}}",
+        "status": 200,
+        "headers": [
+         {
+          "key": "Content-Type",
+          "value": "application/json"
+         }
+        ]
+       },
+       "module": "gateway:WebhookRespond",
+       "version": 1,
+       "metadata": {
+        "designer": {
+         "x": 900,
+         "y": -500
+        }
+       },
+       "parameters": {}
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 7,
+       "filter": {
+        "name": "Раздел b",
+        "conditions": [
+         [
+          {
+           "a": "{{get(split(1.callback_query.data; \"|\"); 1)}}",
+           "b": "k",
+           "o": "text:equal"
+          },
+          {
+           "a": "{{get(split(1.callback_query.data; \"|\"); 2)}}",
+           "b": "b",
+           "o": "text:equal"
+          }
+         ]
+        ]
+       },
+       "mapper": {
+        "body": "{\"method\": \"{{if(get(split(1.callback_query.data; \"|\"); 3) = \"e\"; \"editMessageText\"; \"sendMessage\")}}\", \"chat_id\": {{1.callback_query.message.chat.id}}, \"message_id\": {{1.callback_query.message.message_id}}, \"text\": \"🐠 Рыба вяленая (кг)\\n\\nВыберите товар 👇\", \"reply_markup\": {\"inline_keyboard\": [[{\"text\": \"Плотва с икрой — 35 € / кг\", \"callback_data\": \"f|b1\"}], [{\"text\": \"Чищенные тушки плотвы без головы (100% икра) — 49 € / кг\", \"callback_data\": \"f|b2\"}], [{\"text\": \"Вобла с икрой (80% икра) — 30 € / кг\", \"callback_data\": \"f|b3\"}], [{\"text\": \"Верховодка — 35 € / кг\", \"callback_data\": \"f|b4\"}], [{\"text\": \"Лещ с икрой — 35 € / кг\", \"callback_data\": \"f|b5\"}], [{\"text\": \"Карась с икрой — 23 € / кг\", \"callback_data\": \"f|b7\"}], [{\"text\": \"Щука потрошеная — 25 € / кг\", \"callback_data\": \"f|b8\"}], [{\"text\": \"Форель вяленая потрошеная — 35 € / кг\", \"callback_data\": \"f|b9\"}], [{\"text\": \"Судак потрошеный — 30 € / кг\", \"callback_data\": \"f|b10\"}], [{\"text\": \"Чехонь — 25 € / кг\", \"callback_data\": \"f|b11\"}], [{\"text\": \"Чехонь крупная с икрой 90% — 35 € / кг\", \"callback_data\": \"f|b12\"}], [{\"text\": \"Бычок — 34 € / кг\", \"callback_data\": \"f|b13\"}], [{\"text\": \"Окунь с икрой — 34 € / кг\", \"callback_data\": \"f|b15\"}], [{\"text\": \"Юкола лосося — 67 € / кг\", \"callback_data\": \"f|b16\"}], [{\"text\": \"⬅️ Все разделы\", \"callback_data\": \"m\"}]]}}",
+        "status": 200,
+        "headers": [
+         {
+          "key": "Content-Type",
+          "value": "application/json"
+         }
+        ]
+       },
+       "module": "gateway:WebhookRespond",
+       "version": 1,
+       "metadata": {
+        "designer": {
+         "x": 900,
+         "y": -300
+        }
+       },
+       "parameters": {}
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 8,
+       "filter": {
+        "name": "Раздел c",
+        "conditions": [
+         [
+          {
+           "a": "{{get(split(1.callback_query.data; \"|\"); 1)}}",
+           "b": "k",
+           "o": "text:equal"
+          },
+          {
+           "a": "{{get(split(1.callback_query.data; \"|\"); 2)}}",
+           "b": "c",
+           "o": "text:equal"
+          }
+         ]
+        ]
+       },
+       "mapper": {
+        "body": "{\"method\": \"{{if(get(split(1.callback_query.data; \"|\"); 3) = \"e\"; \"editMessageText\"; \"sendMessage\")}}\", \"chat_id\": {{1.callback_query.message.chat.id}}, \"message_id\": {{1.callback_query.message.message_id}}, \"text\": \"🍢 Рыбные снеки (100 г)\\n\\nВыберите товар 👇\", \"reply_markup\": {\"inline_keyboard\": [[{\"text\": \"Филе горбуши (соломка) — 6 € / 100 г\", \"callback_data\": \"f|c1\"}], [{\"text\": \"Кальмар + лосось (соломка) — 4,9 € / 100 г\", \"callback_data\": \"f|c2\"}], [{\"text\": \"Корюшка сушеная потрошеная — 5,5 € / 100 г\", \"callback_data\": \"f|c3\"}], [{\"text\": \"Соломка леща — 3,5 € / 100 г\", \"callback_data\": \"f|c4\"}], [{\"text\": \"Джерки лосося — 6 € / 100 г\", \"callback_data\": \"f|c5\"}], [{\"text\": \"Ириска из лосося — 6 € / 100 г\", \"callback_data\": \"f|c6\"}], [{\"text\": \"Стейк щуки — 4,5 € / 100 г\", \"callback_data\": \"f|c7\"}], [{\"text\": \"⬅️ Все разделы\", \"callback_data\": \"m\"}]]}}",
+        "status": 200,
+        "headers": [
+         {
+          "key": "Content-Type",
+          "value": "application/json"
+         }
+        ]
+       },
+       "module": "gateway:WebhookRespond",
+       "version": 1,
+       "metadata": {
+        "designer": {
+         "x": 900,
+         "y": -100
+        }
+       },
+       "parameters": {}
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 9,
+       "filter": {
+        "name": "Раздел d",
+        "conditions": [
+         [
+          {
+           "a": "{{get(split(1.callback_query.data; \"|\"); 1)}}",
+           "b": "k",
+           "o": "text:equal"
+          },
+          {
+           "a": "{{get(split(1.callback_query.data; \"|\"); 2)}}",
+           "b": "d",
+           "o": "text:equal"
+          }
+         ]
+        ]
+       },
+       "mapper": {
+        "body": "{\"method\": \"{{if(get(split(1.callback_query.data; \"|\"); 3) = \"e\"; \"editMessageText\"; \"sendMessage\")}}\", \"chat_id\": {{1.callback_query.message.chat.id}}, \"message_id\": {{1.callback_query.message.message_id}}, \"text\": \"🦑 Снеки к пиву (кг)\\n\\nВыберите товар 👇\", \"reply_markup\": {\"inline_keyboard\": [[{\"text\": \"Пятачки осьминога — 40 € / кг\", \"callback_data\": \"f|d1\"}], [{\"text\": \"Паутинка кальмара «сладкий чили» — 40 € / кг\", \"callback_data\": \"f|d2\"}], [{\"text\": \"Кальмар по-шанхайски — 40 € / кг\", \"callback_data\": \"f|d3\"}], [{\"text\": \"Стружка кальмара — 40 € / кг\", \"callback_data\": \"f|d4\"}], [{\"text\": \"Палочки патасу — 40 € / кг\", \"callback_data\": \"f|d5\"}], [{\"text\": \"Филе голубого марлина — 40 € / кг\", \"callback_data\": \"f|d6\"}], [{\"text\": \"Кальмар по-перуански — 40 € / кг\", \"callback_data\": \"f|d7\"}], [{\"text\": \"Полосатик — 40 € / кг\", \"callback_data\": \"f|d8\"}], [{\"text\": \"Стружка краба — 40 € / кг\", \"callback_data\": \"f|d9\"}], [{\"text\": \"Анчоус — 40 € / кг\", \"callback_data\": \"f|d10\"}], [{\"text\": \"Крабовые палочки — 40 € / кг\", \"callback_data\": \"f|d11\"}], [{\"text\": \"⬅️ Все разделы\", \"callback_data\": \"m\"}]]}}",
+        "status": 200,
+        "headers": [
+         {
+          "key": "Content-Type",
+          "value": "application/json"
+         }
+        ]
+       },
+       "module": "gateway:WebhookRespond",
+       "version": 1,
+       "metadata": {
+        "designer": {
+         "x": 900,
+         "y": 100
+        }
+       },
+       "parameters": {}
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 10,
+       "filter": {
+        "name": "Раздел e",
+        "conditions": [
+         [
+          {
+           "a": "{{get(split(1.callback_query.data; \"|\"); 1)}}",
+           "b": "k",
+           "o": "text:equal"
+          },
+          {
+           "a": "{{get(split(1.callback_query.data; \"|\"); 2)}}",
+           "b": "e",
+           "o": "text:equal"
+          }
+         ]
+        ]
+       },
+       "mapper": {
+        "body": "{\"method\": \"{{if(get(split(1.callback_query.data; \"|\"); 3) = \"e\"; \"editMessageText\"; \"sendMessage\")}}\", \"chat_id\": {{1.callback_query.message.chat.id}}, \"message_id\": {{1.callback_query.message.message_id}}, \"text\": \"🥫 Консервы\\n\\nВыберите товар 👇\", \"reply_markup\": {\"inline_keyboard\": [[{\"text\": \"Снеток в томате — 5 € / шт.\", \"callback_data\": \"f|e1\"}], [{\"text\": \"Лещ в томате — 5 € / шт.\", \"callback_data\": \"f|e2\"}], [{\"text\": \"⬅️ Все разделы\", \"callback_data\": \"m\"}]]}}",
+        "status": 200,
+        "headers": [
+         {
+          "key": "Content-Type",
+          "value": "application/json"
+         }
+        ]
+       },
+       "module": "gateway:WebhookRespond",
+       "version": 1,
+       "metadata": {
+        "designer": {
+         "x": 900,
+         "y": 300
+        }
+       },
+       "parameters": {}
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 20,
+       "filter": {
+        "name": "Товар (g)",
+        "conditions": [
+         [
+          {
+           "a": "{{get(split(1.callback_query.data; \"|\"); 1)}}",
+           "b": "f",
+           "o": "text:equal"
+          },
+          {
+           "a": "{{substring(ifempty(get(split(1.callback_query.data; \"|\"); 2); \"x\"); 0; 1)}}",
+           "b": "a",
+           "o": "text:equal"
+          }
+         ],
+         [
+          {
+           "a": "{{get(split(1.callback_query.data; \"|\"); 1)}}",
+           "b": "f",
+           "o": "text:equal"
+          },
+          {
+           "a": "{{substring(ifempty(get(split(1.callback_query.data; \"|\"); 2); \"x\"); 0; 1)}}",
+           "b": "c",
+           "o": "text:equal"
+          }
+         ]
+        ]
+       },
+       "mapper": {
+        "body": "{\"method\": \"editMessageText\", \"chat_id\": {{1.callback_query.message.chat.id}}, \"message_id\": {{1.callback_query.message.message_id}}, \"text\": \"🐟 {{2.name}} — {{replace(2.price; \".\"; \",\")}} {{2.ulabel}}\\n\\nСколько взять?\", \"reply_markup\": {\"inline_keyboard\": [[{\"text\": \"100 г\", \"callback_data\": \"q|{{get(split(1.callback_query.data; \"|\"); 2)}}|100\"}, {\"text\": \"200 г\", \"callback_data\": \"q|{{get(split(1.callback_query.data; \"|\"); 2)}}|200\"}], [{\"text\": \"300 г\", \"callback_data\": \"q|{{get(split(1.callback_query.data; \"|\"); 2)}}|300\"}, {\"text\": \"500 г\", \"callback_data\": \"q|{{get(split(1.callback_query.data; \"|\"); 2)}}|500\"}], [{\"text\": \"⬅️ Назад\", \"callback_data\": \"k|{{substring(ifempty(get(split(1.callback_query.data; \"|\"); 2); \"x\"); 0; 1)}}|e\"}]]}}",
+        "status": 200,
+        "headers": [
+         {
+          "key": "Content-Type",
+          "value": "application/json"
+         }
+        ]
+       },
+       "module": "gateway:WebhookRespond",
+       "version": 1,
+       "metadata": {
+        "designer": {
+         "x": 900,
+         "y": 500
+        }
+       },
+       "parameters": {}
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 21,
+       "filter": {
+        "name": "Товар (k)",
+        "conditions": [
+         [
+          {
+           "a": "{{get(split(1.callback_query.data; \"|\"); 1)}}",
+           "b": "f",
+           "o": "text:equal"
+          },
+          {
+           "a": "{{substring(ifempty(get(split(1.callback_query.data; \"|\"); 2); \"x\"); 0; 1)}}",
+           "b": "b",
+           "o": "text:equal"
+          }
+         ],
+         [
+          {
+           "a": "{{get(split(1.callback_query.data; \"|\"); 1)}}",
+           "b": "f",
+           "o": "text:equal"
+          },
+          {
+           "a": "{{substring(ifempty(get(split(1.callback_query.data; \"|\"); 2); \"x\"); 0; 1)}}",
+           "b": "d",
+           "o": "text:equal"
+          }
+         ]
+        ]
+       },
+       "mapper": {
+        "body": "{\"method\": \"editMessageText\", \"chat_id\": {{1.callback_query.message.chat.id}}, \"message_id\": {{1.callback_query.message.message_id}}, \"text\": \"🐟 {{2.name}} — {{replace(2.price; \".\"; \",\")}} {{2.ulabel}}\\n\\nСколько взять?\", \"reply_markup\": {\"inline_keyboard\": [[{\"text\": \"0,5 кг\", \"callback_data\": \"q|{{get(split(1.callback_query.data; \"|\"); 2)}}|0.5\"}, {\"text\": \"1 кг\", \"callback_data\": \"q|{{get(split(1.callback_query.data; \"|\"); 2)}}|1\"}], [{\"text\": \"1,5 кг\", \"callback_data\": \"q|{{get(split(1.callback_query.data; \"|\"); 2)}}|1.5\"}, {\"text\": \"2 кг\", \"callback_data\": \"q|{{get(split(1.callback_query.data; \"|\"); 2)}}|2\"}], [{\"text\": \"⬅️ Назад\", \"callback_data\": \"k|{{substring(ifempty(get(split(1.callback_query.data; \"|\"); 2); \"x\"); 0; 1)}}|e\"}]]}}",
+        "status": 200,
+        "headers": [
+         {
+          "key": "Content-Type",
+          "value": "application/json"
+         }
+        ]
+       },
+       "module": "gateway:WebhookRespond",
+       "version": 1,
+       "metadata": {
+        "designer": {
+         "x": 900,
+         "y": 700
+        }
+       },
+       "parameters": {}
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 22,
+       "filter": {
+        "name": "Товар (p)",
+        "conditions": [
+         [
+          {
+           "a": "{{get(split(1.callback_query.data; \"|\"); 1)}}",
+           "b": "f",
+           "o": "text:equal"
+          },
+          {
+           "a": "{{substring(ifempty(get(split(1.callback_query.data; \"|\"); 2); \"x\"); 0; 1)}}",
+           "b": "e",
+           "o": "text:equal"
+          }
+         ]
+        ]
+       },
+       "mapper": {
+        "body": "{\"method\": \"editMessageText\", \"chat_id\": {{1.callback_query.message.chat.id}}, \"message_id\": {{1.callback_query.message.message_id}}, \"text\": \"🐟 {{2.name}} — {{replace(2.price; \".\"; \",\")}} {{2.ulabel}}\\n\\nСколько взять?\", \"reply_markup\": {\"inline_keyboard\": [[{\"text\": \"1 шт.\", \"callback_data\": \"q|{{get(split(1.callback_query.data; \"|\"); 2)}}|1\"}, {\"text\": \"2 шт.\", \"callback_data\": \"q|{{get(split(1.callback_query.data; \"|\"); 2)}}|2\"}], [{\"text\": \"3 шт.\", \"callback_data\": \"q|{{get(split(1.callback_query.data; \"|\"); 2)}}|3\"}, {\"text\": \"5 шт.\", \"callback_data\": \"q|{{get(split(1.callback_query.data; \"|\"); 2)}}|5\"}], [{\"text\": \"⬅️ Назад\", \"callback_data\": \"k|{{substring(ifempty(get(split(1.callback_query.data; \"|\"); 2); \"x\"); 0; 1)}}|e\"}]]}}",
+        "status": 200,
+        "headers": [
+         {
+          "key": "Content-Type",
+          "value": "application/json"
+         }
+        ]
+       },
+       "module": "gateway:WebhookRespond",
+       "version": 1,
+       "metadata": {
+        "designer": {
+         "x": 900,
+         "y": 900
+        }
+       },
+       "parameters": {}
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 23,
+       "filter": {
+        "name": "Выбран вес",
+        "conditions": [
+         [
+          {
+           "a": "{{get(split(1.callback_query.data; \"|\"); 1)}}",
+           "b": "q",
+           "o": "text:equal"
+          }
+         ]
+        ]
+       },
+       "mapper": {
+        "body": "{\"method\": \"editMessageText\", \"chat_id\": {{1.callback_query.message.chat.id}}, \"message_id\": {{1.callback_query.message.message_id}}, \"text\": \"🐟 {{2.name}} — {{2.qlabel}}\\n💶 Сумма: {{formatNumber(2.total; 2; \",\"; \".\")}} €\\n\\nКуда доставить?\", \"reply_markup\": {\"inline_keyboard\": [[{\"text\": \"Эдделак\", \"callback_data\": \"c|{{get(split(1.callback_query.data; \"|\"); 2)}}|{{get(split(1.callback_query.data; \"|\"); 3)}}|1\"}, {\"text\": \"Марне\", \"callback_data\": \"c|{{get(split(1.callback_query.data; \"|\"); 2)}}|{{get(split(1.callback_query.data; \"|\"); 3)}}|2\"}], [{\"text\": \"Брунсбюттель\", \"callback_data\": \"c|{{get(split(1.callback_query.data; \"|\"); 2)}}|{{get(split(1.callback_query.data; \"|\"); 3)}}|3\"}, {\"text\": \"Хайде\", \"callback_data\": \"c|{{get(split(1.callback_query.data; \"|\"); 2)}}|{{get(split(1.callback_query.data; \"|\"); 3)}}|4\"}], [{\"text\": \"Другое место\", \"callback_data\": \"c|{{get(split(1.callback_query.data; \"|\"); 2)}}|{{get(split(1.callback_query.data; \"|\"); 3)}}|5\"}]]}}",
+        "status": 200,
+        "headers": [
+         {
+          "key": "Content-Type",
+          "value": "application/json"
+         }
+        ]
+       },
+       "module": "gateway:WebhookRespond",
+       "version": 1,
+       "metadata": {
+        "designer": {
+         "x": 900,
+         "y": 1100
+        }
+       },
+       "parameters": {}
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 24,
+       "filter": {
+        "name": "Выбран город",
+        "conditions": [
+         [
+          {
+           "a": "{{get(split(1.callback_query.data; \"|\"); 1)}}",
+           "b": "c",
+           "o": "text:equal"
+          }
+         ]
+        ]
+       },
+       "mapper": {
+        "body": "{\"method\": \"editMessageText\", \"chat_id\": {{1.callback_query.message.chat.id}}, \"message_id\": {{1.callback_query.message.message_id}}, \"text\": \"🐟 {{2.name}} — {{2.qlabel}}\\n📍 {{2.city}}\\n💶 Сумма: {{formatNumber(2.total; 2; \",\"; \".\")}} €\\n\\nКак удобнее оплатить?\\nОплата 1-го числа — для заказов до 50 € с учётом +20%.\", \"reply_markup\": {\"inline_keyboard\": [[{\"text\": \"💶 Наличными при получении — {{formatNumber(2.total; 2; \",\"; \".\")}} €\", \"callback_data\": \"p|{{get(split(1.callback_query.data; \"|\"); 2)}}|{{get(split(1.callback_query.data; \"|\"); 3)}}|{{get(split(1.callback_query.data; \"|\"); 4)}}|C\"}], [{\"text\": \"📅 Оплата 1-го числа +20% — {{formatNumber(2.total * 1.2; 2; \",\"; \".\")}} €\", \"callback_data\": \"p|{{get(split(1.callback_query.data; \"|\"); 2)}}|{{get(split(1.callback_query.data; \"|\"); 3)}}|{{get(split(1.callback_query.data; \"|\"); 4)}}|D\"}]]}}",
+        "status": 200,
+        "headers": [
+         {
+          "key": "Content-Type",
+          "value": "application/json"
+         }
+        ]
+       },
+       "module": "gateway:WebhookRespond",
+       "version": 1,
+       "metadata": {
+        "designer": {
+         "x": 900,
+         "y": 1300
+        }
+       },
+       "parameters": {}
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 25,
+       "filter": {
+        "name": "Наличные",
+        "conditions": [
+         [
+          {
+           "a": "{{get(split(1.callback_query.data; \"|\"); 1)}}",
+           "b": "p",
+           "o": "text:equal"
+          },
+          {
+           "a": "{{get(split(1.callback_query.data; \"|\"); 5)}}",
+           "b": "C",
+           "o": "text:equal"
+          }
+         ]
+        ]
+       },
+       "mapper": {
+        "body": "{\"method\": \"sendMessage\", \"chat_id\": {{1.callback_query.message.chat.id}}, \"text\": \"🧾 Ваш заказ\\n🐟 {{2.name}} — {{2.qlabel}}\\n📍 {{2.city}}\\n💳 Наличными при получении\\n💶 К оплате: {{formatNumber(2.total; 2; \",\"; \".\")}} €\\n\\n✍️ Ответьте на это сообщение: напишите адрес доставки — улица, дом, город\", \"reply_markup\": {\"force_reply\": true, \"input_field_placeholder\": \"Улица, дом, город\"}}",
+        "status": 200,
+        "headers": [
+         {
+          "key": "Content-Type",
+          "value": "application/json"
+         }
+        ]
+       },
+       "module": "gateway:WebhookRespond",
+       "version": 1,
+       "metadata": {
+        "designer": {
+         "x": 900,
+         "y": 1500
+        }
+       },
+       "parameters": {}
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 26,
+       "filter": {
+        "name": "Оплата 1-го, до 50 €",
+        "conditions": [
+         [
+          {
+           "a": "{{get(split(1.callback_query.data; \"|\"); 1)}}",
+           "b": "p",
+           "o": "text:equal"
+          },
+          {
+           "a": "{{get(split(1.callback_query.data; \"|\"); 5)}}",
+           "b": "D",
+           "o": "text:equal"
+          },
+          {
+           "a": "{{2.total * 1.2}}",
+           "b": "50",
+           "o": "number:lessorequal"
+          }
+         ]
+        ]
+       },
+       "mapper": {
+        "body": "{\"method\": \"sendMessage\", \"chat_id\": {{1.callback_query.message.chat.id}}, \"text\": \"🧾 Ваш заказ\\n🐟 {{2.name}} — {{2.qlabel}}\\n📍 {{2.city}}\\n📅 Оплата 1-го числа +20%\\n💶 К оплате 1-го числа: {{formatNumber(2.total * 1.2; 2; \",\"; \".\")}} €\\n\\n✍️ Ответьте на это сообщение: напишите адрес доставки — улица, дом, город\", \"reply_markup\": {\"force_reply\": true, \"input_field_placeholder\": \"Улица, дом, город\"}}",
+        "status": 200,
+        "headers": [
+         {
+          "key": "Content-Type",
+          "value": "application/json"
+         }
+        ]
+       },
+       "module": "gateway:WebhookRespond",
+       "version": 1,
+       "metadata": {
+        "designer": {
+         "x": 900,
+         "y": 1700
+        }
+       },
+       "parameters": {}
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 27,
+       "filter": {
+        "name": "Оплата 1-го, больше 50 €",
+        "conditions": [
+         [
+          {
+           "a": "{{get(split(1.callback_query.data; \"|\"); 1)}}",
+           "b": "p",
+           "o": "text:equal"
+          },
+          {
+           "a": "{{get(split(1.callback_query.data; \"|\"); 5)}}",
+           "b": "D",
+           "o": "text:equal"
+          },
+          {
+           "a": "{{2.total * 1.2}}",
+           "b": "50",
+           "o": "number:greater"
+          }
+         ]
+        ]
+       },
+       "mapper": {
+        "body": "{\"method\": \"sendMessage\", \"chat_id\": {{1.callback_query.message.chat.id}}, \"text\": \"⚠️ Оплата 1-го числа доступна для заказов до 50 €.\\nВаш заказ с учётом +20%: {{formatNumber(2.total * 1.2; 2; \",\"; \".\")}} €.\\n\\nВыберите оплату наличными выше или оформите заказ заново: /start\"}",
+        "status": 200,
+        "headers": [
+         {
+          "key": "Content-Type",
+          "value": "application/json"
+         }
+        ]
+       },
+       "module": "gateway:WebhookRespond",
+       "version": 1,
+       "metadata": {
+        "designer": {
+         "x": 900,
+         "y": 1900
+        }
+       },
+       "parameters": {}
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 40,
+       "filter": {
+        "name": "Получен адрес",
+        "conditions": [
+         [
+          {
+           "a": "{{1.message.reply_to_message.text}}",
+           "b": "Ваш заказ",
+           "o": "text:contain"
+          },
+          {
+           "a": "{{1.message.reply_to_message.text}}",
+           "b": "Адрес доставки:",
+           "o": "text:notcontain"
+          }
+         ]
+        ]
+       },
+       "mapper": {
+        "method": "POST",
+        "bodyType": "assembled_body",
+        "body_spec": [
+         {
+          "key": "chat_id",
+          "value": "{{1.message.chat.id}}"
+         },
+         {
+          "key": "text",
+          "value": "{{trim(first(split(1.message.reply_to_message.text; \"✍️\")))}}\n🏠 Адрес доставки: {{1.message.text}}\n\n📞 Ответьте на это сообщение: напишите ваш номер телефона"
+         },
+         {
+          "key": "reply_markup",
+          "value": "{\"force_reply\":true,\"input_field_placeholder\":\"Номер телефона\"}"
+         }
+        ],
+        "urlMethod": "sendMessage"
+       },
+       "module": "telegram:UniversalAPICall",
+       "version": 1,
+       "metadata": {
+        "designer": {
+         "x": 900,
+         "y": 2100
+        }
+       },
+       "parameters": {
+        "__IMTCONN__": 11276087
+       }
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 41,
+       "filter": {
+        "name": "Получен телефон",
+        "conditions": [
+         [
+          {
+           "a": "{{1.message.reply_to_message.text}}",
+           "b": "Адрес доставки:",
+           "o": "text:contain"
+          }
+         ]
+        ]
+       },
+       "mapper": {
+        "method": "POST",
+        "bodyType": "assembled_body",
+        "body_spec": [
+         {
+          "key": "chat_id",
+          "value": "-1003911949676"
+         },
+         {
+          "key": "text",
+          "value": "🆕 НОВЫЙ ЗАКАЗ — RAIV FISH\n\n{{trim(first(split(1.message.reply_to_message.text; \"📞\")))}}\n📞 Телефон: {{1.message.text}}\n👤 Клиент: {{1.message.from.first_name}} {{1.message.from.last_name}} @{{1.message.from.username}}\n\n🗺 Маршрут: https://www.google.com/maps/search/?api=1&query={{encodeURL(trim(replace(first(split(get(split(1.message.reply_to_message.text; \"🏠\"); 2); \"📞\")); \"Адрес доставки:\"; \"\")))}}%2C%20Deutschland"
+         }
+        ],
+        "urlMethod": "sendMessage"
+       },
+       "module": "telegram:UniversalAPICall",
+       "version": 1,
+       "metadata": {
+        "designer": {
+         "x": 900,
+         "y": 2300
+        }
+       },
+       "parameters": {
+        "__IMTCONN__": 11276087
+       }
+      },
+      {
+       "id": 42,
+       "mapper": {
+        "body": "{\"method\":\"sendMessage\",\"chat_id\":{{1.message.chat.id}},\"text\":\"✅ Спасибо! Заказ принят.\\nМы свяжемся с вами, чтобы договориться о времени доставки.\\n\\nНовый заказ: /start\"}",
+        "status": 200,
+        "headers": [
+         {
+          "key": "Content-Type",
+          "value": "application/json"
+         }
+        ]
+       },
+       "module": "gateway:WebhookRespond",
+       "version": 1,
+       "metadata": {
+        "designer": {
+         "x": 1200,
+         "y": 2300
+        }
+       },
+       "parameters": {}
+      },
+      {
+       "id": 43,
+       "mapper": {
+        "method": "POST",
+        "bodyType": "assembled_body",
+        "body_spec": [
+         {
+          "key": "chat_id",
+          "value": "-1003911949676"
+         },
+         {
+          "key": "text",
+          "value": "💬 Связаться с клиентом в Telegram 👇"
+         },
+         {
+          "key": "reply_to_message_id",
+          "value": "{{41.body.result.message_id}}"
+         },
+         {
+          "key": "reply_markup",
+          "value": "{\"inline_keyboard\":[[{\"text\":\"💬 Написать клиенту\",\"url\":\"tg://user?id={{1.message.from.id}}\"}]]}"
+         }
+        ],
+        "urlMethod": "sendMessage"
+       },
+       "module": "telegram:UniversalAPICall",
+       "onerror": [
+        {
+         "id": 44,
+         "mapper": null,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "metadata": {
+          "designer": {
+           "x": 1500,
+           "y": 2600
+          }
+         }
+        }
+       ],
+       "version": 1,
+       "metadata": {
+        "designer": {
+         "x": 1500,
+         "y": 2300
+        }
+       },
+       "parameters": {
+        "__IMTCONN__": 11276087
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}
