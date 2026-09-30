@@ -1,5 +1,5 @@
 import json
-CONN = 11276087  # placeholder, swapped to RAIV_Fish connection later
+CONN = 11456488  # RAIV_Fish Telegram Bot
 GROUP = "-1003911949676"
 HOOK = 3818163
 cats = [
