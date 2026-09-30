@@ -564,55 +564,12 @@
       {
        "id": 24,
        "filter": {
-        "name": "Выбран город",
+        "name": "Выбран город → заказ",
         "conditions": [
          [
           {
            "a": "{{get(split(1.callback_query.data; \"|\"); 1)}}",
            "b": "c",
-           "o": "text:equal"
-          }
-         ]
-        ]
-       },
-       "mapper": {
-        "body": "{\"method\": \"editMessageText\", \"chat_id\": {{1.callback_query.message.chat.id}}, \"message_id\": {{1.callback_query.message.message_id}}, \"text\": \"🐟 {{2.name}} — {{2.qlabel}}\\n📍 {{2.city}}\\n💶 Сумма: {{formatNumber(2.total; 2; \",\"; \".\")}} €\\n\\nКак удобнее оплатить?\\nОплата 1-го числа — для заказов до 50 € с учётом +20%.\", \"reply_markup\": {\"inline_keyboard\": [[{\"text\": \"💶 Наличными при получении — {{formatNumber(2.total; 2; \",\"; \".\")}} €\", \"callback_data\": \"p|{{get(split(1.callback_query.data; \"|\"); 2)}}|{{get(split(1.callback_query.data; \"|\"); 3)}}|{{get(split(1.callback_query.data; \"|\"); 4)}}|C\"}], [{\"text\": \"📅 Оплата 1-го числа +20% — {{formatNumber(2.total * 1.2; 2; \",\"; \".\")}} €\", \"callback_data\": \"p|{{get(split(1.callback_query.data; \"|\"); 2)}}|{{get(split(1.callback_query.data; \"|\"); 3)}}|{{get(split(1.callback_query.data; \"|\"); 4)}}|D\"}]]}}",
-        "status": 200,
-        "headers": [
-         {
-          "key": "Content-Type",
-          "value": "application/json"
-         }
-        ]
-       },
-       "module": "gateway:WebhookRespond",
-       "version": 1,
-       "metadata": {
-        "designer": {
-         "x": 900,
-         "y": 1300
-        }
-       },
-       "parameters": {}
-      }
-     ]
-    },
-    {
-     "flow": [
-      {
-       "id": 25,
-       "filter": {
-        "name": "Наличные",
-        "conditions": [
-         [
-          {
-           "a": "{{get(split(1.callback_query.data; \"|\"); 1)}}",
-           "b": "p",
-           "o": "text:equal"
-          },
-          {
-           "a": "{{get(split(1.callback_query.data; \"|\"); 5)}}",
-           "b": "C",
            "o": "text:equal"
           }
          ]
@@ -633,103 +590,7 @@
        "metadata": {
         "designer": {
          "x": 900,
-         "y": 1500
-        }
-       },
-       "parameters": {}
-      }
-     ]
-    },
-    {
-     "flow": [
-      {
-       "id": 26,
-       "filter": {
-        "name": "Оплата 1-го, до 50 €",
-        "conditions": [
-         [
-          {
-           "a": "{{get(split(1.callback_query.data; \"|\"); 1)}}",
-           "b": "p",
-           "o": "text:equal"
-          },
-          {
-           "a": "{{get(split(1.callback_query.data; \"|\"); 5)}}",
-           "b": "D",
-           "o": "text:equal"
-          },
-          {
-           "a": "{{2.total * 1.2}}",
-           "b": "50",
-           "o": "number:lessorequal"
-          }
-         ]
-        ]
-       },
-       "mapper": {
-        "body": "{\"method\": \"sendMessage\", \"chat_id\": {{1.callback_query.message.chat.id}}, \"text\": \"🧾 Ваш заказ\\n🐟 {{2.name}} — {{2.qlabel}}\\n📍 {{2.city}}\\n📅 Оплата 1-го числа +20%\\n💶 К оплате 1-го числа: {{formatNumber(2.total * 1.2; 2; \",\"; \".\")}} €\\n\\n✍️ Ответьте на это сообщение: напишите адрес доставки — улица, дом, город\", \"reply_markup\": {\"force_reply\": true, \"input_field_placeholder\": \"Улица, дом, город\"}}",
-        "status": 200,
-        "headers": [
-         {
-          "key": "Content-Type",
-          "value": "application/json"
-         }
-        ]
-       },
-       "module": "gateway:WebhookRespond",
-       "version": 1,
-       "metadata": {
-        "designer": {
-         "x": 900,
-         "y": 1700
-        }
-       },
-       "parameters": {}
-      }
-     ]
-    },
-    {
-     "flow": [
-      {
-       "id": 27,
-       "filter": {
-        "name": "Оплата 1-го, больше 50 €",
-        "conditions": [
-         [
-          {
-           "a": "{{get(split(1.callback_query.data; \"|\"); 1)}}",
-           "b": "p",
-           "o": "text:equal"
-          },
-          {
-           "a": "{{get(split(1.callback_query.data; \"|\"); 5)}}",
-           "b": "D",
-           "o": "text:equal"
-          },
-          {
-           "a": "{{2.total * 1.2}}",
-           "b": "50",
-           "o": "number:greater"
-          }
-         ]
-        ]
-       },
-       "mapper": {
-        "body": "{\"method\": \"sendMessage\", \"chat_id\": {{1.callback_query.message.chat.id}}, \"text\": \"⚠️ Оплата 1-го числа доступна для заказов до 50 €.\\nВаш заказ с учётом +20%: {{formatNumber(2.total * 1.2; 2; \",\"; \".\")}} €.\\n\\nВыберите оплату наличными выше или оформите заказ заново: /start\"}",
-        "status": 200,
-        "headers": [
-         {
-          "key": "Content-Type",
-          "value": "application/json"
-         }
-        ]
-       },
-       "module": "gateway:WebhookRespond",
-       "version": 1,
-       "metadata": {
-        "designer": {
-         "x": 900,
-         "y": 1900
+         "y": 1300
         }
        },
        "parameters": {}
@@ -781,7 +642,7 @@
        "metadata": {
         "designer": {
          "x": 900,
-         "y": 2100
+         "y": 1500
         }
        },
        "parameters": {
@@ -826,7 +687,7 @@
        "metadata": {
         "designer": {
          "x": 900,
-         "y": 2300
+         "y": 1700
         }
        },
        "parameters": {
@@ -850,7 +711,7 @@
        "metadata": {
         "designer": {
          "x": 1200,
-         "y": 2300
+         "y": 1700
         }
        },
        "parameters": {}
@@ -890,7 +751,7 @@
          "metadata": {
           "designer": {
            "x": 1500,
-           "y": 2600
+           "y": 2000
           }
          }
         }
@@ -899,7 +760,7 @@
        "metadata": {
         "designer": {
          "x": 1500,
-         "y": 2300
+         "y": 1700
         }
        },
        "parameters": {
