@@ -1,0 +1,5 @@
+{
+ "name": "RAIV_Fish Pro — оплата Stripe получена",
+ "hook": 3818580,
+ "note": "stripe:watchEvents (checkout.session.completed) → канал ✅ ОПЛАЧЕНО → клиенту подтверждение → заказы.paid=true; см. сценарий 7707560"
+}

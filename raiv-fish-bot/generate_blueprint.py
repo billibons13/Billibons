@@ -23,6 +23,8 @@ OWNER_ID = "6883357001"  # владелец магазина: команды /ad
 BONUS_PCT = 5   # начисление бонусов, % от суммы к оплате
 BONUS_CAP = 20  # бонусами можно оплатить не больше этого % заказа
 TZ = "Europe/Berlin"
+STRIPE_CONN = 11458868  # Stripe (test) — онлайн-оплата (Pro)
+BOT_URL = "https%3A%2F%2Ft.me%2FRAIV_FISH_bot"
 items = {}
 for c,_,lst in cats:
     for i,(n,p,s) in enumerate(lst,1): items[f"{c}{i}"]=(n,p,s)
@@ -238,7 +240,7 @@ routes.append([
  sv(79,1800,y,[("pline","🎟 Промокод {{71.pcode}} (−{{71.promo}}%): −"+FMT("78.disc")+" €\n"),("bline","💎 Бонусами: −"+FMT("78.bused")+" €\n")]),
  ds(75,1950,y,"UpdateRecord",{"key":CHAT,"upsert":True,"overwriteArrays":False,"data":{"disc":"{{78.disc}}","bused":"{{78.bused}}","final":"{{78.final}}","city":CITY}}),
  router(72,2100,y,[
-  [api(73,2400,y,"sendMessage",[("chat_id",CHAT),("text","🧾 Ваш заказ\n{{71.text}}📍 "+CITY+"\n💳 Наличными при получении\n🧺 Товары: "+FMT("71.total")+" €\n{{if(78.disc > 0; 79.pline; \"\")}}{{if(78.bused > 0; 79.bline; \"\")}}💶 К оплате: "+FMT("78.final")+" €\n\n✍️ Ответьте на это сообщение: напишите адрес доставки — улица, дом, город"),("reply_markup",'{"force_reply":true,"input_field_placeholder":"Улица, дом, город"}')],"Есть товары",[[{"a":"{{71.count}}","b":"0","o":"number:greater"}]])],
+  [api(73,2400,y,"sendMessage",[("chat_id",CHAT),("text","🧾 Ваш заказ\n{{71.text}}📍 "+CITY+"\n💳 Оплата: онлайн или наличными при получении\n🧺 Товары: "+FMT("71.total")+" €\n{{if(78.disc > 0; 79.pline; \"\")}}{{if(78.bused > 0; 79.bline; \"\")}}💶 К оплате: "+FMT("78.final")+" €\n\n✍️ Ответьте на это сообщение: напишите адрес доставки — улица, дом, город"),("reply_markup",'{"force_reply":true,"input_field_placeholder":"Улица, дом, город"}')],"Есть товары",[[{"a":"{{71.count}}","b":"0","o":"number:greater"}]])],
   [api(74,2400,y+200,"sendMessage",[("chat_id",CHAT),("text","🧺 Корзина пуста. Нажмите /start, чтобы выбрать товары.")],"Пусто",[[{"a":"{{ifempty(71.count; 0)}}","b":"0","o":"number:lessorequal"}]])],
  ])]); y+=400
 EMPTY_REC={"text":"","total":0,"count":0}
@@ -256,9 +258,10 @@ ph_flow=[
  ds(122,1200,y,"UpdateRecord",{"key":CHAT,"upsert":True,"overwriteArrays":False,"data":{"chat":CHAT,"name":"{{1.message.from.first_name}} {{1.message.from.last_name}}","username":"{{1.message.from.username}}","phone":"{{1.message.text}}","last_seen":"{{now}}"}},store=CUST),
  ds(123,1350,y,"GetRecord",{"key":CHAT,"returnWrapped":False},store=CUST),
  sv(124,1500,y,[("earn","{{"+EARN+"}}"),("nb","{{ifempty(123.bonus; 0) - ifempty(120.bused; 0) + "+EARN+"}}"),("n","{{ifempty(123.orders; 0) + 1}}"),("day",DAY),
+   ("okey","{{90.chat}}-{{formatDate(now; \"X\")}}"),
    ("hist",'{{formatDate(now; "DD.MM.YY"; "'+TZ+'")}} — {{120.count}} поз. — '+FMT("ifempty(120.final; 120.total)")+" €")]),
  {"id":42,"mapper":{"body":'{"method":"sendMessage","chat_id":{{1.message.chat.id}},"text":"✅ Спасибо! Заказ принят.\\nМы свяжемся с вами, чтобы договориться о времени доставки.\\n\\n💎 Начислено бонусов: '+FMT("124.earn")+' €\\nВаш баланс: '+FMT("124.nb")+' €\\n\\nНовый заказ: /start"}',"status":200,"headers":[{"key":"Content-Type","value":"application/json"}]},"module":"gateway:WebhookRespond","version":1,"metadata":meta(1650,y),"parameters":{}},
- ds(125,1800,y,"AddRecord",{"key":'{{90.chat}}-{{formatDate(now; "X")}}',"overwrite":True,"data":{"chat":CHAT,"name":"{{1.message.from.first_name}} {{1.message.from.last_name}}","phone":"{{1.message.text}}","items":"{{120.text}}","total":"{{120.total}}","disc":"{{ifempty(120.disc; 0)}}","bused":"{{ifempty(120.bused; 0)}}","final":"{{ifempty(120.final; 120.total)}}","pcode":"{{120.pcode}}","city":"{{120.city}}","day":"{{124.day}}","created":"{{now}}"}},store=ORD),
+ ds(125,1800,y,"AddRecord",{"key":"{{124.okey}}","overwrite":True,"data":{"chat":CHAT,"name":"{{1.message.from.first_name}} {{1.message.from.last_name}}","phone":"{{1.message.text}}","items":"{{120.text}}","total":"{{120.total}}","disc":"{{ifempty(120.disc; 0)}}","bused":"{{ifempty(120.bused; 0)}}","final":"{{ifempty(120.final; 120.total)}}","pcode":"{{120.pcode}}","city":"{{120.city}}","day":"{{124.day}}","created":"{{now}}"}},store=ORD),
  ds(126,1950,y,"UpdateRecord",{"key":CHAT,"upsert":True,"overwriteArrays":False,"data":{"orders":"{{124.n}}","spent":"{{ifempty(123.spent; 0) + ifempty(120.final; 120.total)}}","bonus":"{{124.nb}}",
    "history":"{{124.hist}}\n{{substring(ifempty(123.history; \"\"); 0; 600)}}","last_text":"{{120.text}}","last_total":"{{120.total}}","last_count":"{{120.count}}"}},store=CUST),
  ds(127,2100,y,"UpdateRecord",{"key":"{{124.day}}","upsert":True,"overwriteArrays":False,"data":{"day":"{{124.day}}"}},store=STATS),
@@ -297,7 +300,19 @@ REPORT_TXT = ("📊 Продажи за {{formatDate(now; \"DD.MM.YYYY\"; \""+TZ
 own.append([ds(179,900,y,"UpdateRecord",{"key":DAY,"upsert":True,"overwriteArrays":False,"data":{"day":DAY}},"/report",[[OWN,NOREPLY,{"a":"{{1.message.text}}","b":"/report","o":"text:startwith"}]],store=STATS),
   ds(180,1200,y,"GetRecord",{"key":DAY,"returnWrapped":False},store=STATS),
   api(181,1500,y,"sendMessage",[("chat_id",CHAT),("text",REPORT_TXT.replace("@S","180"))])])
-rts=[{"flow":r} for r in routes]+[{"flow":[addr]},{"flow":ph_flow+[g_clear,g1,g3]}]+[{"flow":r} for r in own]
+AMOUNT = "{{round(ifempty(120.final; 120.total) * 100)}}"
+pay_body = ("mode=payment&success_url="+BOT_URL+"&cancel_url="+BOT_URL+"&client_reference_id={{124.okey}}"
+ "&metadata[chat]={{90.chat}}&metadata[order]={{124.okey}}&metadata[name]={{encodeURL(1.message.from.first_name)}}"
+ "&line_items[0][quantity]=1&line_items[0][price_data][currency]=eur&line_items[0][price_data][unit_amount]="+AMOUNT+
+ "&line_items[0][price_data][product_data][name]={{encodeURL(\"RAIV FISH — заказ\")}}"
+ "&line_items[0][price_data][product_data][description]={{encodeURL(substring(120.text; 0; 300))}}")
+pay = {"id":130,"module":"stripe:makeAnApiCall","version":1,"metadata":meta(2700,y+250),"parameters":{"__IMTCONN__":STRIPE_CONN},
+  "mapper":{"url":"/v1/checkout/sessions","method":"POST","headers":[{"key":"Content-Type","value":"application/x-www-form-urlencoded"}],"qs":[],"body":pay_body},
+  "filter":{"name":"Сумма от 0,50 €","conditions":[[{"a":"{{ifempty(120.final; 120.total)}}","b":"0.5","o":"number:greaterorequal"}]]},
+  "onerror":[{"id":630,"mapper":None,"module":"builtin:Ignore","version":1,"metadata":meta(2700,y+550)}]}
+pay_msg = api(131,3000,y+250,"sendMessage",[("chat_id",CHAT),("text","💳 Можно оплатить заказ онлайн — "+FMT("ifempty(120.final; 120.total)")+" €\nApple Pay, Google Pay или карта, безопасно через Stripe.\nИли наличными при получении — как удобно."),
+  ("reply_markup",'{"inline_keyboard":[[{"text":"💳 Оплатить онлайн","url":"{{130.body.url}}"}]]}')],"Ссылка есть",[[{"a":"{{130.body.url}}","o":"exist"}]],onerror=True)
+rts=[{"flow":r} for r in routes]+[{"flow":[addr]},{"flow":ph_flow+[g_clear,router(140,2650,y,[[g1,g3],[pay,pay_msg]])]}]+[{"flow":r} for r in own]
 bp={"name":"RAIV_Fish Bot — Заказы","metadata":{"instant":True,"version":1},"flow":[
  {"id":1,"mapper":{},"module":"gateway:CustomWebHook","version":1,"metadata":meta(0,0),"parameters":{"hook":HOOK,"maxResults":1}},
  {"id":90,"mapper":{"variables":unify,"scope":"roundtrip"},"module":"util:SetVariables","version":1,"metadata":meta(150,0),"parameters":{}},
