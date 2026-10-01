@@ -162,7 +162,7 @@ routes.append([
  api(103,2100,-1100,"sendMessage",[("chat_id",CHAT),("text","🎁 Вам начислено "+str(REF_BONUS)+" € бонусами по приглашению друга! Они спишутся при первом заказе.")]),
  api(104,2400,-1100,"sendMessage",[("chat_id",REFC),("text","👋 По вашей ссылке пришёл новый покупатель. Когда он сделает первый заказ, вам начислится "+str(REF_BONUS)+" € бонусами.")],onerror=True)],
  [api(109,2100,-800,"sendMessage",[("chat_id",CHAT),("text","🛍 Новинка: витрина с фото! Кнопка «🛍 Витрина» теперь всегда внизу чата — выбирайте товары по фото, корзина соберётся сама."),
-   ("reply_markup",json.dumps({"keyboard":[[{"text":"🛍 Витрина","web_app":{"url":WEBAPP}}]],"resize_keyboard":True,"is_persistent":True},ensure_ascii=False))],
+   ("reply_markup",json.dumps({"keyboard":[[{"text":"🛍 Витрина","web_app":{"url":WEBAPP},"style":"primary"}]],"resize_keyboard":True,"is_persistent":True},ensure_ascii=False))],
    "Кнопка витрины ещё не выдана",[[{"a":"{{101.kb}}","b":WEBAPP_V,"o":"text:notequal"}]],onerror=True),
   ds(98,2400,-800,"UpdateRecord",{"key":CHAT,"upsert":True,"overwriteArrays":False,"data":{"kb":WEBAPP_V}},store=CUST)]])])
 TOUCH_CUST = lambda mid,x,y,name,conds: ds(mid,x,y,"UpdateRecord",{"key":CHAT,"upsert":True,"overwriteArrays":False,"data":{"chat":CHAT,"last_seen":"{{now}}"}},name,conds,store=CUST)
@@ -410,6 +410,12 @@ def walk(flow):
             json.loads(re.sub(r"\{\{.*?\}\}","1",m["mapper"]["body"]))
         for r in m.get("routes",[]): walk(r["flow"])
 walk(bp["flow"])
+# цветные кнопки (Bot API 9.4): главное действие зелёное, удаление красное, статусы заказа в канале
+_t=json.dumps(bp,ensure_ascii=False)
+STYLE={"o":"success","x":"danger"}
+_t=re.sub(r'(\\"callback_data\\":\s?\\"(o|x)\\")', lambda m: m.group(1)+', \\"style\\": \\"'+STYLE[m.group(2)]+'\\"', _t)
+_t=re.sub(r'(\\"callback_data\\":\s?\\"s\|[^"\\]*\|([12])\\")', lambda m: m.group(1)+', \\"style\\": \\"'+("primary" if m.group(2)=="1" else "success")+'\\"', _t)
+bp=json.loads(_t)
 s=json.dumps(bp,ensure_ascii=False)
 assert "@@" not in s, s[s.find("@@")-80:s.find("@@")+40]
 ids=[]

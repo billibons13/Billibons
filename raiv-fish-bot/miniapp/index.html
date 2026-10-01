@@ -50,7 +50,7 @@ h2{font-size:16px;margin:16px 16px 8px}
 .sheet .big.emoji{display:flex;align-items:center;justify-content:center;font-size:90px;background:linear-gradient(135deg,#ffe6d5,#ffd0b8)}
 .sheet .pad{padding:14px 16px}
 .sheet h3{margin:0 0 4px;font-size:18px}
-.close{position:sticky;top:0;float:right;margin:10px;background:var(--bg2);border-radius:50%;width:32px;height:32px;font-size:18px;z-index:2}
+.close{position:absolute;top:10px;right:10px;background:var(--bg2);box-shadow:0 1px 4px rgba(0,0,0,.2);border-radius:50%;width:32px;height:32px;font-size:18px;z-index:2}
 .presets{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
 .presets button{background:var(--bg2);border-radius:10px;padding:8px 12px}
 .presets button.on{background:var(--accent);color:var(--accent-text)}
@@ -68,6 +68,9 @@ h2{font-size:16px;margin:16px 16px 8px}
 .bar{height:6px;background:var(--bg2);border-radius:4px;overflow:hidden;margin:6px 0}
 .bar i{display:block;height:100%;background:var(--accent)}
 .note{color:var(--hint);font-size:13px;margin:6px 0 12px}
+.share{width:100%;background:var(--bg2);border-radius:12px;padding:11px;font-weight:600;margin-bottom:8px}
+.homebtn{display:block;margin:0 16px 8px;width:calc(100% - 32px);background:var(--card);border-radius:12px;padding:9px;font-weight:600;color:var(--link)}
+.homebtn[hidden]{display:none}
 .toast{position:fixed;left:50%;top:14px;transform:translateX(-50%);background:rgba(20,23,26,.92);color:#fff;padding:9px 14px;border-radius:12px;font-size:14px;z-index:30;opacity:0;transition:opacity .2s;pointer-events:none}
 .toast.on{opacity:1}
 </style>
@@ -81,6 +84,7 @@ h2{font-size:16px;margin:16px 16px 8px}
   <input class="search" id="q" type="search" placeholder="Поиск: лещ, икра, кальмар…" autocomplete="off">
   <div class="chips" id="chips"></div>
 </div>
+<button class="homebtn" id="homeBtn" hidden>📲 Добавить RAIV FISH на главный экран</button>
 <div class="perks"><span>🚗 Бесплатно от 20 €</span><span>🕐 Сегодня или завтра</span><span>💎 5% бонусами</span></div>
 <div id="list"></div>
 <div class="foot">Эдделак · Марне · Брунсбюттель · Хайде<br>Оформление и оплата — в чате с ботом</div>
@@ -150,11 +154,13 @@ function product(k){
     openSheet(`${photo(i,"big")}<div class="pad"><h3>${esc(i.n)}</h3><div class="note">${esc(priceLbl(i))}</div>
       <div class="presets">${c.q.map(v => `<button data-q="${v}" class="${+v===q?"on":""}">${num(v)} ${UL[c.u]}</button>`).join("")}</div>
       <div class="stepper"><button data-d="-1">−</button><input id="qin" inputmode="decimal" value="${num(q)}"><span>${UL[c.u]}</span><button data-d="1">+</button></div>
+      <button class="share" id="shareBtn">📤 Поделиться с другом — 3 € вам обоим</button>
       <button class="primary" id="addBtn">${cart[k] ? "Обновить" : "Добавить"} · ${eur(lineSum(k,q))}</button></div>`);
     const s = document.getElementById("sheet");
     s.querySelectorAll("[data-q]").forEach(b => b.onclick = () => { q = +b.dataset.q; haptic(); draw(); });
     s.querySelectorAll("[data-d]").forEach(b => b.onclick = () => { q = Math.max(step(c), +(q + step(c) * +b.dataset.d).toFixed(3)); haptic(); draw(); });
     document.getElementById("qin").onchange = e => { const v = parseFloat(e.target.value.replace(",", ".")); if(v > 0 && v < 100000){ q = +v.toFixed(3); } draw(); };
+    document.getElementById("shareBtn").onclick = () => share(i);
     document.getElementById("addBtn").onclick = () => { cart[k] = q; save(); haptic("medium"); closeSheet(); render(); toast("Добавлено в корзину ✓"); };
   };
   draw();
@@ -179,6 +185,20 @@ function cartView(){
   });
   document.getElementById("goBtn").onclick = checkout;
 }
+function refLink(){
+  const u = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
+  return "https://t.me/" + DATA.bot + (u ? "?start=ref_" + u.id : "");
+}
+function share(i){
+  const text = (i ? "🐟 " + i.n + " — " + priceLbl(i) + "\n" : "") + "Вяленая рыба и снеки с доставкой. По моей ссылке — 3 € на первый заказ 🎁";
+  const url = "https://t.me/share/url?url=" + encodeURIComponent(refLink()) + "&text=" + encodeURIComponent(text);
+  haptic();
+  if(tg && tg.openTelegramLink) tg.openTelegramLink(url); else window.open(url, "_blank");
+}
+function homeScreen(){
+  if(!tg || !tg.isVersionAtLeast || !tg.isVersionAtLeast("8.0") || !tg.checkHomeScreenStatus) return;
+  try{ tg.checkHomeScreenStatus(st => { if(st === "missed"){ const b = document.getElementById("homeBtn"); b.hidden = false; b.onclick = () => tg.addToHomeScreen(); } }); }catch(e){}
+}
 function checkout(){
   const payload = Object.keys(cart).map(k => k + ":" + (+cart[k].toFixed(3))).join(",");
   if(!tg || !tg.initData){ toast("Откройте витрину из бота @" + DATA.bot); return; }
@@ -190,7 +210,7 @@ function checkout(){
   }
 }
 
-document.getElementById("chips").onclick = e => { const b = e.target.closest("[data-c]"); if(!b) return; cur = b.dataset.c; chips(); render(); window.scrollTo({top:0}); };
+document.getElementById("chips").onclick = e => { const b = e.target.closest("[data-c]"); if(!b) return; cur = b.dataset.c; chips(); render(); homeScreen(); window.scrollTo({top:0}); };
 document.getElementById("list").onclick = e => { const b = e.target.closest("[data-k]"); if(b) product(b.dataset.k); };
 document.getElementById("q").oninput = e => { qtxt = e.target.value; render(); };
 document.getElementById("cartBtn").onclick = cartView;
