@@ -93,7 +93,7 @@ h2{font-size:16px;margin:16px 16px 8px}
 <body>
 <div class="top">
   <div class="brand">
-    <div><h1>🐟 RAIV FISH</h1><small>вяленая рыба, икра и снеки к пиву</small></div>
+    <div><h1>🐟 RAIV FISH</h1><small>вяленая рыба, икра и снеки к пиву · v9</small></div>
     <button class="cartbtn" id="cartBtn" aria-label="Корзина">🧺<b id="cartCount" hidden>0</b></button>
   </div>
   <input class="search" id="q" type="search" placeholder="Поиск: лещ, икра, кальмар…" autocomplete="off">
@@ -135,7 +135,7 @@ function priceLbl(i){ return num(i.p) + " " + i.cat.l; }
 function step(c){ return c.u === "g" ? 50 : c.u === "k" ? 0.1 : 1; }
 function total(){ let t = 0; for(const k in cart) t += lineSum(k, cart[k]); return t; }
 function haptic(t){ try{ tg && tg.HapticFeedback && tg.HapticFeedback.impactOccurred(t||"light"); }catch(e){} }
-function toast(t){ const el = document.getElementById("toast"); el.textContent = t; el.classList.add("on"); clearTimeout(toast.h); toast.h = setTimeout(() => el.classList.remove("on"), 1600); }
+function toast(t){ const el = document.getElementById("toast"); el.textContent = t; el.classList.add("on"); clearTimeout(toast.h); toast.h = setTimeout(() => el.classList.remove("on"), 4000); }
 function photo(i, cls){ return i.img ? `<img class="${cls}" src="${i.img}" alt="${esc(i.n)}" loading="lazy">` : `<div class="${cls} emoji">${EMO[i.cat.c]}</div>`; }
 
 function chips(){
