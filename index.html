@@ -103,7 +103,7 @@ h2{font-size:16px;margin:16px 16px 8px}
 <button class="homebtn" id="homeBtn" hidden>📲 Добавить RAIV FISH на главный экран</button>
 <div class="perks"><span>🚗 Бесплатно от 20 €</span><span>🕐 Сегодня или завтра</span><span>💎 5% бонусами</span></div>
 <div id="list"></div>
-<div class="foot">Эдделак · Марне · Брунсбюттель · Хайде<br>Оформление и оплата — в чате с ботом</div>
+<div class="foot">Эдделак · Марне · Брунсбюттель · Хайде<br>Оформление и оплата — в чате с ботом<br><span style="opacity:.6">витрина v9</span></div>
 
 <button class="cartbar" id="cartBar" hidden></button>
 <div class="shade" id="shade"></div>
@@ -225,19 +225,42 @@ function deepLink(){
   const p = "c_" + Object.keys(cart).map(k => k + "-" + String(+cart[k].toFixed(3)).replace(".", "p")).join("_");
   return p.length <= 64 ? "https://t.me/" + DATA.bot + "?start=" + p : "";
 }
+const APP_V = "v9";
+function sentOk(){ cart = {}; save(); render(); }
+function fallback(url, why){
+  // запасной путь: обычная ссылка t.me — Telegram откроет чат и отправит корзину боту
+  const d = tg ? `${tg.platform || "?"} · ${tg.version || "?"} · ${tg.initDataUnsafe && tg.initDataUnsafe.query_id ? "меню" : "кнопка"}` : "браузер";
+  openSheet(`<div class="pad"><h3>📨 Отправить заказ в чат</h3>
+    <div class="note">${esc(why)}</div>
+    ${url ? `<a class="primary" id="fbLink" href="${url}" target="_blank" style="display:block;text-align:center;text-decoration:none">Отправить в чат →</a>
+    <div class="note">Откроется чат с ботом — нажмите «Запустить/Start», если Telegram попросит. Корзина придёт сообщением.</div>`
+    : `<div class="note">Слишком много позиций для ссылки — откройте витрину кнопкой «🛍 Витрина» внизу чата.</div>`}
+    <div class="note" style="font-size:11px">${APP_V} · ${esc(d)}</div></div>`);
+  const l = document.getElementById("fbLink");
+  if(l) l.onclick = e => { if(tg && tg.openTelegramLink){ e.preventDefault(); try{ tg.openTelegramLink(url); }catch(x){ window.location.href = url; } } sentOk(); setTimeout(() => { try{ tg && tg.close(); }catch(x){} }, 400); };
+}
+function deepLink(){
+  // b5:1,a2:0.3 → c_b5-1_a2-0p3 (в ссылке /start разрешены только A-Z a-z 0-9 _ -)
+  const p = "c_" + Object.keys(cart).map(k => k + "-" + String(+cart[k].toFixed(3)).replace(".", "p")).join("_");
+  return p.length <= 64 ? "https://t.me/" + DATA.bot + "?start=" + p : "";
+}
 function checkout(){
   const payload = Object.keys(cart).map(k => k + ":" + (+cart[k].toFixed(3))).join(",");
   const inTg = tg && tg.platform && tg.platform !== "unknown";
-  // Кнопка клавиатуры «🛍 Витрина» → sendData (initData пустой, query_id нет)
+  const url = deepLink();
+  // Кнопка клавиатуры «🛍 Витрина» → sendData (окно закроется само). Если через 2 с окно ещё открыто — запасной путь.
   if(inTg && tg.sendData && !(tg.initDataUnsafe && tg.initDataUnsafe.query_id)){
-    try{ tg.sendData(payload); cart = {}; save(); return; }catch(e){ /* ниже — запасной путь через ссылку */ }
+    const keep = Object.assign({}, cart); cart = {}; save();      // окно закроется само — корзину чистим заранее
+    const back = () => { cart = keep; save(); render(); };
+    try{
+      tg.sendData(payload);
+      setTimeout(() => { back(); fallback(url, "Telegram не принял заказ напрямую. Нажмите кнопку — заказ уйдёт в чат ссылкой."); }, 2000);
+      return;
+    }catch(e){ back(); fallback(url, "Telegram: " + (e && e.message ? e.message : "ошибка отправки") + ". Нажмите кнопку — заказ уйдёт в чат ссылкой."); return; }
   }
   // Кнопка меню, ссылка или браузер → корзина уходит в бота ссылкой /start c_...
-  const url = deepLink();
-  if(!url){ toast("Много позиций — откройте витрину кнопкой «🛍 Витрина» внизу чата"); return; }
-  cart = {}; save(); render();
-  if(inTg && tg.openTelegramLink){ tg.openTelegramLink(url); setTimeout(() => { try{ tg.close(); }catch(e){} }, 300); }
-  else window.location.href = url;
+  if(inTg && tg.openTelegramLink && url){ try{ tg.openTelegramLink(url); sentOk(); setTimeout(() => { try{ tg.close(); }catch(e){} }, 400); return; }catch(e){} }
+  fallback(url, inTg ? "Нажмите кнопку — заказ уйдёт в чат с ботом." : "Витрина открыта вне Telegram. Нажмите кнопку — откроется чат с ботом.");
 }
 
 document.getElementById("chips").onclick = e => { const b = e.target.closest("[data-c]"); if(!b) return; cur = b.dataset.c; chips(); render(); window.scrollTo({top:0}); };
