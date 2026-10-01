@@ -203,7 +203,8 @@ function homeScreen(){
 }
 function checkout(){
   const payload = Object.keys(cart).map(k => k + ":" + (+cart[k].toFixed(3))).join(",");
-  if(!tg || !tg.initData){ toast("Откройте витрину из бота @" + DATA.bot); return; }
+  // Витрина, открытая кнопкой клавиатуры, не получает initData — это нормально; вне Telegram platform = "unknown"
+  if(!tg || !tg.sendData || !tg.platform || tg.platform === "unknown"){ toast("Откройте витрину из бота @" + DATA.bot); return; }
   if(tg.initDataUnsafe && tg.initDataUnsafe.query_id){   // открыта не кнопкой клавиатуры — sendData не дойдёт
     toast("Откройте витрину большой кнопкой «🛍 Витрина» внизу чата"); return;
   }
