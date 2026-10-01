@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>RAIV FISH — витрина</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{
+  --bg:var(--tg-theme-bg-color,#fff);--bg2:var(--tg-theme-secondary-bg-color,#f2f3f5);
+  --text:var(--tg-theme-text-color,#14171a);--hint:var(--tg-theme-hint-color,#8a9099);
+  --accent:var(--tg-theme-button-color,#e8572a);--accent-text:var(--tg-theme-button-text-color,#fff);
+  --link:var(--tg-theme-link-color,#e8572a);--card:var(--tg-theme-section-bg-color,var(--bg));
+  --radius:16px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg2);color:var(--text);font:15px/1.35 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+.top{position:sticky;top:0;z-index:5;background:var(--bg2);padding:12px 16px 8px}
+.brand{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.brand h1{margin:0;font-size:20px;letter-spacing:.5px}
+.brand small{color:var(--hint);font-size:12px;display:block}
+.cartbtn{position:relative;background:var(--card);border-radius:12px;padding:8px 12px;font-weight:600}
+.cartbtn b{position:absolute;top:-6px;right:-6px;background:var(--accent);color:var(--accent-text);border-radius:10px;font-size:11px;min-width:20px;height:20px;line-height:20px;text-align:center;padding:0 5px}
+.search{margin-top:10px;width:100%;border:0;border-radius:12px;padding:10px 12px;background:var(--card);color:var(--text);font-size:15px;outline:none}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:10px 0 2px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{white-space:nowrap;background:var(--card);border-radius:20px;padding:7px 12px;font-size:14px}
+.chip.on{background:var(--accent);color:var(--accent-text)}
+.perks{display:flex;gap:6px;flex-wrap:wrap;padding:0 16px 4px;color:var(--hint);font-size:12px}
+.perks span{background:var(--card);border-radius:10px;padding:4px 8px}
+h2{font-size:16px;margin:16px 16px 8px}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:0 16px}
+@media(min-width:560px){.grid{grid-template-columns:repeat(3,1fr)}}
+.card{background:var(--card);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column;text-align:left}
+.ph{aspect-ratio:1/1;width:100%;object-fit:cover;display:block;background:var(--bg2)}
+.ph.emoji{display:flex;align-items:center;justify-content:center;font-size:54px;background:linear-gradient(135deg,#ffe6d5,#ffd0b8)}
+.card .in{padding:8px 10px 10px;display:flex;flex-direction:column;gap:4px;flex:1}
+.card .n{font-size:14px;font-weight:600;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card .p{color:var(--hint);font-size:13px}
+.card .add{margin-top:auto;background:var(--accent);color:var(--accent-text);border-radius:10px;padding:7px;font-weight:600;font-size:14px}
+.card.off{opacity:.5}.card.off .add{background:var(--bg2);color:var(--hint)}
+.incart{font-size:12px;color:var(--link);font-weight:600}
+.empty{padding:40px 16px;text-align:center;color:var(--hint)}
+.foot{padding:20px 16px 110px;color:var(--hint);font-size:12px;text-align:center}
+.shade{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:20;display:none}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:21;background:var(--bg);border-radius:20px 20px 0 0;max-height:88vh;overflow:auto;transform:translateY(100%);transition:transform .22s ease;padding-bottom:calc(16px + env(safe-area-inset-bottom))}
+.sheet.open{transform:none}
+.sheet .big{width:100%;aspect-ratio:4/3;object-fit:cover;display:block}
+.sheet .big.emoji{display:flex;align-items:center;justify-content:center;font-size:90px;background:linear-gradient(135deg,#ffe6d5,#ffd0b8)}
+.sheet .pad{padding:14px 16px}
+.sheet h3{margin:0 0 4px;font-size:18px}
+.close{position:absolute;top:10px;right:10px;background:var(--bg2);box-shadow:0 1px 4px rgba(0,0,0,.2);border-radius:50%;width:32px;height:32px;font-size:18px;z-index:2}
+.presets{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.presets button{background:var(--bg2);border-radius:10px;padding:8px 12px}
+.presets button.on{background:var(--accent);color:var(--accent-text)}
+.stepper{display:flex;align-items:center;gap:10px;margin:6px 0 12px}
+.stepper button{width:40px;height:40px;border-radius:12px;background:var(--bg2);font-size:20px}
+.stepper input{width:90px;text-align:center;font-size:17px;border:0;border-radius:10px;padding:9px;background:var(--bg2);color:var(--text)}
+.primary{width:100%;background:var(--accent);color:var(--accent-text);border-radius:12px;padding:13px;font-weight:700;font-size:16px}
+.primary:disabled{opacity:.5}
+.row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--bg2)}
+.row img,.row .e{width:48px;height:48px;border-radius:10px;object-fit:cover;flex:none;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:24px}
+.row .mid{flex:1;min-width:0}.row .mid div{font-size:14px;font-weight:600}.row .mid small{color:var(--hint)}
+.row .qty{display:flex;align-items:center;gap:6px}
+.row .qty button{width:30px;height:30px;border-radius:9px;background:var(--bg2)}
+.tot{display:flex;justify-content:space-between;font-size:17px;font-weight:700;margin:14px 0 8px}
+.bar{height:6px;background:var(--bg2);border-radius:4px;overflow:hidden;margin:6px 0}
+.bar i{display:block;height:100%;background:var(--accent)}
+.note{color:var(--hint);font-size:13px;margin:6px 0 12px}
+.share{width:100%;background:var(--bg2);border-radius:12px;padding:11px;font-weight:600;margin-bottom:8px}
+.homebtn{display:block;margin:0 16px 8px;width:calc(100% - 32px);background:var(--card);border-radius:12px;padding:9px;font-weight:600;color:var(--link)}
+.homebtn[hidden]{display:none}
+.toast{position:fixed;left:50%;top:14px;transform:translateX(-50%);background:rgba(20,23,26,.92);color:#fff;padding:9px 14px;border-radius:12px;font-size:14px;z-index:30;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:1}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="brand">
+    <div><h1>🐟 RAIV FISH</h1><small>вяленая рыба, икра и снеки к пиву</small></div>
+    <button class="cartbtn" id="cartBtn" aria-label="Корзина">🧺<b id="cartCount" hidden>0</b></button>
+  </div>
+  <input class="search" id="q" type="search" placeholder="Поиск: лещ, икра, кальмар…" autocomplete="off">
+  <div class="chips" id="chips"></div>
+</div>
+<button class="homebtn" id="homeBtn" hidden>📲 Добавить RAIV FISH на главный экран</button>
+<div class="perks"><span>🚗 Бесплатно от 20 €</span><span>🕐 Сегодня или завтра</span><span>💎 5% бонусами</span></div>
+<div id="list"></div>
+<div class="foot">Эдделак · Марне · Брунсбюттель · Хайде<br>Оформление и оплата — в чате с ботом</div>
+
+<div class="shade" id="shade"></div>
+<div class="sheet" id="sheet"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const DATA = {"cats": [{"c": "a", "t": "🐟 Икра вяленая (100 г)", "u": "g", "q": ["100", "200", "300", "500"], "l": "€ / 100 г", "items": [{"k": "a1", "n": "Икра толстолоба", "p": 6.0, "s": 1, "img": "img/a1.jpg"}, {"k": "a2", "n": "Икра кеты", "p": 8.5, "s": 1, "img": "img/a2.jpg"}, {"k": "a3", "n": "Икра форели", "p": 8.5, "s": 1, "img": "img/a3.jpg"}, {"k": "a4", "n": "Икра судака", "p": 6.5, "s": 0, "img": ""}, {"k": "a5", "n": "Икра щуки", "p": 7.0, "s": 1, "img": ""}, {"k": "a6", "n": "Икра плотвы", "p": 7.0, "s": 0, "img": "img/a6.jpg"}, {"k": "a7", "n": "Икра минтая", "p": 6.5, "s": 0, "img": ""}]}, {"c": "b", "t": "🐠 Рыба вяленая (кг)", "u": "k", "q": ["0.5", "1", "1.5", "2"], "l": "€ / кг", "items": [{"k": "b1", "n": "Плотва с икрой", "p": 35.0, "s": 1, "img": "img/b1.jpg"}, {"k": "b2", "n": "Чищенные тушки плотвы без головы (100% икра)", "p": 49.0, "s": 1, "img": "img/b2.jpg"}, {"k": "b3", "n": "Вобла с икрой (80% икра)", "p": 30.0, "s": 1, "img": "img/b3.jpg"}, {"k": "b4", "n": "Верховодка", "p": 35.0, "s": 1, "img": "img/b4.jpg"}, {"k": "b5", "n": "Лещ с икрой", "p": 35.0, "s": 1, "img": "img/b5.jpg"}, {"k": "b6", "n": "Лещ без икры", "p": 20.0, "s": 0, "img": ""}, {"k": "b7", "n": "Карась с икрой", "p": 23.0, "s": 1, "img": "img/b7.jpg"}, {"k": "b8", "n": "Щука потрошеная", "p": 25.0, "s": 1, "img": "img/b8.jpg"}, {"k": "b9", "n": "Форель вяленая потрошеная", "p": 35.0, "s": 1, "img": "img/b9.jpg"}, {"k": "b10", "n": "Судак потрошеный", "p": 30.0, "s": 1, "img": "img/b10.jpg"}, {"k": "b11", "n": "Чехонь", "p": 25.0, "s": 1, "img": "img/b11.jpg"}, {"k": "b12", "n": "Чехонь крупная с икрой 90%", "p": 35.0, "s": 1, "img": "img/b12.jpg"}, {"k": "b13", "n": "Бычок", "p": 34.0, "s": 1, "img": "img/b13.jpg"}, {"k": "b14", "n": "Корюшка с икрой (премиум)", "p": 60.0, "s": 0, "img": "img/b14.jpg"}, {"k": "b15", "n": "Окунь с икрой", "p": 34.0, "s": 1, "img": "img/b15.jpg"}, {"k": "b16", "n": "Юкола лосося", "p": 67.0, "s": 1, "img": "img/b16.jpg"}]}, {"c": "c", "t": "🍢 Рыбные снеки (100 г)", "u": "g", "q": ["100", "200", "300", "500"], "l": "€ / 100 г", "items": [{"k": "c1", "n": "Филе горбуши (соломка)", "p": 6.0, "s": 1, "img": "img/c1.jpg"}, {"k": "c2", "n": "Кальмар + лосось (соломка)", "p": 4.9, "s": 1, "img": "img/c2.jpg"}, {"k": "c3", "n": "Корюшка сушеная потрошеная", "p": 5.5, "s": 1, "img": ""}, {"k": "c4", "n": "Соломка леща", "p": 3.5, "s": 1, "img": "img/c4.jpg"}, {"k": "c5", "n": "Джерки лосося", "p": 6.0, "s": 1, "img": "img/c5.jpg"}, {"k": "c6", "n": "Ириска из лосося", "p": 6.0, "s": 1, "img": "img/c6.jpg"}, {"k": "c7", "n": "Стейк щуки", "p": 4.5, "s": 1, "img": "img/c7.jpg"}]}, {"c": "d", "t": "🦑 Снеки к пиву (кг)", "u": "k", "q": ["0.2", "0.3", "0.5", "1"], "l": "€ / кг", "items": [{"k": "d1", "n": "Пятачки осьминога", "p": 40.0, "s": 1, "img": ""}, {"k": "d2", "n": "Паутинка кальмара «сладкий чили»", "p": 40.0, "s": 1, "img": ""}, {"k": "d3", "n": "Кальмар по-шанхайски", "p": 40.0, "s": 1, "img": ""}, {"k": "d4", "n": "Стружка кальмара", "p": 40.0, "s": 1, "img": ""}, {"k": "d5", "n": "Палочки патасу", "p": 40.0, "s": 1, "img": ""}, {"k": "d6", "n": "Филе голубого марлина", "p": 40.0, "s": 1, "img": ""}, {"k": "d7", "n": "Кальмар по-перуански", "p": 40.0, "s": 1, "img": ""}, {"k": "d8", "n": "Полосатик", "p": 40.0, "s": 1, "img": ""}, {"k": "d9", "n": "Стружка краба", "p": 40.0, "s": 1, "img": ""}, {"k": "d10", "n": "Анчоус", "p": 40.0, "s": 1, "img": ""}, {"k": "d11", "n": "Крабовые палочки", "p": 40.0, "s": 1, "img": ""}]}, {"c": "e", "t": "🥫 Консервы", "u": "p", "q": ["1", "2", "3", "5"], "l": "€ / шт.", "items": [{"k": "e1", "n": "Снеток в томате", "p": 5.0, "s": 1, "img": ""}, {"k": "e2", "n": "Лещ в томате", "p": 5.0, "s": 1, "img": ""}]}], "min": 20, "bonus": 5, "bot": "RAIV_FISH_bot", "seller": "@esusnob"};
+const tg = window.Telegram && Telegram.WebApp;
+const EMO = {a:"🐟",b:"🐠",c:"🍢",d:"🦑",e:"🥫"};
+const UL = {g:"г",k:"кг",p:"шт."};
+const ITEMS = {}; DATA.cats.forEach(c => c.items.forEach(i => ITEMS[i.k] = Object.assign({cat:c}, i)));
+let cart = load(), cur = "all", qtxt = "";
+
+function load(){ try{ const c = JSON.parse(localStorage.getItem("raiv_cart")||"{}"); for(const k in c) if(!ITEMS[k]||!ITEMS[k].s) delete c[k]; return c; }catch(e){ return {}; } }
+function save(){ try{ localStorage.setItem("raiv_cart", JSON.stringify(cart)); }catch(e){} }
+function esc(s){ return String(s).replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m])); }
+function eur(v){ return v.toFixed(2).replace(".", ",") + " €"; }
+function num(v){ return String(+(+v).toFixed(3)).replace(".", ","); }
+function div(c){ return c.u === "g" ? 100 : 1; }
+function lineSum(k, q){ const i = ITEMS[k]; return i.p * q / div(i.cat); }
+function priceLbl(i){ return num(i.p) + " " + i.cat.l; }
+function step(c){ return c.u === "g" ? 50 : c.u === "k" ? 0.1 : 1; }
+function total(){ let t = 0; for(const k in cart) t += lineSum(k, cart[k]); return t; }
+function haptic(t){ try{ tg && tg.HapticFeedback && tg.HapticFeedback.impactOccurred(t||"light"); }catch(e){} }
+function toast(t){ const el = document.getElementById("toast"); el.textContent = t; el.classList.add("on"); clearTimeout(toast.h); toast.h = setTimeout(() => el.classList.remove("on"), 1600); }
+function photo(i, cls){ return i.img ? `<img class="${cls}" src="${i.img}" alt="${esc(i.n)}" loading="lazy">` : `<div class="${cls} emoji">${EMO[i.cat.c]}</div>`; }
+
+function chips(){
+  const all = [{c:"all", t:"Все"}].concat(DATA.cats.map(c => ({c:c.c, t:c.t.replace(/\s*\(.*\)/, "")})));
+  document.getElementById("chips").innerHTML = all.map(c => `<button class="chip${c.c===cur?" on":""}" data-c="${c.c}">${esc(c.t)}</button>`).join("");
+}
+function render(){
+  const q = qtxt.trim().toLowerCase(); let html = "";
+  DATA.cats.forEach(c => {
+    if(cur !== "all" && cur !== c.c) return;
+    const its = c.items.map(i => ITEMS[i.k]).filter(i => !q || i.n.toLowerCase().includes(q)).sort((a,b) => b.s - a.s);
+    if(!its.length) return;
+    html += `<h2>${esc(c.t)}</h2><div class="grid">` + its.map(i => `
+      <button class="card${i.s?"":" off"}" data-k="${i.k}">
+        ${photo(i, "ph")}
+        <div class="in"><div class="n">${esc(i.n)}</div><div class="p">${esc(priceLbl(i))}</div>
+        ${cart[i.k] ? `<div class="incart">✓ в корзине: ${num(cart[i.k])} ${UL[c.u]}</div>` : ""}
+        <span class="add">${i.s ? "Выбрать" : "Нет в наличии"}</span></div>
+      </button>`).join("") + `</div>`;
+  });
+  document.getElementById("list").innerHTML = html || `<div class="empty">Ничего не нашли 🤔<br>Попробуйте другое слово</div>`;
+  badge();
+}
+function badge(){
+  const n = Object.keys(cart).length, b = document.getElementById("cartCount");
+  b.hidden = !n; b.textContent = n;
+  if(tg){
+    if(n){ tg.MainButton.setParams({text:`🧺 Корзина · ${eur(total())}`, is_visible:true}); }
+    else tg.MainButton.hide();
+  }
+}
+function openSheet(html){ const s = document.getElementById("sheet"); s.innerHTML = `<button class="close" data-close>✕</button>` + html; document.getElementById("shade").style.display = "block"; requestAnimationFrame(() => s.classList.add("open")); if(tg) tg.BackButton.show(); }
+function closeSheet(){ document.getElementById("sheet").classList.remove("open"); document.getElementById("shade").style.display = "none"; if(tg) tg.BackButton.hide(); }
+
+function product(k){
+  const i = ITEMS[k], c = i.cat; if(!i.s){ toast("Сейчас нет в наличии"); return; }
+  let q = cart[k] || +c.q[0];
+  const draw = () => {
+    openSheet(`${photo(i,"big")}<div class="pad"><h3>${esc(i.n)}</h3><div class="note">${esc(priceLbl(i))}</div>
+      <div class="presets">${c.q.map(v => `<button data-q="${v}" class="${+v===q?"on":""}">${num(v)} ${UL[c.u]}</button>`).join("")}</div>
+      <div class="stepper"><button data-d="-1">−</button><input id="qin" inputmode="decimal" value="${num(q)}"><span>${UL[c.u]}</span><button data-d="1">+</button></div>
+      <button class="share" id="shareBtn">📤 Поделиться с другом — 3 € вам обоим</button>
+      <button class="primary" id="addBtn">${cart[k] ? "Обновить" : "Добавить"} · ${eur(lineSum(k,q))}</button></div>`);
+    const s = document.getElementById("sheet");
+    s.querySelectorAll("[data-q]").forEach(b => b.onclick = () => { q = +b.dataset.q; haptic(); draw(); });
+    s.querySelectorAll("[data-d]").forEach(b => b.onclick = () => { q = Math.max(step(c), +(q + step(c) * +b.dataset.d).toFixed(3)); haptic(); draw(); });
+    document.getElementById("qin").onchange = e => { const v = parseFloat(e.target.value.replace(",", ".")); if(v > 0 && v < 100000){ q = +v.toFixed(3); } draw(); };
+    document.getElementById("shareBtn").onclick = () => share(i);
+    document.getElementById("addBtn").onclick = () => { cart[k] = q; save(); haptic("medium"); closeSheet(); render(); toast("Добавлено в корзину ✓"); };
+  };
+  draw();
+}
+function cartView(){
+  const ks = Object.keys(cart); if(!ks.length){ toast("Корзина пуста"); return; }
+  const t = total(), left = Math.max(0, DATA.min - t), pct = Math.min(100, t / DATA.min * 100);
+  openSheet(`<div class="pad"><h3>🧺 Ваша корзина</h3>
+    ${ks.map(k => { const i = ITEMS[k], c = i.cat; return `<div class="row">${i.img ? `<img src="${i.img}" alt="">` : `<div class="e">${EMO[c.c]}</div>`}
+      <div class="mid"><div>${esc(i.n)}</div><small>${num(cart[k])} ${UL[c.u]} · ${eur(lineSum(k,cart[k]))}</small></div>
+      <div class="qty"><button data-m="${k}">−</button><button data-p="${k}">+</button></div></div>`; }).join("")}
+    <div class="tot"><span>Итого</span><span>${eur(t)}</span></div>
+    <div class="bar"><i style="width:${pct}%"></i></div>
+    <div class="note">${left > 0 ? `Минимальный заказ ${DATA.min} € — добавьте ещё ${eur(left)}` : "🚗 Доставка бесплатно · 💎 " + DATA.bonus + "% вернётся бонусами"}</div>
+    <button class="primary" id="goBtn" ${left > 0 ? "disabled" : ""}>Оформить в чате →</button>
+    <div class="note">Город, время доставки, адрес и оплату выберете в чате с ботом. Бонусы и промокод применятся автоматически.</div></div>`);
+  const s = document.getElementById("sheet");
+  s.querySelectorAll("[data-m],[data-p]").forEach(b => b.onclick = () => {
+    const k = b.dataset.m || b.dataset.p, c = ITEMS[k].cat, d = b.dataset.m ? -1 : 1;
+    const v = +(cart[k] + step(c) * d).toFixed(3); if(v <= 0) delete cart[k]; else cart[k] = v;
+    save(); haptic(); render(); Object.keys(cart).length ? cartView() : closeSheet();
+  });
+  document.getElementById("goBtn").onclick = checkout;
+}
+function refLink(){
+  const u = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
+  return "https://t.me/" + DATA.bot + (u ? "?start=ref_" + u.id : "");
+}
+function share(i){
+  const text = (i ? "🐟 " + i.n + " — " + priceLbl(i) + "\n" : "") + "Вяленая рыба и снеки с доставкой. По моей ссылке — 3 € на первый заказ 🎁";
+  const url = "https://t.me/share/url?url=" + encodeURIComponent(refLink()) + "&text=" + encodeURIComponent(text);
+  haptic();
+  if(tg && tg.openTelegramLink) tg.openTelegramLink(url); else window.open(url, "_blank");
+}
+function homeScreen(){
+  if(!tg || !tg.isVersionAtLeast || !tg.isVersionAtLeast("8.0") || !tg.checkHomeScreenStatus) return;
+  try{ tg.checkHomeScreenStatus(st => { if(st === "missed"){ const b = document.getElementById("homeBtn"); b.hidden = false; b.onclick = () => tg.addToHomeScreen(); } }); }catch(e){}
+}
+function checkout(){
+  const payload = Object.keys(cart).map(k => k + ":" + (+cart[k].toFixed(3))).join(",");
+  if(!tg || !tg.initData){ toast("Откройте витрину из бота @" + DATA.bot); return; }
+  try{
+    tg.sendData(payload);           // работает, если витрина открыта кнопкой «🛍 Витрина» внизу чата
+    cart = {}; save();
+  }catch(e){
+    toast("Откройте витрину кнопкой «🛍 Витрина» внизу чата");
+  }
+}
+
+document.getElementById("chips").onclick = e => { const b = e.target.closest("[data-c]"); if(!b) return; cur = b.dataset.c; chips(); render(); homeScreen(); window.scrollTo({top:0}); };
+document.getElementById("list").onclick = e => { const b = e.target.closest("[data-k]"); if(b) product(b.dataset.k); };
+document.getElementById("q").oninput = e => { qtxt = e.target.value; render(); };
+document.getElementById("cartBtn").onclick = cartView;
+document.getElementById("shade").onclick = closeSheet;
+document.getElementById("sheet").addEventListener("click", e => { if(e.target.closest("[data-close]")) closeSheet(); });
+if(tg){
+  tg.ready(); tg.expand();
+  try{ tg.setHeaderColor("secondary_bg_color"); }catch(e){}
+  tg.MainButton.onClick(cartView);
+  tg.BackButton.onClick(closeSheet);
+}
+chips(); render();
+</script>
+</body>
+</html>
