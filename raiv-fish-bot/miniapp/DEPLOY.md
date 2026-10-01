@@ -1,13 +1,9 @@
-# Публикация витрины RAIV FISH на Netlify
+# Публикация витрины RAIV FISH
 
-Сайт: https://raiv-fish-shop.netlify.app (Netlify project id 88c53092-cb0b-4b4e-8525-798262c66389).
-Файлы сайта — эта папка: index.html, img/, netlify.toml (index.html собирается командой `python3 generate_miniapp.py`).
+Хостинг: **GitHub Pages**, ветка `gh-pages` репозитория billibons13/Billibons → https://billibons13.github.io/Billibons/
+(Netlify не используется: на аккаунте закончились кредиты, 01.10.2026.)
 
-Задание для Claude на компьютере владельца:
-1. git clone https://github.com/billibons13/Billibons && git checkout claude/blissful-tesla-9xox1x
-2. cd raiv-fish-bot/miniapp
-3. Опубликовать папку в существующий проект (не создавать новый):
-   npx -y netlify-cli deploy --prod --dir . --site 88c53092-cb0b-4b4e-8525-798262c66389
-   (при первом запуске netlify-cli попросит войти в аккаунт Netlify в браузере)
-4. Проверить, что https://raiv-fish-shop.netlify.app/ и /img/b5.jpg открываются.
-5. Ничего другого не менять: бота в Make обновит облачная сессия Claude после ответа «готово».
+Обновить витрину:
+1. `python3 raiv-fish-bot/generate_miniapp.py` — собрать index.html из каталога бота.
+2. Скопировать `raiv-fish-bot/miniapp/index.html` и `raiv-fish-bot/miniapp/img/` в ветку `gh-pages` (корень), закоммитить и запушить.
+3. Через 1–2 минуты проверить https://billibons13.github.io/Billibons/ и /img/b5.jpg.
