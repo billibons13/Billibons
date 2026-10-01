@@ -1,0 +1,77 @@
+{
+ "name": "RAIV_Fish — ежедневный отчёт 21:00",
+ "metadata": {
+  "version": 1
+ },
+ "flow": [
+  {
+   "id": 1,
+   "module": "datastore:UpdateRecord",
+   "version": 1,
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   },
+   "parameters": {
+    "datastore": 203279
+   },
+   "mapper": {
+    "key": "{{formatDate(now; \"YYYY-MM-DD\"; \"Europe/Berlin\")}}",
+    "upsert": true,
+    "overwriteArrays": false,
+    "data": {
+     "day": "{{formatDate(now; \"YYYY-MM-DD\"; \"Europe/Berlin\")}}"
+    }
+   }
+  },
+  {
+   "id": 3,
+   "module": "datastore:GetRecord",
+   "version": 1,
+   "metadata": {
+    "designer": {
+     "x": 300,
+     "y": 0
+    }
+   },
+   "parameters": {
+    "datastore": 203279
+   },
+   "mapper": {
+    "key": "{{formatDate(now; \"YYYY-MM-DD\"; \"Europe/Berlin\")}}",
+    "returnWrapped": false
+   }
+  },
+  {
+   "id": 4,
+   "module": "telegram:UniversalAPICall",
+   "version": 1,
+   "metadata": {
+    "designer": {
+     "x": 600,
+     "y": 0
+    }
+   },
+   "parameters": {
+    "__IMTCONN__": 11456488
+   },
+   "mapper": {
+    "method": "POST",
+    "bodyType": "assembled_body",
+    "urlMethod": "sendMessage",
+    "body_spec": [
+     {
+      "key": "chat_id",
+      "value": "-1004438320479"
+     },
+     {
+      "key": "text",
+      "value": "📊 Отчёт за {{formatDate(now; \"DD.MM.YYYY\"; \"Europe/Berlin\")}} — RAIV FISH\n\n🧾 Заказов: {{ifempty(3.orders; 0)}}\n💶 Выручка: {{formatNumber(ifempty(3.revenue; 0); 2; \",\"; \".\")}} €\n🧮 Средний чек: {{formatNumber(if(ifempty(3.orders; 0) > 0; 3.revenue / 3.orders; 0); 2; \",\"; \".\")}} €\n🆕 Новых клиентов: {{ifempty(3.newcust; 0)}}\n🎟 Скидки по промокодам: {{formatNumber(ifempty(3.disc; 0); 2; \",\"; \".\")}} €\n💎 Оплачено бонусами: {{formatNumber(ifempty(3.bused; 0); 2; \",\"; \".\")}} €\n\n{{ifempty(3.lines; \"Сегодня заказов не было.\")}}"
+     }
+    ]
+   }
+  }
+ ]
+}

@@ -27,3 +27,20 @@
 1. Make → Create scenario → Import blueprint → `backup/v2_cart_blueprint.json`.
 2. Пересоздать при необходимости: Telegram-подключение (токен бота), data store со структурой text/total/count, вебхук; поправить ID в блупринте (CONN, HOOK, DS в `generate_blueprint.py` и перегенерировать).
 3. setWebhook на URL нового вебхука.
+
+## v3 Business (01.10.2026)
+
+| Что | ID |
+|---|---|
+| Рабочий сценарий (тот же) | 7707233 «Заказы v3 (Business) — РАБОЧИЙ» |
+| Ежедневный отчёт 21:00 | 7707443 (blueprint: `daily_report_blueprint.json`) |
+| Data store: клиенты | 203277 (структура 609976) |
+| Data store: заказы | 203280 (структура 609977) |
+| Data store: промокоды | 203278 (структура 609978, поиск по полю `code`) |
+| Data store: продажи по дням | 203279 (структура 609979) |
+| Data store: корзины | 203268 (структура 609962 + promo/pcode/disc/bused/final/city) |
+
+Blueprint v3: `v3_business_blueprint.json` (генератор: `generate_blueprint.py`).
+Откат на v2 с корзиной и кнопкой предложения: загрузить `v2_cart_offer_blueprint.json` в сценарий 7707233.
+
+Команды владельца (chat 6883357001): `/admin`, `/report`, `/promo КОД 10`, `/send текст`. Клиент: `/stop` — отписка от рассылок.
