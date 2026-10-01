@@ -1,0 +1,20 @@
+{
+ "_comment": "Данные ВАШИХ партнёрских аккаунтов. Не секреты (видны в каждой ссылке). API-токены сюда НЕ класть — только в Make (Keys/Connections).",
+ "amazon_partner_tag": null,
+ "awin_publisher_id": null,
+ "awin_programmes": [],
+ "adcell_publisher_id": null,
+ "adcell_programmes": [],
+ "max_new_products_per_day": 5,
+ "make": {
+  "team_id": 2241615,
+  "datastore_products": 203568,
+  "tool_send": 7712897,
+  "tool_report": 7713110,
+  "scenario_intake": 7712881,
+  "scenario_status": 7712888,
+  "scenario_klaus_scripts": 7712068,
+  "hook_intake": "https://hook.eu1.make.com/lrdmvdkf8m3svedd58zei2kn62ptgbam",
+  "hook_status": "https://hook.eu1.make.com/arkbrhuvdrp6fxrzp4vx581lnyayxv81"
+ }
+}

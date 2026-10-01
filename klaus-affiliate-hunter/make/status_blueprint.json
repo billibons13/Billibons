@@ -1,0 +1,276 @@
+{
+ "name": "Klaus Affiliate Hunter — 2. Status & Statistik (Feedback)",
+ "metadata": {
+  "instant": true,
+  "version": 1,
+  "scenario": {
+   "dlq": false,
+   "dataloss": false,
+   "maxErrors": 3,
+   "autoCommit": true,
+   "roundtrips": 1,
+   "sequential": false,
+   "confidential": false,
+   "autoCommitTriggerLast": true
+  }
+ },
+ "flow": [
+  {
+   "id": 1,
+   "module": "gateway:CustomWebHook",
+   "version": 1,
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   },
+   "parameters": {
+    "hook": 3820340,
+    "maxResults": 1
+   },
+   "mapper": {}
+  },
+  {
+   "id": 2,
+   "module": "datastore:GetRecord",
+   "version": 1,
+   "metadata": {
+    "designer": {
+     "x": 300,
+     "y": 0
+    }
+   },
+   "parameters": {
+    "datastore": 203568
+   },
+   "mapper": {
+    "key": "{{1.product_id}}",
+    "returnWrapped": false
+   }
+  },
+  {
+   "id": 7,
+   "module": "util:SetVariables",
+   "version": 1,
+   "metadata": {
+    "designer": {
+     "x": 600,
+     "y": 0
+    }
+   },
+   "parameters": {},
+   "mapper": {
+    "variables": [
+     {
+      "name": "exists",
+      "value": "{{if(2.product_id; \"1\"; \"0\")}}"
+     },
+     {
+      "name": "drop",
+      "value": "{{if(1.link_status = \"broken\"; \"1\"; if(1.availability = \"out_of_stock\"; \"1\"; \"0\"))}}"
+     },
+     {
+      "name": "new_sales",
+      "value": "{{if(ifempty(1.sales; 0) > ifempty(2.sales; 0); \"1\"; \"0\")}}"
+     },
+     {
+      "name": "published_now",
+      "value": "{{if(1.video_status = \"published\"; if(2.video_status = \"published\"; \"0\"; \"1\"); \"0\")}}"
+     }
+    ],
+    "scope": "roundtrip"
+   }
+  },
+  {
+   "id": 10,
+   "module": "builtin:BasicRouter",
+   "version": 1,
+   "metadata": {
+    "designer": {
+     "x": 900,
+     "y": 0
+    }
+   },
+   "mapper": null,
+   "routes": [
+    {
+     "flow": [
+      {
+       "id": 3,
+       "module": "datastore:UpdateRecord",
+       "version": 1,
+       "metadata": {
+        "designer": {
+         "x": 1200,
+         "y": -150
+        }
+       },
+       "parameters": {
+        "datastore": 203568
+       },
+       "mapper": {
+        "key": "{{1.product_id}}",
+        "upsert": false,
+        "overwriteArrays": false,
+        "data": {
+         "video_status": "{{ifempty(1.video_status; 2.video_status)}}",
+         "video_url": "{{ifempty(1.video_url; 2.video_url)}}",
+         "publication_results": "{{ifempty(1.publication_results; 2.publication_results)}}",
+         "views": "{{ifempty(1.views; 2.views)}}",
+         "clicks": "{{ifempty(1.clicks; 2.clicks)}}",
+         "sales": "{{ifempty(1.sales; 2.sales)}}",
+         "confirmed_commission_eur": "{{ifempty(1.confirmed_commission_eur; 2.confirmed_commission_eur)}}",
+         "refunds": "{{ifempty(1.refunds; 2.refunds)}}",
+         "link_status": "{{ifempty(1.link_status; 2.link_status)}}",
+         "availability": "{{ifempty(1.availability; 2.availability)}}",
+         "price_eur": "{{ifempty(1.price_eur; 2.price_eur)}}",
+         "verification_date": "{{ifempty(1.verification_date; 2.verification_date)}}",
+         "estimated_commission_eur": "{{if(1.price_eur; if(2.commission_percent; round(1.price_eur * 2.commission_percent) / 100; 2.estimated_commission_eur); 2.estimated_commission_eur)}}",
+         "content_queue": "{{if(7.drop = \"1\"; false; 2.content_queue)}}",
+         "affiliate_url": "{{if(1.link_status = \"broken\"; \"\"; 2.affiliate_url)}}",
+         "affiliate_status": "{{if(1.link_status = \"broken\"; \"rejected\"; 2.affiliate_status)}}",
+         "commercial_priority": "{{if(7.drop = \"1\"; \"HOLD\"; 2.commercial_priority)}}",
+         "notes": "{{ifempty(1.notes; 2.notes)}}",
+         "last_update": "{{now}}"
+        }
+       },
+       "filter": {
+        "name": "Produkt existiert",
+        "conditions": [
+         [
+          {
+           "a": "{{7.exists}}",
+           "o": "text:equal",
+           "b": "1"
+          }
+         ]
+        ]
+       }
+      },
+      {
+       "id": 4,
+       "module": "gateway:WebhookRespond",
+       "version": 1,
+       "metadata": {
+        "designer": {
+         "x": 1500,
+         "y": -150
+        }
+       },
+       "parameters": {},
+       "mapper": {
+        "status": 200,
+        "body": "{\"ok\": true, \"product_id\": \"{{1.product_id}}\", \"content_queue\": {{if(7.drop = \"1\"; \"false\"; if(2.content_queue; \"true\"; \"false\"))}}, \"video_status\": \"{{ifempty(1.video_status; 2.video_status)}}\", \"link_status\": \"{{ifempty(1.link_status; 2.link_status)}}\"}",
+        "headers": [
+         {
+          "key": "Content-Type",
+          "value": "application/json"
+         }
+        ]
+       }
+      },
+      {
+       "id": 5,
+       "module": "telegram:SendReplyMessage",
+       "version": 1,
+       "metadata": {
+        "designer": {
+         "x": 1800,
+         "y": -150
+        }
+       },
+       "parameters": {
+        "__IMTCONN__": 9469273
+       },
+       "mapper": {
+        "chatId": "6883357001",
+        "text": "⚠️ Klaus Affiliate Hunter — {{2.product_name}}\n{{if(1.link_status = \"broken\"; \"Ссылка больше не работает — товар снят с очереди. \"; \"\")}}{{if(1.availability = \"out_of_stock\"; \"Товара нет в наличии — снят с очереди. \"; \"\")}}{{if(1.video_status = \"published\"; \"🎬 Видео опубликовано: \"; \"\")}}{{if(1.video_status = \"published\"; 1.video_url; \"\")}}{{if(7.new_sales = \"1\"; \" 💶 Продажи всего: \"; \"\")}}{{if(7.new_sales = \"1\"; 1.sales; \"\")}}{{if(7.new_sales = \"1\"; \" · подтверждено, €: \"; \"\")}}{{if(7.new_sales = \"1\"; ifempty(1.confirmed_commission_eur; 0); \"\")}}\nID: {{2.product_id}}",
+        "parseMode": "",
+        "disableWebPagePreview": true
+       },
+       "filter": {
+        "name": "Wichtiges Ereignis",
+        "conditions": [
+         [
+          {
+           "a": "{{7.drop}}",
+           "o": "text:equal",
+           "b": "1"
+          }
+         ],
+         [
+          {
+           "a": "{{7.new_sales}}",
+           "o": "text:equal",
+           "b": "1"
+          }
+         ],
+         [
+          {
+           "a": "{{7.published_now}}",
+           "o": "text:equal",
+           "b": "1"
+          }
+         ]
+        ]
+       },
+       "onerror": [
+        {
+         "id": 51,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "metadata": {
+          "designer": {
+           "x": 1800,
+           "y": 0
+          }
+         },
+         "mapper": null
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 6,
+       "module": "gateway:WebhookRespond",
+       "version": 1,
+       "metadata": {
+        "designer": {
+         "x": 1200,
+         "y": 150
+        }
+       },
+       "parameters": {},
+       "mapper": {
+        "status": 404,
+        "body": "{\"ok\": false, \"error\": \"unbekannte product_id\"}",
+        "headers": [
+         {
+          "key": "Content-Type",
+          "value": "application/json"
+         }
+        ]
+       },
+       "filter": {
+        "name": "Produkt fehlt",
+        "conditions": [
+         [
+          {
+           "a": "{{7.exists}}",
+           "o": "text:equal",
+           "b": "0"
+          }
+         ]
+        ]
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

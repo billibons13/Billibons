@@ -1,0 +1,239 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "klaus-affiliate-hunter/product.schema.json",
+ "title": "Klaus Affiliate Hunter — товар для Make (intake webhook)",
+ "type": "object",
+ "required": [
+  "product_id",
+  "product_name",
+  "product_url",
+  "affiliate_status",
+  "market",
+  "schema_version"
+ ],
+ "additionalProperties": false,
+ "properties": {
+  "schema_version": {
+   "const": "1.0"
+  },
+  "product_id": {
+   "type": "string",
+   "pattern": "^[A-Za-z0-9_.-]{1,64}$",
+   "description": "amzn-de-<ASIN> или de-<sha1(канонический URL)[:16]>; ключ дедупликации"
+  },
+  "product_name": {
+   "type": "string",
+   "minLength": 1
+  },
+  "brand": {
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "category": {
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "market": {
+   "const": "DE"
+  },
+  "store": {
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "product_url": {
+   "type": "string",
+   "pattern": "^https?://"
+  },
+  "affiliate_url": {
+   "type": [
+    "string",
+    "null"
+   ],
+   "pattern": "^https://",
+   "description": "только при affiliate_status = verified, иначе null"
+  },
+  "affiliate_network": {
+   "enum": [
+    "amazon_de",
+    "awin",
+    "adcell",
+    "belboon",
+    "tradetracker",
+    "cj",
+    "impact",
+    "digistore24",
+    "brand_direct",
+    "other",
+    null
+   ]
+  },
+  "affiliate_status": {
+   "enum": [
+    "verified",
+    "pending",
+    "unverified",
+    "rejected"
+   ]
+  },
+  "price_eur": {
+   "type": [
+    "number",
+    "null"
+   ],
+   "minimum": 0
+  },
+  "commission_percent": {
+   "type": [
+    "number",
+    "null"
+   ],
+   "minimum": 0,
+   "maximum": 100
+  },
+  "commission_fixed_eur": {
+   "type": [
+    "number",
+    "null"
+   ],
+   "minimum": 0
+  },
+  "estimated_commission_eur": {
+   "type": [
+    "number",
+    "null"
+   ],
+   "minimum": 0,
+   "description": "price_eur × commission_percent / 100 (или фикс. вознаграждение)"
+  },
+  "cookie_duration_days": {
+   "type": [
+    "number",
+    "null"
+   ],
+   "minimum": 0
+  },
+  "availability": {
+   "enum": [
+    "in_stock",
+    "out_of_stock",
+    "preorder",
+    "unknown"
+   ]
+  },
+  "source_url": {
+   "type": [
+    "string",
+    "null"
+   ],
+   "pattern": "^https?://"
+  },
+  "product_description": {
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "video_category": {
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "matching_klaus_scenario": {
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "video_hook": {
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "commercial_priority": {
+   "enum": [
+    "A",
+    "B",
+    "C",
+    "HOLD"
+   ]
+  },
+  "score": {
+   "type": [
+    "number",
+    "null"
+   ],
+   "minimum": 0,
+   "maximum": 1
+  },
+  "epm_scenarios": {
+   "type": [
+    "object",
+    "null"
+   ],
+   "description": "доход на 1000 просмотров; assumption=true — допущения"
+  },
+  "compliance_flags": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "disclosure_text": {
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "discovered_at": {
+   "type": "string",
+   "format": "date"
+  },
+  "verification_date": {
+   "type": [
+    "string",
+    "null"
+   ],
+   "format": "date"
+  },
+  "content_queue": {
+   "type": "boolean"
+  },
+  "notes": {
+   "type": [
+    "string",
+    "null"
+   ]
+  }
+ },
+ "allOf": [
+  {
+   "if": {
+    "properties": {
+     "affiliate_status": {
+      "not": {
+       "const": "verified"
+      }
+     }
+    }
+   },
+   "then": {
+    "properties": {
+     "affiliate_url": {
+      "const": null
+     },
+     "content_queue": {
+      "const": false
+     }
+    }
+   }
+  }
+ ]
+}

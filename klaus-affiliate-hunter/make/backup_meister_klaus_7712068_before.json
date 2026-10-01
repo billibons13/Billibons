@@ -1,0 +1,83 @@
+{
+ "flow": [
+  {
+   "id": 1,
+   "mapper": {
+    "model": "gemini-3.5-flash-lite",
+    "contents": [
+     {
+      "role": "user",
+      "parts": [
+       {
+        "text": "Heute ist {{formatDate(now; \"D. MMMM YYYY\"; \"Europe/Berlin\")}}. Schreibe 4 Video-Skripte für die kommende Woche (Montag, Mittwoch, Freitag, Sonntag) zum Wochenthema: {{get(split(\"Schimmel vorbeugen|Kalk in Bad und Küche|Abfluss und Rohre|Heizung und Fenster im Winter|Küche: Fett, Backofen, Kühlschrank|Waschmaschine und Wäsche|Fliesen, Fugen und Silikon|Kleine Reparaturen in der Wohnung\"; \"|\"); parseNumber(formatDate(now; \"W\")) % 8 + 1)}}. Berücksichtige die Jahreszeit.\n\nFormat für jedes Skript:\n\n[Tag] – [Titel]\nHook (0–3 s): ...\nSzene 2: ...\nSzene 3: ...\nSchluss: ...\nProdukt: [Produkttyp] oder «nur Tipp»\n\nMindestens eines der 4 Skripte ist «nur Tipp» ohne Produkt. Trenne die Skripte mit ---",
+        "type": "text"
+       }
+      ]
+     }
+    ],
+    "generationConfig": {
+     "maxOutputTokens": 3000
+    },
+    "system_instruction": {
+     "parts": [
+      {
+       "text": "Du bist Drehbuchautor für «Meister Klaus», eine KI-generierte Handwerker-Figur (ca. 55, Schnurrbart, blaue Latzhose), die Deutschen in 30-Sekunden-Videos (TikTok, Instagram Reels, YouTube Shorts) Haushaltsprobleme erklärt.\n\nStil: freundlich, bodenständig, kurze Sätze, umgangssprachliches Deutsch. Klaus beginnt jedes Video mit «Na, Problem? Klaus ist da!» und endet mit «Das kriegen wir hin!».\n\nRegeln:\n1. Nur sichere, fachlich korrekte Tipps. Nie Chlor- und Säurereiniger mischen; bei Chemie immer Lüften und Handschuhe erwähnen.\n2. Bei großem Schimmel (über 0,5 m²), Strom, Gas: Fachbetrieb empfehlen.\n3. Keine Markennamen, keine Testergebnisse, keine Heilversprechen. Nenne pro Skript nur einen passenden Produkttyp (z. B. «Hygrometer»).\n4. Kein Markdown, keine Sternchen.\n5. Gesamtlänge maximal 3500 Zeichen (Telegram-Limit)."
+      }
+     ]
+    }
+   },
+   "module": "gemini-ai:createACompletionGeminiPro",
+   "version": 1,
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   },
+   "parameters": {
+    "__IMTCONN__": 9603562
+   }
+  },
+  {
+   "id": 2,
+   "mapper": {
+    "text": "🔧 Meister Klaus – Skripte für die neue Woche\n\n{{1.candidates[1].content.parts[1].text}}",
+    "chatId": "6883357001",
+    "parseMode": ""
+   },
+   "module": "telegram:SendReplyMessage",
+   "version": 1,
+   "metadata": {
+    "designer": {
+     "x": 300,
+     "y": 0
+    }
+   },
+   "parameters": {
+    "__IMTCONN__": 9469273
+   }
+  }
+ ],
+ "name": "Meister Klaus — 1. Wochenskripte (Gemini → Telegram)",
+ "metadata": {
+  "instant": false,
+  "version": 1,
+  "scenario": {
+   "dlq": false,
+   "dataloss": false,
+   "maxErrors": 3,
+   "autoCommit": true,
+   "roundtrips": 1,
+   "sequential": false,
+   "confidential": false,
+   "autoCommitTriggerLast": true
+  }
+ },
+ "scheduling": {
+  "days": [
+   6
+  ],
+  "time": "10:00",
+  "type": "weekly"
+ }
+}
