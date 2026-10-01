@@ -1,0 +1,346 @@
+{
+  "_comment": "Конфиг клиента RAIV FISH по platform/CONFIG_SCHEMA.md v1.0. Данные взяты из raiv-fish-bot/generate_blueprint.py (ветка claude/blissful-tesla-9xox1x, бот v6). Секретов и URL вебхуков здесь нет: только ID объектов Make и ссылки secret://.",
+  "schema_version": "1.0",
+  "client_id": "raiv_fish",
+  "env": "prod",
+  "template": "shop",
+  "plan": {
+    "plan_id": "pro_1500",
+    "addons": ["online_payment"],
+    "_comment": "Тариф и аддоны — только для сверки. Что реально открыто, решает PlanManager по записи об оплате; конфиг может только выключить модуль, но не включить сверх тарифа."
+  },
+  "business": {
+    "name": "RAIV FISH",
+    "tagline": {"ru": "вяленая рыба, икра и снеки к пиву"},
+    "category": "food_retail",
+    "contact": {"telegram": "@raiv_fish1", "phone": null, "email": null},
+    "legal": {"legal_name": "TODO: имя/фирма владельца для Impressum", "address": "TODO", "vat_id": null, "small_business_vat_exempt": null},
+    "seller_promo": {"enabled": true, "seller_contact": "@esusnob", "_comment": "кнопка «💼 Хочу такой бот» — витрина платформы, не магазина"}
+  },
+  "locale": {
+    "country": "DE",
+    "region": "Schleswig-Holstein",
+    "timezone": "Europe/Berlin",
+    "languages": ["ru"],
+    "default_language": "ru",
+    "planned_languages": ["de"],
+    "date_format": "DD.MM.YYYY",
+    "time_format": "HH:mm"
+  },
+  "currency": {
+    "code": "EUR",
+    "symbol": "€",
+    "symbol_position": "after",
+    "decimal_separator": ",",
+    "thousands_separator": ".",
+    "decimals": 2,
+    "always_show_decimals": true,
+    "rounding": "floor_cent"
+  },
+  "texts": {
+    "pack": "shop_ru_v1",
+    "overrides": {
+      "ru": {
+        "start": "🐟 RAIV FISH — вяленая рыба, икра и снеки к пиву\n\n🚗 Бесплатная доставка от {min_order}: {zones}\n🕐 Сегодня или завтра — днём или вечером\n💳 Онлайн или наличными · 💎 {bonus_pct}% бонусами с каждого заказа\n\nВыберите раздел 👇",
+        "pricelist_header": "📋 ВЕСЬ ПРАЙС RAIV FISH\nТо, что отмечено ❌, — сейчас нет в наличии.",
+        "order_accepted": "✅ Спасибо! Заказ №{order_no} принят.\nМы свяжемся с вами, чтобы договориться о времени доставки.",
+        "delivered": "✅ Заказ №{order_no} доставлен. Приятного аппетита! 🐟\n\nОцените, пожалуйста, заказ:",
+        "ai_assistant_context": "небольшой магазин вяленой рыбы и снеков; доставка курьером по 4 городам; заказы через Telegram-бота"
+      }
+    }
+  },
+  "channels": {
+    "customer": [
+      {
+        "type": "telegram_bot",
+        "bot_username": "RAIV_FISH_bot",
+        "bot_user_id": "8457348629",
+        "token_ref": "make_connection:11456488",
+        "webhook": {
+          "make_hook_id": 3818482,
+          "url_ref": "secret://raiv_fish/tg_webhook_url",
+          "secret_token_ref": "secret://raiv_fish/tg_webhook_secret",
+          "rotate_required": true,
+          "_comment": "Аудит v5 A1: старый адрес хука был в публичном репо → новый хук + secret_token."
+        },
+        "commands": ["/start", "/orders", "/invite", "/help", "/stop", "/privacy", "/delete"],
+        "mini_app": {"enabled": true, "url": "https://billibons13.github.io/Billibons/", "button_version": "1"}
+      }
+    ],
+    "owner": {
+      "owner_user_ids": ["6883357001"],
+      "staff_user_ids": [],
+      "orders_chat_id": "-1004438320479",
+      "reports_chat_id": "-1004438320479",
+      "ai_assistant_chat_id": "6883357001",
+      "public_channel": "@raiv_fish1",
+      "public_channel_bot_admin": false
+    }
+  },
+  "catalog": {
+    "source": "inline",
+    "planned_source": "datastore",
+    "out_of_stock_mark": "❌",
+    "show_out_of_stock": true,
+    "photos": {"base_url": "https://billibons13.github.io/Billibons/img/", "pattern": "{code}.jpg"},
+    "units": {
+      "g": {
+        "label": {"ru": "г"},
+        "price_label": {"ru": "€ / 100 г"},
+        "input_hint": {"ru": "в граммах, например 250"},
+        "min_qty": 50,
+        "max_qty": 3000,
+        "step": 10
+      },
+      "kg": {"label": {"ru": "кг"}, "price_label": {"ru": "€ / кг"}, "input_hint": {"ru": "в кг, например 0,7"}, "min_qty": 0.1, "max_qty": 10, "step": 0.1},
+      "pcs": {"label": {"ru": "шт."}, "price_label": {"ru": "€ / шт."}, "input_hint": {"ru": "в штуках, например 4"}, "min_qty": 1, "max_qty": 50, "step": 1}
+    },
+    "categories": [
+      {
+        "id": "a",
+        "title": {"ru": "🐟 Икра вяленая (100 г)"},
+        "unit": "g",
+        "price_per": 100,
+        "qty_presets": [100, 200, 300, 500],
+        "items": [
+          {"code": "a1", "name": {"ru": "Икра толстолоба"}, "price": 6.0, "in_stock": true},
+          {"code": "a2", "name": {"ru": "Икра кеты"}, "price": 8.5, "in_stock": true},
+          {"code": "a3", "name": {"ru": "Икра форели"}, "price": 8.5, "in_stock": true},
+          {"code": "a4", "name": {"ru": "Икра судака"}, "price": 6.5, "in_stock": false},
+          {"code": "a5", "name": {"ru": "Икра щуки"}, "price": 7.0, "in_stock": true},
+          {"code": "a6", "name": {"ru": "Икра плотвы"}, "price": 7.0, "in_stock": false},
+          {"code": "a7", "name": {"ru": "Икра минтая"}, "price": 6.5, "in_stock": false}
+        ]
+      },
+      {
+        "id": "b",
+        "title": {"ru": "🐠 Рыба вяленая (кг)"},
+        "unit": "kg",
+        "price_per": 1,
+        "qty_presets": [0.5, 1, 1.5, 2],
+        "items": [
+          {"code": "b1", "name": {"ru": "Плотва с икрой"}, "price": 35.0, "in_stock": true},
+          {"code": "b2", "name": {"ru": "Чищенные тушки плотвы без головы (100% икра)"}, "price": 49.0, "in_stock": true},
+          {"code": "b3", "name": {"ru": "Вобла с икрой (80% икра)"}, "price": 30.0, "in_stock": true},
+          {"code": "b4", "name": {"ru": "Верховодка"}, "price": 35.0, "in_stock": true},
+          {"code": "b5", "name": {"ru": "Лещ с икрой"}, "price": 35.0, "in_stock": true},
+          {"code": "b6", "name": {"ru": "Лещ без икры"}, "price": 20.0, "in_stock": false},
+          {"code": "b7", "name": {"ru": "Карась с икрой"}, "price": 23.0, "in_stock": true},
+          {"code": "b8", "name": {"ru": "Щука потрошеная"}, "price": 25.0, "in_stock": true},
+          {"code": "b9", "name": {"ru": "Форель вяленая потрошеная"}, "price": 35.0, "in_stock": true},
+          {"code": "b10", "name": {"ru": "Судак потрошеный"}, "price": 30.0, "in_stock": true},
+          {"code": "b11", "name": {"ru": "Чехонь"}, "price": 25.0, "in_stock": true},
+          {"code": "b12", "name": {"ru": "Чехонь крупная с икрой 90%"}, "price": 35.0, "in_stock": true},
+          {"code": "b13", "name": {"ru": "Бычок"}, "price": 34.0, "in_stock": true},
+          {"code": "b14", "name": {"ru": "Корюшка с икрой (премиум)"}, "price": 60.0, "in_stock": false},
+          {"code": "b15", "name": {"ru": "Окунь с икрой"}, "price": 34.0, "in_stock": true},
+          {"code": "b16", "name": {"ru": "Юкола лосося"}, "price": 67.0, "in_stock": true}
+        ]
+      },
+      {
+        "id": "c",
+        "title": {"ru": "🍢 Рыбные снеки (100 г)"},
+        "unit": "g",
+        "price_per": 100,
+        "qty_presets": [100, 200, 300, 500],
+        "items": [
+          {"code": "c1", "name": {"ru": "Филе горбуши (соломка)"}, "price": 6.0, "in_stock": true},
+          {"code": "c2", "name": {"ru": "Кальмар + лосось (соломка)"}, "price": 4.9, "in_stock": true},
+          {"code": "c3", "name": {"ru": "Корюшка сушеная потрошеная"}, "price": 5.5, "in_stock": true},
+          {"code": "c4", "name": {"ru": "Соломка леща"}, "price": 3.5, "in_stock": true},
+          {"code": "c5", "name": {"ru": "Джерки лосося"}, "price": 6.0, "in_stock": true},
+          {"code": "c6", "name": {"ru": "Ириска из лосося"}, "price": 6.0, "in_stock": true},
+          {"code": "c7", "name": {"ru": "Стейк щуки"}, "price": 4.5, "in_stock": true}
+        ]
+      },
+      {
+        "id": "d",
+        "title": {"ru": "🦑 Снеки к пиву (кг)"},
+        "unit": "kg",
+        "price_per": 1,
+        "qty_presets": [0.2, 0.3, 0.5, 1],
+        "items": [
+          {"code": "d1", "name": {"ru": "Пятачки осьминога"}, "price": 40.0, "in_stock": true},
+          {"code": "d2", "name": {"ru": "Паутинка кальмара «сладкий чили»"}, "price": 40.0, "in_stock": true},
+          {"code": "d3", "name": {"ru": "Кальмар по-шанхайски"}, "price": 40.0, "in_stock": true},
+          {"code": "d4", "name": {"ru": "Стружка кальмара"}, "price": 40.0, "in_stock": true},
+          {"code": "d5", "name": {"ru": "Палочки патасу"}, "price": 40.0, "in_stock": true},
+          {"code": "d6", "name": {"ru": "Филе голубого марлина"}, "price": 40.0, "in_stock": true},
+          {"code": "d7", "name": {"ru": "Кальмар по-перуански"}, "price": 40.0, "in_stock": true},
+          {"code": "d8", "name": {"ru": "Полосатик"}, "price": 40.0, "in_stock": true},
+          {"code": "d9", "name": {"ru": "Стружка краба"}, "price": 40.0, "in_stock": true},
+          {"code": "d10", "name": {"ru": "Анчоус"}, "price": 40.0, "in_stock": true},
+          {"code": "d11", "name": {"ru": "Крабовые палочки"}, "price": 40.0, "in_stock": true}
+        ]
+      },
+      {
+        "id": "e",
+        "title": {"ru": "🥫 Консервы"},
+        "unit": "pcs",
+        "price_per": 1,
+        "qty_presets": [1, 2, 3, 5],
+        "items": [
+          {"code": "e1", "name": {"ru": "Снеток в томате"}, "price": 5.0, "in_stock": true},
+          {"code": "e2", "name": {"ru": "Лещ в томате"}, "price": 5.0, "in_stock": true}
+        ]
+      }
+    ]
+  },
+  "fulfillment": {
+    "min_order": 20,
+    "local_delivery": {
+      "enabled": true,
+      "fee": 0,
+      "free_from": 20,
+      "zones": [
+        {"id": "1", "name": {"ru": "Эдделак"}, "fee": 0},
+        {"id": "2", "name": {"ru": "Марне"}, "fee": 0},
+        {"id": "3", "name": {"ru": "Брунсбюттель"}, "fee": 0},
+        {"id": "4", "name": {"ru": "Хайде"}, "fee": 0}
+      ],
+      "other_place": {
+        "enabled": true,
+        "fee": null,
+        "label": {"ru": "Другое место"},
+        "price_text": {"ru": "по договорённости"},
+        "_comment": "аудит v5 B: сейчас бот пишет «бесплатно» — неверно"
+      },
+      "slots": {
+        "days_ahead": 1,
+        "windows": [
+          {"id": "1", "day_offset": 0, "from": "12:00", "to": "16:00"},
+          {"id": "2", "day_offset": 0, "from": "17:00", "to": "21:00"},
+          {"id": "3", "day_offset": 1, "from": "12:00", "to": "16:00"},
+          {"id": "4", "day_offset": 1, "from": "17:00", "to": "21:00"}
+        ],
+        "hide_if_ends_within_min": 60
+      }
+    },
+    "pickup": {"enabled": false, "points": []},
+    "parcel": {
+      "enabled": false,
+      "module": "parcel_shipping",
+      "_comment": "Канал @raiv_fish1 обещает доставку по Европе. Включать после того, как владелец даст тарифы перевозчика и правила упаковки.",
+      "carrier": "TODO: DHL / DPD / GLS",
+      "ship_days": ["mon", "wed"],
+      "packaging_weight_g": 300,
+      "max_parcel_weight_kg": 31.5,
+      "weight_rounding": "up_to_tier",
+      "countries": [
+        {
+          "code": "DE",
+          "tiers": [{"up_to_kg": 2, "price": null}, {"up_to_kg": 5, "price": null}, {"up_to_kg": 10, "price": null}, {"up_to_kg": 31.5, "price": null}]
+        },
+        {
+          "code": "AT",
+          "tiers": [{"up_to_kg": 2, "price": null}, {"up_to_kg": 5, "price": null}, {"up_to_kg": 10, "price": null}, {"up_to_kg": 31.5, "price": null}]
+        },
+        {
+          "code": "NL",
+          "tiers": [{"up_to_kg": 2, "price": null}, {"up_to_kg": 5, "price": null}, {"up_to_kg": 10, "price": null}, {"up_to_kg": 31.5, "price": null}]
+        },
+        {
+          "code": "PL",
+          "tiers": [{"up_to_kg": 2, "price": null}, {"up_to_kg": 5, "price": null}, {"up_to_kg": 10, "price": null}, {"up_to_kg": 31.5, "price": null}]
+        },
+        {
+          "code": "CZ",
+          "tiers": [{"up_to_kg": 2, "price": null}, {"up_to_kg": 5, "price": null}, {"up_to_kg": 10, "price": null}, {"up_to_kg": 31.5, "price": null}]
+        }
+      ],
+      "free_from": null,
+      "requires_address_fields": ["full_name", "street", "postcode", "city", "country", "phone"],
+      "eu_only": true
+    }
+  },
+  "payment": {
+    "methods": [
+      {"id": "cash_on_delivery", "enabled": true, "applies_to": ["local_delivery"]},
+      {
+        "id": "stripe_checkout",
+        "enabled": true,
+        "connection_ref": "make_connection:11458868",
+        "mode": "test",
+        "visible_to": "owner_only",
+        "min_amount": 0.5,
+        "confirm_scenario_id": 7707560,
+        "confirm_hook_id": 3818580,
+        "webhook_secret_ref": "secret://raiv_fish/stripe_webhook_secret",
+        "_comment": "Аудит v5 A8: в режиме test кнопку видят только owner_user_ids. Покупателям — после mode=live."
+      }
+    ],
+    "prepayment": {"required_for": ["parcel"], "percent": 100}
+  },
+  "modules": {
+    "cart": {"enabled": true},
+    "mini_app": {"enabled": true},
+    "repeat_order": {"enabled": true, "reprice": true},
+    "order_statuses": {"enabled": true, "statuses": ["new", "in_transit", "delivered"]},
+    "ratings": {"enabled": true, "low_rating_threshold": 3, "ask_reason_below": 4},
+    "customers": {"enabled": true},
+    "promo_codes": {"enabled": true, "min_percent": 1, "max_percent": 50, "default_max_uses": null},
+    "bonuses": {"enabled": true, "earn_percent": 5, "max_pay_percent": 20, "credit_on": "delivered"},
+    "referral": {"enabled": true, "bonus_friend": 3, "bonus_referrer": 3, "credit_on": "friend_first_delivered"},
+    "broadcasts": {"enabled": true, "preview_before_send": true, "requires_marketing_consent": true},
+    "reminders": {"enabled": true, "inactive_days": 14, "send_at": "11:00", "requires_marketing_consent": true, "scenario_id": 7707493},
+    "abandoned_cart": {"enabled": true, "after_hours": 2, "max_age_days": 2, "window": ["10:00", "20:00"], "scenario_id": 7707656},
+    "daily_report": {"enabled": true, "send_at": "21:00", "scenario_id": 7707443},
+    "ai_assistant": {"enabled": true, "send_at": "08:30", "scenario_id": 7707489, "send_customer_names": false},
+    "ai_faq": {"enabled": false, "knowledge": [], "handoff_to_owner": true},
+    "wholesale": {
+      "enabled": false,
+      "_comment": "Канал @raiv_fish1 обещает оптовые заказы. Через модуль request_quote: заявка → владелец отвечает ценой.",
+      "flow": "request_quote",
+      "min_order_amount": null,
+      "min_qty_kg": null,
+      "price_list": "on_request",
+      "requires_company_data": true
+    },
+    "parcel_shipping": {"enabled": false, "_comment": "см. fulfillment.parcel"}
+  },
+  "compliance": {
+    "regime": "EU_GDPR",
+    "national_rules": ["DE_BDSG", "DE_UWG_7", "DE_TDDDG"],
+    "controller": {"name": "TODO", "email": "TODO", "address": "TODO"},
+    "privacy_policy_url": "TODO: https://…/privacy",
+    "impressum_url": "TODO",
+    "consent": {
+      "order_processing": {"basis": "contract", "ask": false},
+      "marketing": {
+        "basis": "consent",
+        "ask": true,
+        "default": false,
+        "ask_at": "after_first_order",
+        "text": {"ru": "Присылать вам акции и напоминания? Отписаться — /stop в любой момент."}
+      },
+      "existing_customers_without_consent": "no_marketing"
+    },
+    "commands": {"privacy": "/privacy", "delete": "/delete", "unsubscribe": "/stop"},
+    "delete_policy": {"mode": "anonymize", "keep_for_accounting": ["order_no", "date", "items", "amounts"], "confirm": true},
+    "retention_days": {"carts": 30, "customers_inactive": 730, "orders_personal_data": 730, "orders_accounting": 2922, "chat_messages": 0},
+    "ai_processing": {"send_personal_data": false, "provider_region": "EU_preferred"},
+    "status": "not_implemented",
+    "_comment": "Аудит v5 A13: сейчас нет согласия, /privacy, /delete и срока хранения. 2922 дня (8 лет, Buchungsbelege) — проверить с налоговым консультантом."
+  },
+  "security": {
+    "webhook_secret_required": true,
+    "sequential_processing": true,
+    "admin_commands_owner_only": true,
+    "status_buttons_allowed_ids": "owner_and_staff",
+    "status_buttons_chat_id": "-1004438320479",
+    "rating_buttons": "order_customer_only",
+    "outbound_chat_ids": "known_customers_only",
+    "ignore_message_not_modified": true
+  },
+  "limits": {"max_items_in_cart": 30, "max_order_amount": 1000, "max_broadcast_per_day": 1, "max_text_length": 4000},
+  "infra": {
+    "runtime": "make",
+    "make": {
+      "zone": "eu1",
+      "team_id": 2241615,
+      "scenarios": {"main": 7707233, "daily_report": 7707443, "ai_assistant": 7707489, "reminders": 7707493, "stripe_confirm": 7707560, "abandoned_cart": 7707656},
+      "datastores": {"carts": 203268, "customers": 203277, "promo_codes": 203278, "stats": 203279, "orders": 203280},
+      "tools": {"telegram_api": 7706891, "updates_webhook": 7706894, "bot_menu": 7707653, "http_get": 7707662}
+    }
+  }
+}

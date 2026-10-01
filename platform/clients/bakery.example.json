@@ -1,0 +1,289 @@
+{
+  "_comment": "Вымышленная кондитерская — пример шаблона Pre-order по platform/CONFIG_SCHEMA.md v1.0. Другая страна (CH), языки (de/en), валюта (CHF), закон о данных (revDSG) — схема та же, что у RAIV FISH.",
+  "schema_version": "1.0",
+  "client_id": "konditorei_beispiel",
+  "env": "prod",
+  "template": "preorder",
+  "plan": {"plan_id": "business_800", "addons": ["online_payment", "ai_faq"]},
+  "business": {
+    "name": "Konditorei Beispiel",
+    "tagline": {"de": "Torten auf Bestellung, Gebäck und Pralinés", "en": "Cakes to order, pastries and pralines"},
+    "category": "bakery",
+    "contact": {"telegram": "@konditorei_beispiel", "phone": "+41 00 000 00 00", "email": "hallo@example.ch"},
+    "legal": {
+      "legal_name": "Konditorei Beispiel GmbH (fiktiv)",
+      "address": "Musterstrasse 1, 6000 Luzern",
+      "vat_id": "CHE-000.000.000 MWST",
+      "small_business_vat_exempt": false
+    },
+    "seller_promo": {"enabled": false}
+  },
+  "locale": {
+    "country": "CH",
+    "region": "LU",
+    "timezone": "Europe/Zurich",
+    "languages": ["de", "en"],
+    "default_language": "de",
+    "language_detection": "telegram_language_code",
+    "date_format": "DD.MM.YYYY",
+    "time_format": "HH:mm"
+  },
+  "currency": {
+    "code": "CHF",
+    "symbol": "CHF",
+    "symbol_position": "before",
+    "decimal_separator": ".",
+    "thousands_separator": "’",
+    "decimals": 2,
+    "always_show_decimals": true,
+    "rounding": "nearest_0.05"
+  },
+  "texts": {
+    "pack": "preorder_de_en_v1",
+    "overrides": {
+      "de": {
+        "start": "🎂 Konditorei Beispiel — Torten auf Bestellung\n\nBestellen Sie mindestens {lead_time} im Voraus.\n📍 Abholung in Luzern oder Lieferung ab {free_from} gratis.\n\nWählen Sie 👇",
+        "order_accepted": "✅ Danke! Vorbestellung Nr. {order_no} für {date} {slot} ist eingegangen. Wir bestätigen sie innerhalb von 2 Stunden."
+      },
+      "en": {
+        "start": "🎂 Konditorei Beispiel — cakes to order\n\nPlease order at least {lead_time} in advance.\n📍 Pick up in Lucerne or free delivery from {free_from}.\n\nChoose 👇",
+        "order_accepted": "✅ Thank you! Pre-order no. {order_no} for {date} {slot} received. We will confirm within 2 hours."
+      }
+    }
+  },
+  "channels": {
+    "customer": [
+      {
+        "type": "telegram_bot",
+        "bot_username": "KonditoreiBeispielBot",
+        "bot_user_id": "TODO",
+        "token_ref": "make_connection:TODO",
+        "webhook": {
+          "make_hook_id": null,
+          "url_ref": "secret://konditorei_beispiel/tg_webhook_url",
+          "secret_token_ref": "secret://konditorei_beispiel/tg_webhook_secret",
+          "rotate_required": false
+        },
+        "commands": ["/start", "/orders", "/help", "/language", "/privacy", "/delete", "/stop"],
+        "mini_app": {"enabled": false}
+      }
+    ],
+    "planned_customer_channels": ["whatsapp_cloud"],
+    "owner": {
+      "owner_user_ids": ["TODO_OWNER_TG_ID"],
+      "staff_user_ids": ["TODO_BAKER_TG_ID"],
+      "orders_chat_id": "TODO_ORDERS_GROUP_ID",
+      "reports_chat_id": "TODO_OWNER_TG_ID",
+      "public_channel": null
+    }
+  },
+  "catalog": {
+    "source": "inline",
+    "out_of_stock_mark": "—",
+    "show_out_of_stock": false,
+    "photos": {"base_url": "TODO", "pattern": "{code}.jpg"},
+    "units": {
+      "pcs": {"label": {"de": "Stk.", "en": "pcs"}, "price_label": {"de": "pro Stk.", "en": "each"}, "min_qty": 1, "max_qty": 5, "step": 1},
+      "box": {"label": {"de": "Box", "en": "box"}, "price_label": {"de": "pro Box", "en": "per box"}, "min_qty": 1, "max_qty": 10, "step": 1}
+    },
+    "categories": [
+      {
+        "id": "t",
+        "title": {"de": "🎂 Torten", "en": "🎂 Cakes"},
+        "unit": "pcs",
+        "price_per": 1,
+        "qty_presets": [1],
+        "items": [
+          {
+            "code": "t1",
+            "name": {"de": "Schwarzwälder Torte", "en": "Black Forest cake"},
+            "price": 48.0,
+            "in_stock": true,
+            "allergens": ["gluten", "eggs", "milk", "nuts"],
+            "variants": [
+              {"id": "s18", "label": {"de": "Ø 18 cm, 6–8 Personen", "en": "Ø 18 cm, 6–8 people"}, "price": 48.0},
+              {"id": "s24", "label": {"de": "Ø 24 cm, 10–14 Personen", "en": "Ø 24 cm, 10–14 people"}, "price": 72.0}
+            ],
+            "options": [{"id": "text", "type": "text", "label": {"de": "Aufschrift", "en": "Inscription"}, "max_length": 30, "price": 5.0}],
+            "lead_time_hours": 48,
+            "daily_capacity": 6
+          },
+          {
+            "code": "t2",
+            "name": {"de": "Zuger Kirschtorte", "en": "Zug cherry cake"},
+            "price": 52.0,
+            "in_stock": true,
+            "allergens": ["gluten", "eggs", "milk", "nuts", "alcohol"],
+            "variants": [
+              {"id": "s18", "label": {"de": "Ø 18 cm", "en": "Ø 18 cm"}, "price": 52.0},
+              {"id": "s24", "label": {"de": "Ø 24 cm", "en": "Ø 24 cm"}, "price": 78.0}
+            ],
+            "lead_time_hours": 48,
+            "daily_capacity": 4
+          },
+          {
+            "code": "t3",
+            "name": {"de": "Hochzeitstorte (auf Anfrage)", "en": "Wedding cake (on request)"},
+            "price": null,
+            "price_mode": "quote",
+            "in_stock": true,
+            "allergens": ["gluten", "eggs", "milk"],
+            "lead_time_hours": 336
+          }
+        ]
+      },
+      {
+        "id": "g",
+        "title": {"de": "🥐 Gebäck", "en": "🥐 Pastries"},
+        "unit": "box",
+        "price_per": 1,
+        "qty_presets": [1, 2, 3],
+        "items": [
+          {
+            "code": "g1",
+            "name": {"de": "Gipfeli-Box (6 Stk.)", "en": "Croissant box (6)"},
+            "price": 13.5,
+            "in_stock": true,
+            "allergens": ["gluten", "milk"],
+            "lead_time_hours": 18,
+            "daily_capacity": 30
+          },
+          {
+            "code": "g2",
+            "name": {"de": "Pralinés (12 Stk.)", "en": "Pralines (12)"},
+            "price": 29.0,
+            "in_stock": true,
+            "allergens": ["milk", "nuts", "soy"],
+            "lead_time_hours": 24,
+            "daily_capacity": 15
+          }
+        ]
+      }
+    ]
+  },
+  "preorder": {
+    "default_lead_time_hours": 48,
+    "order_cutoff": "14:00",
+    "max_days_ahead": 30,
+    "closed_weekdays": ["mon"],
+    "closed_dates": ["2026-12-25", "2026-12-26", "2027-01-01"],
+    "capacity_scope": "per_item_per_day",
+    "requires_owner_confirmation": true,
+    "confirmation_sla_minutes": 120,
+    "cancellation": {"free_until_hours": 48, "deposit_refundable_after": false}
+  },
+  "fulfillment": {
+    "min_order": 20,
+    "pickup": {
+      "enabled": true,
+      "points": [{"id": "shop", "name": {"de": "Laden Luzern", "en": "Lucerne shop"}, "address": "Musterstrasse 1, 6000 Luzern"}],
+      "slots": {
+        "windows": [
+          {"id": "1", "weekdays": ["tue", "wed", "thu", "fri", "sat", "sun"], "from": "09:00", "to": "12:00"},
+          {"id": "2", "weekdays": ["tue", "wed", "thu", "fri", "sat", "sun"], "from": "14:00", "to": "18:00"}
+        ]
+      }
+    },
+    "local_delivery": {
+      "enabled": true,
+      "fee": 12,
+      "free_from": 150,
+      "zones": [
+        {"id": "lu", "name": {"de": "Stadt Luzern", "en": "City of Lucerne"}, "fee": 12},
+        {"id": "agg", "name": {"de": "Agglomeration Luzern", "en": "Lucerne area"}, "fee": 18}
+      ],
+      "other_place": {"enabled": false},
+      "slots": {"windows": [{"id": "d1", "weekdays": ["sat", "sun"], "from": "10:00", "to": "13:00"}], "hide_if_ends_within_min": 120}
+    },
+    "parcel": {"enabled": false}
+  },
+  "payment": {
+    "methods": [
+      {"id": "cash_on_pickup", "enabled": true, "applies_to": ["pickup"]},
+      {
+        "id": "stripe_checkout",
+        "enabled": true,
+        "connection_ref": "make_connection:TODO",
+        "mode": "live",
+        "visible_to": "all",
+        "min_amount": 0.5,
+        "payment_method_types": ["card", "twint"],
+        "webhook_secret_ref": "secret://konditorei_beispiel/stripe_webhook_secret"
+      }
+    ],
+    "prepayment": {"required_for": ["preorder_items_over"], "threshold": 60, "percent": 30, "deadline_hours": 24, "unpaid_action": "cancel_and_release_capacity"}
+  },
+  "modules": {
+    "cart": {"enabled": true},
+    "mini_app": {"enabled": false},
+    "repeat_order": {"enabled": true, "reprice": true},
+    "order_statuses": {"enabled": true, "statuses": ["new", "confirmed", "in_production", "ready_for_pickup", "out_for_delivery", "completed", "cancelled"]},
+    "ratings": {"enabled": true, "low_rating_threshold": 3, "ask_reason_below": 4},
+    "customers": {"enabled": true},
+    "promo_codes": {"enabled": false},
+    "bonuses": {"enabled": false},
+    "referral": {"enabled": false},
+    "broadcasts": {"enabled": true, "preview_before_send": true, "requires_marketing_consent": true},
+    "reminders": {"enabled": true, "kind": "occasion", "occasion_days_before": 7, "requires_marketing_consent": true},
+    "abandoned_cart": {"enabled": false},
+    "daily_report": {"enabled": true, "send_at": "19:00", "include": ["tomorrow_production_list"]},
+    "ai_assistant": {"enabled": false},
+    "ai_faq": {
+      "enabled": true,
+      "languages": ["de", "en"],
+      "knowledge": [
+        {
+          "q": {"de": "Habt ihr glutenfreie Torten?", "en": "Do you have gluten-free cakes?"},
+          "a": {"de": "Auf Anfrage, mit 72 h Vorlauf. Spuren von Gluten möglich.", "en": "On request with 72 h notice. May contain traces of gluten."}
+        },
+        {
+          "q": {"de": "Wie lange ist eine Torte haltbar?", "en": "How long does a cake keep?"},
+          "a": {"de": "Gekühlt 2 Tage.", "en": "2 days refrigerated."}
+        }
+      ],
+      "may_quote_prices": false,
+      "handoff_to_owner": true,
+      "send_personal_data": false
+    },
+    "wholesale": {"enabled": false},
+    "request_quote": {"enabled": true, "for_price_mode": "quote", "fields": ["date", "guests", "theme", "budget", "photo_reference"], "owner_reply_sla_hours": 24}
+  },
+  "compliance": {
+    "regime": "CH_revDSG",
+    "national_rules": ["CH_UWG_3o", "CH_LIV_allergens"],
+    "controller": {"name": "Konditorei Beispiel GmbH (fiktiv)", "email": "datenschutz@example.ch", "address": "Musterstrasse 1, 6000 Luzern"},
+    "privacy_policy_url": "https://example.ch/datenschutz",
+    "impressum_url": "https://example.ch/impressum",
+    "consent": {
+      "order_processing": {"basis": "contract", "ask": false},
+      "marketing": {
+        "basis": "consent",
+        "ask": true,
+        "default": false,
+        "ask_at": "after_first_order",
+        "text": {
+          "de": "Dürfen wir Ihnen Angebote und Erinnerungen senden? Abmelden jederzeit mit /stop.",
+          "en": "May we send you offers and reminders? Unsubscribe anytime with /stop."
+        }
+      },
+      "occasion_dates": {"basis": "consent", "ask": true}
+    },
+    "commands": {"privacy": "/privacy", "delete": "/delete", "unsubscribe": "/stop"},
+    "delete_policy": {"mode": "anonymize", "keep_for_accounting": ["order_no", "date", "items", "amounts"], "confirm": true},
+    "retention_days": {"carts": 14, "customers_inactive": 730, "orders_personal_data": 365, "orders_accounting": 3653, "chat_messages": 0},
+    "ai_processing": {"send_personal_data": false, "provider_region": "EU_or_CH"},
+    "status": "required_before_launch"
+  },
+  "security": {
+    "webhook_secret_required": true,
+    "sequential_processing": true,
+    "admin_commands_owner_only": true,
+    "status_buttons_allowed_ids": "owner_and_staff",
+    "status_buttons_chat_id": "TODO_ORDERS_GROUP_ID",
+    "rating_buttons": "order_customer_only",
+    "outbound_chat_ids": "known_customers_only",
+    "ignore_message_not_modified": true
+  },
+  "limits": {"max_items_in_cart": 10, "max_order_amount": 800, "max_broadcast_per_day": 1, "max_text_length": 4000},
+  "infra": {"runtime": "make", "make": {"zone": "eu1", "team_id": null, "scenarios": {}, "datastores": {}, "tools": {}}}
+}
