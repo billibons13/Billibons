@@ -26,6 +26,8 @@ TZ = "Europe/Berlin"
 MIN_ORDER = 20   # минимальная сумма заказа, €
 REF_BONUS = 3    # «приведи друга»: бонус другу сразу и пригласившему после первого заказа друга
 BOT_USER = "RAIV_FISH_bot"
+WEBAPP = "https://raiv-fish-shop.netlify.app/"  # Mini App витрина (miniapp/, generate_miniapp.py)
+WEBAPP_V = "1"  # поднять, чтобы заново выдать кнопку витрины всем клиентам
 STRIPE_CONN = 11458868  # Stripe (test) — онлайн-оплата (Pro)
 BOT_URL = "https%3A%2F%2Ft.me%2FRAIV_FISH_bot"
 items = {}
@@ -154,10 +156,15 @@ routes.append([
     [IS_TEXT+[{"a":"{{1.message.text}}","b":c,"o":"text:notstartwith"} for c in CMDS]],store=CUST),
  ds(101,1200,-1100,"GetRecord",{"key":CHAT,"returnWrapped":False},store=CUST),
  resp(4,1500,-1100,None,None,{"method":"sendMessage","chat_id":chat,"text":greet+start_text,"reply_markup":cat_kb("s")}),
- ds(102,1800,-1100,"UpdateRecord",{"key":CHAT,"upsert":True,"overwriteArrays":False,"data":{"ref":REFC,"bonus":"{{ifempty(101.bonus; 0) + "+str(REF_BONUS)+"}}"}},"Новый по приглашению",
+ router(108,1800,-1100,[[
+ ds(102,2100,-1100,"UpdateRecord",{"key":CHAT,"upsert":True,"overwriteArrays":False,"data":{"ref":REFC,"bonus":"{{ifempty(101.bonus; 0) + "+str(REF_BONUS)+"}}"}},"Новый по приглашению",
     [[{"a":"{{1.message.text}}","b":"/start ref_","o":"text:startwith"},{"a":"{{ifempty(101.orders; 0)}}","b":"0","o":"number:equal"},{"a":"{{101.ref}}","o":"notexist"},{"a":REFC,"b":CHAT,"o":"text:notequal"}]],store=CUST),
  api(103,2100,-1100,"sendMessage",[("chat_id",CHAT),("text","🎁 Вам начислено "+str(REF_BONUS)+" € бонусами по приглашению друга! Они спишутся при первом заказе.")]),
- api(104,2400,-1100,"sendMessage",[("chat_id",REFC),("text","👋 По вашей ссылке пришёл новый покупатель. Когда он сделает первый заказ, вам начислится "+str(REF_BONUS)+" € бонусами.")],onerror=True)])
+ api(104,2400,-1100,"sendMessage",[("chat_id",REFC),("text","👋 По вашей ссылке пришёл новый покупатель. Когда он сделает первый заказ, вам начислится "+str(REF_BONUS)+" € бонусами.")],onerror=True)],
+ [api(109,2100,-800,"sendMessage",[("chat_id",CHAT),("text","🛍 Новинка: витрина с фото! Кнопка «🛍 Витрина» теперь всегда внизу чата — выбирайте товары по фото, корзина соберётся сама."),
+   ("reply_markup",json.dumps({"keyboard":[[{"text":"🛍 Витрина","web_app":{"url":WEBAPP}}]],"resize_keyboard":True,"is_persistent":True},ensure_ascii=False))],
+   "Кнопка витрины ещё не выдана",[[{"a":"{{101.kb}}","b":WEBAPP_V,"o":"text:notequal"}]],onerror=True),
+  ds(98,2400,-800,"UpdateRecord",{"key":CHAT,"upsert":True,"overwriteArrays":False,"data":{"kb":WEBAPP_V}},store=CUST)]])])
 TOUCH_CUST = lambda mid,x,y,name,conds: ds(mid,x,y,"UpdateRecord",{"key":CHAT,"upsert":True,"overwriteArrays":False,"data":{"chat":CHAT,"last_seen":"{{now}}"}},name,conds,store=CUST)
 cbchat=ph("{{1.callback_query.message.chat.id}}"); cbmid=ph(MID)
 routes.append([resp(5,900,-700,"Разделы",[[eq(D(1),"m")]],
@@ -363,6 +370,25 @@ pay = {"id":130,"module":"stripe:makeAnApiCall","version":1,"metadata":meta(2700
   "onerror":[{"id":630,"mapper":None,"module":"builtin:Ignore","version":1,"metadata":meta(2700,y+550)}]}
 pay_msg = api(131,3000,y+250,"sendMessage",[("chat_id",CHAT),("text","💳 Можно оплатить заказ онлайн — "+FMT("ifempty(120.final; 120.total)")+" €\nApple Pay, Google Pay или карта, безопасно через Stripe.\nИли наличными при получении — как удобно."),
   ("reply_markup",'{"inline_keyboard":[[{"text":"💳 Оплатить онлайн","url":"{{130.body.url}}"}]]}')],"Ссылка есть",[[{"a":"{{130.body.url}}","o":"exist"}]],onerror=True)
+IT='first(split(201.value; ":"))'
+IQ='last(split(201.value; ":"))'
+ipref=f'substring({IT}; 0; 1)'
+iname="switch("+IT+"; "+"; ".join(f'"{k}"; "{v[0]}"' for k,v in items.items())+'; "")'
+iprice="switch("+IT+"; "+"; ".join(f'"{k}"; "{v[1]}"' for k,v in items.items())+'; "0")'
+istock="switch("+IT+"; "+"; ".join(f'"{k}"; "{v[2]}"' for k,v in items.items())+'; "0")'
+itot=f'parseNumber({iprice}; ".") * parseNumber({IQ}; ".") / switch({ipref}; "a"; 100; "c"; 100; 1)'
+iunit=f'switch({ipref}; "a"; "г"; "c"; "г"; "e"; "шт."; "кг")'
+WA_TEXT='{{join(map(202.array; "line"); "")}}'
+WA_TOTAL='sum(map(202.array; "total"))'
+routes.append([
+ {"id":201,"mapper":{"array":'{{split(1.message.web_app_data.data; ",")}}'},"module":"builtin:BasicFeeder","version":1,"metadata":meta(900,-2600),"parameters":{},
+  "filter":{"name":"Корзина из витрины","conditions":[[{"a":"{{1.message.web_app_data.data}}","o":"exist"}]]}},
+ {"id":202,"mapper":{"line":"• {{"+iname+"}} — {{replace("+IQ+'; "."; ",")}} {{'+iunit+"}} — {{formatNumber("+itot+'; 2; ","; ".")}} €\n',"total":"{{"+itot+"}}"},
+  "module":"builtin:BasicAggregator","version":1,"metadata":meta(1200,-2600),"parameters":{"feeder":201},
+  "filter":{"name":"Есть в наличии","conditions":[[{"a":"{{"+istock+"}}","b":"1","o":"text:equal"},{"a":"{{"+itot+"}}","b":"0","o":"number:greater"}]]}},
+ ds(203,1500,-2600,"UpdateRecord",{"key":CHAT,"upsert":True,"overwriteArrays":False,"data":{"text":WA_TEXT,"total":"{{"+WA_TOTAL+"}}","count":"{{length(202.array)}}","seen":"{{now}}"}},
+    "Корзина не пустая",[[{"a":"{{length(202.array)}}","b":"0","o":"number:greater"}]]),
+ api(204,1800,-2600,"sendMessage",[("chat_id",CHAT),("text","🛍 Корзина из витрины:\n"+WA_TEXT+"💶 Итого: {{formatNumber("+WA_TOTAL+'; 2; ","; ".")}} €\n\n{{if('+WA_TOTAL+" >= "+str(MIN_ORDER)+'; "🚗 Доставка бесплатно. Оформим?"; "Минимальный заказ '+str(MIN_ORDER)+' € — добавьте ещё товаров.")}}'),("reply_markup",CART_BTNS)])])
 rts=[{"flow":r} for r in routes]+[{"flow":[addr]},{"flow":ph_flow+[g_clear,router(140,2650,y,[[g1,g3],[pay,pay_msg],[
    ds(141,2700,y+500,"GetRecord",{"key":"{{123.ref}}","returnWrapped":False},"Первый заказ друга",[[{"a":"{{ifempty(123.orders; 0)}}","b":"0","o":"number:equal"},{"a":"{{123.ref}}","o":"exist"}]],store=CUST),
    ds(142,3000,y+500,"UpdateRecord",{"key":"{{123.ref}}","upsert":False,"overwriteArrays":False,"data":{"bonus":"{{ifempty(141.bonus; 0) + "+str(REF_BONUS)+"}}"}},store=CUST),
