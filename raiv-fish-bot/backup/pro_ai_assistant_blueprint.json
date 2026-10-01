@@ -1,0 +1,147 @@
+{
+ "name": "RAIV_Fish Pro — AI-помощник 08:30",
+ "metadata": {
+  "version": 1
+ },
+ "flow": [
+  {
+   "id": 1,
+   "module": "datastore:UpdateRecord",
+   "version": 1,
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   },
+   "parameters": {
+    "datastore": 203279
+   },
+   "mapper": {
+    "key": "{{formatDate(addDays(now; -1); \"YYYY-MM-DD\"; \"Europe/Berlin\")}}",
+    "upsert": true,
+    "overwriteArrays": false,
+    "data": {
+     "day": "{{formatDate(addDays(now; -1); \"YYYY-MM-DD\"; \"Europe/Berlin\")}}"
+    }
+   }
+  },
+  {
+   "id": 2,
+   "module": "datastore:GetRecord",
+   "version": 1,
+   "metadata": {
+    "designer": {
+     "x": 300,
+     "y": 0
+    }
+   },
+   "parameters": {
+    "datastore": 203279
+   },
+   "mapper": {
+    "key": "{{formatDate(addDays(now; -1); \"YYYY-MM-DD\"; \"Europe/Berlin\")}}",
+    "returnWrapped": false
+   }
+  },
+  {
+   "id": 3,
+   "module": "datastore:UpdateRecord",
+   "version": 1,
+   "metadata": {
+    "designer": {
+     "x": 600,
+     "y": 0
+    }
+   },
+   "parameters": {
+    "datastore": 203279
+   },
+   "mapper": {
+    "key": "{{formatDate(addDays(now; -2); \"YYYY-MM-DD\"; \"Europe/Berlin\")}}",
+    "upsert": true,
+    "overwriteArrays": false,
+    "data": {
+     "day": "{{formatDate(addDays(now; -2); \"YYYY-MM-DD\"; \"Europe/Berlin\")}}"
+    }
+   }
+  },
+  {
+   "id": 4,
+   "module": "datastore:GetRecord",
+   "version": 1,
+   "metadata": {
+    "designer": {
+     "x": 900,
+     "y": 0
+    }
+   },
+   "parameters": {
+    "datastore": 203279
+   },
+   "mapper": {
+    "key": "{{formatDate(addDays(now; -2); \"YYYY-MM-DD\"; \"Europe/Berlin\")}}",
+    "returnWrapped": false
+   }
+  },
+  {
+   "id": 6,
+   "module": "datastore:Stats",
+   "version": 1,
+   "metadata": {
+    "designer": {
+     "x": 1200,
+     "y": 0
+    }
+   },
+   "parameters": {
+    "datastore": 203277
+   },
+   "mapper": {}
+  },
+  {
+   "id": 7,
+   "module": "ai-tools:Ask",
+   "version": 1,
+   "metadata": {
+    "designer": {
+     "x": 1500,
+     "y": 0
+    }
+   },
+   "parameters": {},
+   "mapper": {
+    "input": "Ты — помощник владельца небольшого магазина вяленой рыбы и снеков RAIV FISH (доставка: Эдделак, Марне, Брунсбюттель, Хайде; заказы через Telegram-бота). Дай владельцу 3 коротких конкретных совета на сегодня по-русски: что продвигать, кому и что написать, какую акцию или промокод можно предложить. Правила: ты только советуешь; не меняй цены и не обещай клиентам скидки от имени магазина; учитывай, что товаров «нет в наличии» продвигать нельзя. Пиши без вступлений, нумерованным списком, каждый пункт 1–2 предложения, в конце одна строка «Идея для рассылки:» с готовым текстом до 300 знаков.\n\nВчера: заказов {{ifempty(2.orders; 0)}}, выручка {{formatNumber(ifempty(2.revenue; 0); 2; \",\"; \".\")}} €, новых клиентов {{ifempty(2.newcust; 0)}}, скидки {{formatNumber(ifempty(2.disc; 0); 2; \",\"; \".\")}} €, бонусами {{formatNumber(ifempty(2.bused; 0); 2; \",\"; \".\")}} €.\nПозавчера: заказов {{ifempty(4.orders; 0)}}, выручка {{formatNumber(ifempty(4.revenue; 0); 2; \",\"; \".\")}} €, новых клиентов {{ifempty(4.newcust; 0)}}, скидки {{formatNumber(ifempty(4.disc; 0); 2; \",\"; \".\")}} €, бонусами {{formatNumber(ifempty(4.bused; 0); 2; \",\"; \".\")}} €.\nЗаказы вчера:\n{{ifempty(2.lines; \"нет\")}}\nВсего клиентов в базе бота: {{6.count}}.\nНет в наличии: Икра судака, Икра плотвы, Икра минтая, Лещ без икры, Корюшка с икрой (премиум).\nАссортимент в наличии: Икра толстолоба 6 € / 100 г; Икра кеты 8,5 € / 100 г; Икра форели 8,5 € / 100 г; Икра щуки 7 € / 100 г; Плотва с икрой 35 € / кг; Чищенные тушки плотвы без головы (100% икра) 49 € / кг; Вобла с икрой (80% икра) 30 € / кг; Верховодка 35 € / кг; Лещ с икрой 35 € / кг; Карась с икрой 23 € / кг; Щука потрошеная 25 € / кг; Форель вяленая потрошеная 35 € / кг; Судак потрошеный 30 € / кг; Чехонь 25 € / кг; Чехонь крупная с икрой 90% 35 € / кг; Бычок 34 € / кг; Окунь с икрой 34 € / кг; Юкола лосося 67 € / кг; Филе горбуши (соломка) 6 € / 100 г; Кальмар + лосось (соломка) 4,9 € / 100 г; Корюшка сушеная потрошеная 5,5 € / 100 г; Соломка леща 3,5 € / 100 г; Джерки лосося 6 € / 100 г; Ириска из лосося 6 € / 100 г; Стейк щуки 4,5 € / 100 г; Пятачки осьминога 40 € / кг; Паутинка кальмара «сладкий чили» 40 € / кг; Кальмар по-шанхайски 40 € / кг; Стружка кальмара 40 € / кг; Палочки патасу 40 € / кг; Филе голубого марлина 40 € / кг; Кальмар по-перуански 40 € / кг; Полосатик 40 € / кг; Стружка краба 40 € / кг; Анчоус 40 € / кг; Крабовые палочки 40 € / кг; Снеток в томате 5 € / шт.; Лещ в томате 5 € / шт.."
+   }
+  },
+  {
+   "id": 8,
+   "module": "telegram:UniversalAPICall",
+   "version": 1,
+   "metadata": {
+    "designer": {
+     "x": 1800,
+     "y": 0
+    }
+   },
+   "parameters": {
+    "__IMTCONN__": 11456488
+   },
+   "mapper": {
+    "method": "POST",
+    "bodyType": "assembled_body",
+    "urlMethod": "sendMessage",
+    "body_spec": [
+     {
+      "key": "chat_id",
+      "value": "6883357001"
+     },
+     {
+      "key": "text",
+      "value": "🤖 AI-помощник RAIV FISH · {{formatDate(now; \"DD.MM\"; \"Europe/Berlin\")}}\n\n📊 Вчера: {{ifempty(2.orders; 0)}} зак. · {{formatNumber(ifempty(2.revenue; 0); 2; \",\"; \".\")}} € (позавчера {{formatNumber(ifempty(4.revenue; 0); 2; \",\"; \".\")}} €) · клиентов в базе: {{6.count}}\n\n{{7.answer}}\n\nℹ️ Это советы. Решаете вы: /promo КОД 10 — промокод, /send текст — рассылка."
+     }
+    ]
+   }
+  }
+ ]
+}

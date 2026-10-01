@@ -1,0 +1,148 @@
+{
+ "name": "RAIV_Fish Pro — напоминания (14 дней) 11:00",
+ "metadata": {
+  "version": 1
+ },
+ "flow": [
+  {
+   "id": 1,
+   "module": "datastore:SearchRecord",
+   "version": 1,
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   },
+   "parameters": {
+    "datastore": 203277,
+    "continueWhenNoRes": false,
+    "limit": 200
+   },
+   "mapper": {
+    "filter": [
+     [
+      {
+       "a": "orders",
+       "o": "number:greater",
+       "b": "0"
+      },
+      {
+       "a": "last_seen",
+       "o": "date:less",
+       "b": "{{addDays(now; -14)}}"
+      },
+      {
+       "a": "blocked",
+       "o": "notexist"
+      }
+     ],
+     [
+      {
+       "a": "orders",
+       "o": "number:greater",
+       "b": "0"
+      },
+      {
+       "a": "last_seen",
+       "o": "date:less",
+       "b": "{{addDays(now; -14)}}"
+      },
+      {
+       "a": "blocked",
+       "o": "boolean:isfalse"
+      }
+     ]
+    ],
+    "sort": []
+   }
+  },
+  {
+   "id": 2,
+   "module": "telegram:UniversalAPICall",
+   "version": 1,
+   "metadata": {
+    "designer": {
+     "x": 300,
+     "y": 0
+    }
+   },
+   "parameters": {
+    "__IMTCONN__": 11456488
+   },
+   "mapper": {
+    "method": "POST",
+    "bodyType": "assembled_body",
+    "urlMethod": "sendMessage",
+    "body_spec": [
+     {
+      "key": "chat_id",
+      "value": "{{1.data.chat}}"
+     },
+     {
+      "key": "text",
+      "value": "👋 Давно не виделись! У нас свежая вяленая рыба и снеки.\n💎 Ваши бонусы: {{formatNumber(ifempty(1.data.bonus; 0); 2; \",\"; \".\")}} € — спишутся при заказе автоматически.\n\nСоберите прошлый заказ одной кнопкой 👇\n\n/stop — не получать сообщения"
+     },
+     {
+      "key": "reply_markup",
+      "value": "{\"inline_keyboard\": [[{\"text\": \"🔁 Повторить прошлый заказ\", \"callback_data\": \"r\"}], [{\"text\": \"📋 Каталог\", \"callback_data\": \"m\"}]]}"
+     }
+    ]
+   },
+   "onerror": [
+    {
+     "id": 502,
+     "module": "builtin:Ignore",
+     "version": 1,
+     "metadata": {
+      "designer": {
+       "x": 300,
+       "y": 300
+      }
+     },
+     "mapper": null
+    }
+   ],
+   "filter": {
+    "name": "Ещё не напоминали",
+    "conditions": [
+     [
+      {
+       "a": "{{1.data.reminded}}",
+       "o": "notexist"
+      }
+     ],
+     [
+      {
+       "a": "{{1.data.reminded}}",
+       "o": "date:less",
+       "b": "{{1.data.last_seen}}"
+      }
+     ]
+    ]
+   }
+  },
+  {
+   "id": 3,
+   "module": "datastore:UpdateRecord",
+   "version": 1,
+   "metadata": {
+    "designer": {
+     "x": 600,
+     "y": 0
+    }
+   },
+   "parameters": {
+    "datastore": 203277
+   },
+   "mapper": {
+    "key": "{{1.key}}",
+    "upsert": false,
+    "overwriteArrays": false,
+    "data": {
+     "reminded": "{{now}}"
+    }
+   }
+  }
+ ]
+}
