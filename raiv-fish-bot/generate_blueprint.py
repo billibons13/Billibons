@@ -47,7 +47,34 @@ variables = [
  {"name":"hint","value":"{{"+f'switch({pref}; "a"; "{HINT["g"]}"; "c"; "{HINT["g"]}"; "e"; "{HINT["p"]}"; "{HINT["k"]}")'+"}}"},
 ]
 # ---- main menu text
-menu = """Здравствуйте! 🐟 RAIV FISH — вяленая рыба и снеки.
+SELLER = "@esusnob"  # продавец бота
+OFFER_BTN = [{"text":"💼 Хочу такой бот для своего бизнеса","callback_data":"p"}]
+offer = """💼 Такой бот — для вашего магазина
+
+Этот бот принимает заказы сам: каталог с наличием, корзина, свой вес, расчёт суммы, адрес и телефон. Готовый заказ с маршрутом приходит в ваш Telegram-канал. Работает 24/7.
+
+📦 ПАКЕТЫ
+• Start — 350 €
+каталог, корзина, доставка, заказ в канал, учёт остатков
+• Business — 800 € ⭐
++ база клиентов, рассылки, акции, промокоды, бонусы, ежедневный отчёт
+• Pro — 1 500 €
++ AI-помощник по продажам и остаткам, подключение внешних сервисов
+
+🛠 ОБСЛУЖИВАНИЕ
+• Базовое — 25 €/мес (250 €/год)
+• Полное — 39 €/мес (390 €/год)
+🎁 Start + 6 мес. обслуживания — 440 € вместо 500 €
+
+➕ Онлайн-оплата (Apple Pay, Google Pay, карты, PayPal) — 150 €
+
+Запуск Start за 1–2 дня: ваше название, логотип, цены и города. 50% предоплата, остальное после тестового заказа.
+
+Попробуйте сами: соберите корзину и оформите пробный заказ.
+Вопросы и заказ бота: @esusnob 👇"""
+menu = """💼 Хотите такой бот для своего магазина? Кнопка внизу.
+
+Здравствуйте! 🐟 RAIV FISH — вяленая рыба и снеки.
 Весь ассортимент и наличие внизу. То, что отмечено ❌, — нет в наличии.
 
 """
@@ -58,7 +85,7 @@ for c,title,lst in cats:
         menu += f"• {n} — {p.replace('.',',')} {ULBL[c]}" + ("❌" if not s else "") + "\n"
     menu += "\n"
 menu += "🚗 Доставка каждый день: Эдделак, Марне, Брунсбюттель, Хайде\n💶 Оплата при получении\n\n🧺 Можно собрать корзину из нескольких товаров.\nВыберите раздел 👇"
-cat_kb = lambda mode: {"inline_keyboard":[[{"text":t,"callback_data":f"k|{c}|{mode}"}] for c,t,_ in cats]}
+cat_kb = lambda mode: {"inline_keyboard":([OFFER_BTN] if mode=="s" else [])+[[{"text":t,"callback_data":f"k|{c}|{mode}"}] for c,t,_ in cats]}
 T = {}
 def ph(expr):
     k=f"@@{len(T)}@@"; T[k]=expr; return k
@@ -93,6 +120,10 @@ routes.append([resp(4,900,-900,"Меню",[[{"a":"{{1.message.text}}","o":"exist
 cbchat=ph("{{1.callback_query.message.chat.id}}"); cbmid=ph(MID)
 routes.append([resp(5,900,-700,"Разделы",[[eq(D(1),"m")]],
   {"method":"editMessageText","chat_id":cbchat,"message_id":cbmid,"text":"Выберите раздел 👇","reply_markup":cat_kb("e")})])
+routes.append([resp(30,900,-600,"Предложение",[[eq(D(1),"p")]],
+  {"method":"sendMessage","chat_id":cbchat,"text":offer,"reply_markup":{"inline_keyboard":[
+    [{"text":"💬 Написать продавцу","url":"https://t.me/esusnob"}],
+    [{"text":"🛒 Попробовать заказ","callback_data":"m"}]]}})])
 y=-500
 for idx,(c,title,lst) in enumerate(cats):
     kb=[[{"text":f"{n} — {p.replace('.',',')} {ULBL[c]}","callback_data":f"f|{c}{i}"}] for i,(n,p,s) in enumerate(lst,1) if s]
