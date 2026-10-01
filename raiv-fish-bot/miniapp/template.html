@@ -42,7 +42,7 @@ h2{font-size:16px;margin:16px 16px 8px}
 .card.off{opacity:.5}.card.off .add{background:var(--bg2);color:var(--hint)}
 .incart{font-size:12px;color:var(--link);font-weight:600}
 .empty{padding:40px 16px;text-align:center;color:var(--hint)}
-.foot{padding:20px 16px 110px;color:var(--hint);font-size:12px;text-align:center}
+.foot{padding:20px 16px 120px;color:var(--hint);font-size:12px;text-align:center}
 .shade{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:20;display:none}
 .sheet{position:fixed;left:0;right:0;bottom:0;z-index:21;background:var(--bg);border-radius:20px 20px 0 0;max-height:88vh;overflow:auto;transform:translateY(100%);transition:transform .22s ease;padding-bottom:calc(16px + env(safe-area-inset-bottom))}
 .sheet.open{transform:none}
@@ -71,6 +71,8 @@ h2{font-size:16px;margin:16px 16px 8px}
 .share{width:100%;background:var(--bg2);border-radius:12px;padding:11px;font-weight:600;margin-bottom:8px}
 .homebtn{display:block;margin:0 16px 8px;width:calc(100% - 32px);background:var(--card);border-radius:12px;padding:9px;font-weight:600;color:var(--link)}
 .homebtn[hidden]{display:none}
+.cartbar{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:15;background:var(--accent);color:var(--accent-text);border-radius:14px;padding:14px;font-weight:700;font-size:16px;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.cartbar[hidden]{display:none}
 .toast{position:fixed;left:50%;top:14px;transform:translateX(-50%);background:rgba(20,23,26,.92);color:#fff;padding:9px 14px;border-radius:12px;font-size:14px;z-index:30;opacity:0;transition:opacity .2s;pointer-events:none}
 .toast.on{opacity:1}
 </style>
@@ -89,11 +91,13 @@ h2{font-size:16px;margin:16px 16px 8px}
 <div id="list"></div>
 <div class="foot">Эдделак · Марне · Брунсбюттель · Хайде<br>Оформление и оплата — в чате с ботом</div>
 
+<button class="cartbar" id="cartBar" hidden></button>
 <div class="shade" id="shade"></div>
 <div class="sheet" id="sheet"></div>
 <div class="toast" id="toast"></div>
 
 <script>
+window.onerror = function(msg, src, line){ try{ var t=document.getElementById("toast"); t.textContent="⚠️ "+msg+" ("+line+")"; t.classList.add("on"); }catch(e){} };
 /*@@DATA@@*/
 const tg = window.Telegram && Telegram.WebApp;
 const EMO = {a:"🐟",b:"🐠",c:"🍢",d:"🦑",e:"🥫"};
@@ -139,10 +143,8 @@ function render(){
 function badge(){
   const n = Object.keys(cart).length, b = document.getElementById("cartCount");
   b.hidden = !n; b.textContent = n;
-  if(tg){
-    if(n){ tg.MainButton.setParams({text:`🧺 Корзина · ${eur(total())}`, is_visible:true}); }
-    else tg.MainButton.hide();
-  }
+  const bar = document.getElementById("cartBar");
+  bar.hidden = !n; bar.textContent = `🧺 Корзина · ${n} поз. · ${eur(total())} — оформить`;
 }
 function openSheet(html){ const s = document.getElementById("sheet"); s.innerHTML = `<button class="close" data-close>✕</button>` + html; document.getElementById("shade").style.display = "block"; requestAnimationFrame(() => s.classList.add("open")); if(tg) tg.BackButton.show(); }
 function closeSheet(){ document.getElementById("sheet").classList.remove("open"); document.getElementById("shade").style.display = "none"; if(tg) tg.BackButton.hide(); }
@@ -202,11 +204,14 @@ function homeScreen(){
 function checkout(){
   const payload = Object.keys(cart).map(k => k + ":" + (+cart[k].toFixed(3))).join(",");
   if(!tg || !tg.initData){ toast("Откройте витрину из бота @" + DATA.bot); return; }
+  if(tg.initDataUnsafe && tg.initDataUnsafe.query_id){   // открыта не кнопкой клавиатуры — sendData не дойдёт
+    toast("Откройте витрину большой кнопкой «🛍 Витрина» внизу чата"); return;
+  }
   try{
     tg.sendData(payload);           // работает, если витрина открыта кнопкой «🛍 Витрина» внизу чата
     cart = {}; save();
   }catch(e){
-    toast("Откройте витрину кнопкой «🛍 Витрина» внизу чата");
+    toast("⚠️ " + (e && e.message ? e.message : "Не удалось отправить") + " — откройте витрину кнопкой внизу чата");
   }
 }
 
@@ -214,12 +219,12 @@ document.getElementById("chips").onclick = e => { const b = e.target.closest("[d
 document.getElementById("list").onclick = e => { const b = e.target.closest("[data-k]"); if(b) product(b.dataset.k); };
 document.getElementById("q").oninput = e => { qtxt = e.target.value; render(); };
 document.getElementById("cartBtn").onclick = cartView;
+document.getElementById("cartBar").onclick = cartView;
 document.getElementById("shade").onclick = closeSheet;
 document.getElementById("sheet").addEventListener("click", e => { if(e.target.closest("[data-close]")) closeSheet(); });
 if(tg){
   tg.ready(); tg.expand();
   try{ tg.setHeaderColor("secondary_bg_color"); }catch(e){}
-  tg.MainButton.onClick(cartView);
   tg.BackButton.onClick(closeSheet);
 }
 chips(); render();
