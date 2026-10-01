@@ -27,8 +27,8 @@ TZ = "Europe/Berlin"
 MIN_ORDER = 20   # минимальная сумма заказа, €
 REF_BONUS = 3    # «приведи друга»: бонус другу сразу и пригласившему после первого заказа друга
 BOT_USER = "RAIV_FISH_bot"
-WEBAPP = "https://billibons13.github.io/Billibons/"  # Mini App витрина: ветка gh-pages (собирается из miniapp/, generate_miniapp.py)
-WEBAPP_V = "1"  # поднять, чтобы заново выдать кнопку витрины всем клиентам
+WEBAPP = "https://billibons13.github.io/Billibons/?v=9"  # ?v= — сброс кэша Telegram Desktop  # Mini App витрина: ветка gh-pages (собирается из miniapp/, generate_miniapp.py)
+WEBAPP_V = "2"  # поднять, чтобы заново выдать кнопку витрины всем клиентам
 STRIPE_CONN = 11458868  # Stripe (test) — онлайн-оплата (Pro)
 BOT_URL = "https%3A%2F%2Ft.me%2FRAIV_FISH_bot"
 items = {}
