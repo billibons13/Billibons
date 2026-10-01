@@ -1,0 +1,204 @@
+<title>Бот заказов для рыбного магазина</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Manrope:wght@400;500;700&display=swap">
+<style>
+/* Layout: одна колонка ~760px; шапка с «чатом» бота, дальше тарифы сеткой 3→1, таблицы в своих контейнерах */
+:root{
+  --bg:#f3f6f8; --surface:#ffffff; --ink:#0f2230; --muted:#56697a; --line:#d6e0e7;
+  --sea:#0d4d6b; --roe:#e8572a; --roe-soft:#fde6dc; --ok:#1f8a5b;
+  --display:"Unbounded","Arial Black",system-ui,sans-serif;
+  --body:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0b1820; --surface:#11232e; --ink:#e6eef3; --muted:#9db0bf; --line:#22394a;
+  --sea:#5fb3d9; --roe:#ff7a4d; --roe-soft:#3a1f16; --ok:#4cc58c; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0b1820; --surface:#11232e; --ink:#e6eef3; --muted:#9db0bf; --line:#22394a;
+  --sea:#5fb3d9; --roe:#ff7a4d; --roe-soft:#3a1f16; --ok:#4cc58c; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:16px/1.6 var(--body);padding-inline:16px;padding-block:32px 56px}
+.wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:48px}
+h1,h2,h3{font-family:var(--display);line-height:1.2;text-wrap:balance;margin:0}
+h1{font-size:clamp(1.6rem,4.5vw,2.4rem);font-weight:700}
+h2{font-size:1.25rem;font-weight:700}
+h3{font-size:1rem;font-weight:500}
+p{margin:0}
+.eyebrow{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--sea);font-weight:700}
+section{display:flex;flex-direction:column;gap:16px}
+.lead{font-size:1.1rem;color:var(--muted);max-width:62ch}
+.hero{display:grid;grid-template-columns:1.2fr 1fr;gap:28px;align-items:center}
+.hero>div{min-width:0;display:flex;flex-direction:column;gap:16px}
+.demo{display:inline-flex;align-self:flex-start;gap:8px;align-items:center;background:var(--sea);color:var(--bg);text-decoration:none;font-weight:700;padding:10px 16px;border-radius:999px}
+.demo:focus-visible{outline:3px solid var(--roe);outline-offset:2px}
+/* мини-чат */
+.chat{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:8px;font-size:.88rem}
+.msg{background:var(--bg);border-radius:12px 12px 12px 4px;padding:8px 10px;max-width:92%}
+.msg.me{align-self:flex-end;background:var(--roe-soft);border-radius:12px 12px 4px 12px}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.btns span{border:1px solid var(--line);border-radius:8px;text-align:center;padding:5px 4px;color:var(--sea);font-weight:500}
+.sum{font-variant-numeric:tabular-nums;font-weight:700}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+.two>div{min-width:0;display:flex;flex-direction:column;gap:10px}
+ul.ticks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+ul.ticks li{padding-left:24px;position:relative}
+ul.ticks li::before{content:"";position:absolute;left:4px;top:.6em;width:9px;height:9px;border-radius:50%;background:var(--roe)}
+.plans{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.plan{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.plan.star{border:2px solid var(--roe)}
+.plan .tag{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--roe)}
+.price{font-family:var(--display);font-size:1.8rem;font-variant-numeric:tabular-nums}
+.plan ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:.92rem}
+.plan .time{margin-top:auto;font-size:.82rem;color:var(--muted)}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:440px;font-variant-numeric:tabular-nums}
+th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+th{font-size:.8rem;color:var(--muted);font-weight:700;letter-spacing:.04em}
+td.c,th.c{text-align:center}
+.yes{color:var(--ok);font-weight:700}
+.offer{background:var(--roe-soft);border-radius:14px;padding:18px 20px;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline}
+.offer b{font-family:var(--display);font-size:1.3rem}
+.offer s{color:var(--muted)}
+ol.steps{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:8px}
+.note{font-size:.9rem;color:var(--muted)}
+.contact{border-top:1px solid var(--line);padding-top:24px;display:flex;flex-direction:column;gap:6px}
+.contact .val{font-weight:700;user-select:all}
+@media (max-width:680px){.hero,.two{grid-template-columns:1fr}.plans{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+.value{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.value>div{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;min-width:0;display:flex;flex-direction:column;gap:4px}
+.value b{font-family:var(--display);font-size:1.4rem;font-variant-numeric:tabular-nums}
+.value span{font-size:.88rem;color:var(--muted)}
+.big{background:var(--surface);border:2px solid var(--roe);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:14px}
+.big .row{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 18px}
+.big .price{font-size:2.4rem}
+.feat{display:grid;grid-template-columns:1fr 1fr;gap:10px 24px}
+.feat>div{min-width:0}
+.feat b{display:block}
+.feat span{font-size:.9rem;color:var(--muted)}
+td.r,th.r{text-align:right;white-space:nowrap}
+tr.tot td{font-weight:700}
+@media (max-width:680px){.value,.feat{grid-template-columns:1fr}}
+@media print{html,body{background:#fff}body{padding-block:0}.wrap{gap:28px}.demo{display:none}section,.big{break-inside:avoid}}
+</style>
+
+<div class="wrap">
+
+<header class="hero">
+  <div>
+    <span class="eyebrow">Коммерческое предложение · пакет Business</span>
+    <h1>Бот, который принимает заказы на рыбу и сам возвращает покупателей</h1>
+    <p class="lead">Сейчас заказы приходят в переписку, и каждый нужно уточнять: что, сколько, куда, на какую сумму. Бот делает это сам и присылает готовый заказ в ваш Telegram-канал. А бонусы, промокоды и рассылки приводят покупателей за повторными заказами.</p>
+    <a class="demo" href="https://t.me/RAIV_FISH_bot" target="_blank" rel="noopener">Попробовать вживую: @RAIV_FISH_bot →</a>
+  </div>
+  <div class="chat" aria-label="Пример заказа в боте">
+    <div class="msg">👋 С возвращением! Ваши бонусы: 💎 4,60 €</div>
+    <div class="btns"><span>🔁 Повторить заказ</span><span>🎟 Промокод</span></div>
+    <div class="msg">🧾 Ваш заказ<br>• Икра кеты 300 г — 25,50 €<br>• Лещ с икрой 0,7 кг — 24,50 €<br>🎟 Промокод FISH10: −5,00 €<br>💎 Бонусами: −4,60 €<br><span class="sum">💶 К оплате: 40,40 €</span></div>
+    <div class="msg me">Markt 1, Heide</div>
+    <div class="msg">✅ Заказ принят! 💎 Начислено 2,02 €</div>
+  </div>
+</header>
+
+<section>
+  <span class="eyebrow">Что изменится в работе</span>
+  <div class="value">
+    <div><b>0 переписки</b><span>Покупатель сам выбирает товары, вес, город и оставляет адрес и телефон</span></div>
+    <div><b>24/7</b><span>Заказы принимаются ночью, в выходные и когда вы за рулём</span></div>
+    <div><b>+повторные</b><span>Бонусы 5%, промокоды и рассылки возвращают покупателей</span></div>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">Что входит</span>
+  <h2>Всё, что работает в демо-боте, — под ваш магазин</h2>
+  <div class="feat">
+    <div><b>🐟 Каталог с наличием</b><span>Ваши разделы, товары и цены; то, чего нет, заказать нельзя</span></div>
+    <div><b>🧺 Корзина и свой вес</b><span>Несколько товаров в заказе, фасовка или любой вес: «0,7 кг», «350 г»</span></div>
+    <div><b>📲 Заказ в ваш канал</b><span>Состав, сумма, адрес, телефон, маршрут в Google Maps, кнопка «Написать клиенту»</span></div>
+    <div><b>👥 База клиентов</b><span>Все покупатели, их телефоны, число заказов и потраченная сумма</span></div>
+    <div><b>📜 История и «Повторить заказ»</b><span>Постоянный клиент собирает прошлый заказ одной кнопкой</span></div>
+    <div><b>💎 Бонусы</b><span>5% с каждого заказа, списание до 20% суммы. Проценты настраиваются</span></div>
+    <div><b>🎟 Промокоды</b><span>Создаёте сами одной командой: <code>/promo FISH10 10</code></span></div>
+    <div><b>📣 Рассылки и акции</b><span>Одно сообщение — всем покупателям: <code>/send …</code>, с отпиской</span></div>
+    <div><b>📊 Отчёт каждый вечер</b><span>Заказы, выручка, средний чек, новые клиенты — в 21:00 в канал</span></div>
+    <div><b>🎨 Под ваш бренд</b><span>Название, логотип, приветствие, города и условия доставки</span></div>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">Сколько это стоит на рынке</span>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Функции</th><th class="r">Рынок, 2026</th></tr></thead>
+      <tbody>
+        <tr><td>Каталог, корзина, оформление, заказ в канал</td><td class="r">600–900 €</td></tr>
+        <tr><td>База клиентов, история, повтор заказа</td><td class="r">300–500 €</td></tr>
+        <tr><td>Бонусы и промокоды</td><td class="r">350–600 €</td></tr>
+        <tr><td>Рассылки</td><td class="r">200–400 €</td></tr>
+        <tr><td>Ежедневные отчёты и управление</td><td class="r">200–400 €</td></tr>
+        <tr class="tot"><td>Итого у фрилансеров и студий</td><td class="r">1 650–2 800 €</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note">Для сравнения: пакет Business у немецких студий Telegram-ботов — 1 990 €.</p>
+</section>
+
+<section>
+  <span class="eyebrow">Ваша цена</span>
+  <div class="big">
+    <div class="row"><h2>Пакет Business</h2><span class="price">1 490 €</span></div>
+    <ul class="ticks">
+      <li>Всё перечисленное выше, настроенное под ваш ассортимент</li>
+      <li>Подключение вашего канала заказов и тестовый заказ вместе с вами</li>
+      <li>Короткая инструкция для вас и сотрудников</li>
+      <li>Запуск за 5–7 дней после получения прайса</li>
+    </ul>
+    <div class="row"><b>Оплата:</b><span>50% (745 €) — до старта, 50% (745 €) — после тестового заказа</span></div>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">Обслуживание</span>
+  <div class="offer"><span>Полное обслуживание</span><b>49 € / мес</b><span>— первые 3 месяца бесплатно</span></div>
+  <ul class="ticks">
+    <li>Работа бота 24/7, контроль и исправление сбоев</li>
+    <li>Обновление цен и наличия, новые товары и разделы — без ограничений</li>
+    <li>Помощь с промокодами и рассылками, ответ до 12 часов</li>
+  </ul>
+  <p class="note">Обслуживание нужно для работы бота: в нём уже учтены платформа и хранение данных.</p>
+</section>
+
+<section>
+  <span class="eyebrow">По желанию</span>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Услуга</th><th class="r">Цена</th></tr></thead>
+      <tbody>
+        <tr><td>Онлайн-оплата в боте: Apple Pay, Google Pay, карты, PayPal</td><td class="r">150 €</td></tr>
+        <tr><td>Бот на немецком или английском</td><td class="r">60 €</td></tr>
+        <tr><td>QR-код на бота для упаковки и визиток</td><td class="r">бесплатно</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">Как начать</span>
+  <ol class="steps">
+    <li>Откройте <b>@RAIV_FISH_bot</b>, соберите корзину и оформите пробный заказ</li>
+    <li>Пришлите прайс, логотип, города и условия доставки</li>
+    <li>Предоплата 745 € — через 5–7 дней бот готов</li>
+    <li>Тестовый заказ вместе → оставшиеся 745 € → бот работает</li>
+  </ol>
+  <p class="note">Цены, бонусы и ваши данные меняете только вы. Предложение действует 14 дней.</p>
+</section>
+
+<footer class="contact">
+  <span class="eyebrow">Связаться</span>
+  <p>Telegram: <span class="val">@esusnob</span></p>
+</footer>
+
+</div>
