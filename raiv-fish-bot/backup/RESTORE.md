@@ -73,3 +73,13 @@ Blueprint v3: `v3_business_blueprint.json` (генератор: `generate_bluepr
 | Бот v6: кнопка «🛍 Витрина», корзина из витрины (цены считает бот), цветные кнопки | сценарий 7707233 (`v6_miniapp_blueprint.json`) |
 | Витрина Mini App | GitHub Pages, ветка `gh-pages` → https://billibons13.github.io/Billibons/ (`miniapp/DEPLOY.md`) |
 Откат на v5: загрузить `v5_stage1_blueprint.json` в сценарий 7707233.
+
+## Этап 3: живой каталог и склад (v7–v8, 01.10.2026)
+
+| Что | Где |
+|---|---|
+| Бот v8: каталог из data store 203278 (`cat_<код>`: цена, наличие), /price /stock /catalog с подтверждением, «📦 Склад» (/sklad, кнопки ✅/❌), корзина по ссылке `/start c_...` | сценарий 7707233 (`v8_sklad_blueprint.json`; предыдущая — `v7_catalog_blueprint.json`) |
+| Каталог API для витрины (цены и наличие, CORS *) | сценарий 7708101, хук https://hook.eu1.make.com/hzm5bgeixv8k4652x3ofaaxw378nwyhu |
+| 📦 Агент склада: утренняя сводка наличия владельцу + кнопки разделов | сценарий 7708259 (`stock_agent_blueprint.json`, `generate_stock_agent.py`), ежедневно 09:00 |
+| Разовая загрузка каталога (43 товара) | сценарий 7708099 (выключен) |
+Откат на v7: загрузить `v7_catalog_blueprint.json` в сценарий 7707233. Каталог при откате не теряется — он в data store.

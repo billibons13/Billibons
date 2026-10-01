@@ -201,19 +201,24 @@ function homeScreen(){
   if(!tg || !tg.isVersionAtLeast || !tg.isVersionAtLeast("8.0") || !tg.checkHomeScreenStatus) return;
   try{ tg.checkHomeScreenStatus(st => { if(st === "missed"){ const b = document.getElementById("homeBtn"); b.hidden = false; b.onclick = () => tg.addToHomeScreen(); } }); }catch(e){}
 }
+function deepLink(){
+  // b5:1,a2:0.3 → c_b5-1_a2-0p3 (в ссылке /start разрешены только A-Z a-z 0-9 _ -)
+  const p = "c_" + Object.keys(cart).map(k => k + "-" + String(+cart[k].toFixed(3)).replace(".", "p")).join("_");
+  return p.length <= 64 ? "https://t.me/" + DATA.bot + "?start=" + p : "";
+}
 function checkout(){
   const payload = Object.keys(cart).map(k => k + ":" + (+cart[k].toFixed(3))).join(",");
-  // Витрина, открытая кнопкой клавиатуры, не получает initData — это нормально; вне Telegram platform = "unknown"
-  if(!tg || !tg.sendData || !tg.platform || tg.platform === "unknown"){ toast("Откройте витрину из бота @" + DATA.bot); return; }
-  if(tg.initDataUnsafe && tg.initDataUnsafe.query_id){   // открыта не кнопкой клавиатуры — sendData не дойдёт
-    toast("Откройте витрину большой кнопкой «🛍 Витрина» внизу чата"); return;
+  const inTg = tg && tg.platform && tg.platform !== "unknown";
+  // Кнопка клавиатуры «🛍 Витрина» → sendData (initData пустой, query_id нет)
+  if(inTg && tg.sendData && !(tg.initDataUnsafe && tg.initDataUnsafe.query_id)){
+    try{ tg.sendData(payload); cart = {}; save(); return; }catch(e){ /* ниже — запасной путь через ссылку */ }
   }
-  try{
-    tg.sendData(payload);           // работает, если витрина открыта кнопкой «🛍 Витрина» внизу чата
-    cart = {}; save();
-  }catch(e){
-    toast("⚠️ " + (e && e.message ? e.message : "Не удалось отправить") + " — откройте витрину кнопкой внизу чата");
-  }
+  // Кнопка меню, ссылка или браузер → корзина уходит в бота ссылкой /start c_...
+  const url = deepLink();
+  if(!url){ toast("Много позиций — откройте витрину кнопкой «🛍 Витрина» внизу чата"); return; }
+  cart = {}; save(); render();
+  if(inTg && tg.openTelegramLink){ tg.openTelegramLink(url); setTimeout(() => { try{ tg.close(); }catch(e){} }, 300); }
+  else window.location.href = url;
 }
 
 document.getElementById("chips").onclick = e => { const b = e.target.closest("[data-c]"); if(!b) return; cur = b.dataset.c; chips(); render(); window.scrollTo({top:0}); };
@@ -229,6 +234,19 @@ if(tg){
   tg.BackButton.onClick(closeSheet);
 }
 chips(); render(); homeScreen();
+// живые цены и наличие (владелец меняет их командами /price и /stock в боте)
+(function liveCatalog(){
+  if(!DATA.api || !window.fetch) return;
+  const ctl = window.AbortController ? new AbortController() : null;
+  const t = setTimeout(() => ctl && ctl.abort(), 5000);
+  fetch(DATA.api, {cache:"no-store", signal: ctl ? ctl.signal : undefined})
+    .then(r => r.json()).then(d => {
+      clearTimeout(t);
+      (d.items || []).forEach(x => { const i = ITEMS[x.k]; if(i){ i.p = +x.p; i.s = x.s ? 1 : 0; if(x.n) i.n = x.n; } });
+      for(const k in cart) if(!ITEMS[k] || !ITEMS[k].s) delete cart[k];
+      save(); render();
+    }).catch(() => clearTimeout(t));
+})();
 </script>
 </body>
 </html>

@@ -1,0 +1,111 @@
+{
+ "name": "RAIV_Fish — 📦 агент склада (утро 09:00)",
+ "metadata": {
+  "version": 1
+ },
+ "flow": [
+  {
+   "id": 1,
+   "module": "datastore:SearchRecord",
+   "version": 1,
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   },
+   "parameters": {
+    "datastore": 203278,
+    "continueWhenNoRes": true,
+    "limit": 100
+   },
+   "mapper": {
+    "filter": [
+     [
+      {
+       "a": "item",
+       "o": "exist"
+      }
+     ]
+    ],
+    "sort": []
+   }
+  },
+  {
+   "id": 2,
+   "module": "builtin:BasicAggregator",
+   "version": 1,
+   "metadata": {
+    "designer": {
+     "x": 300,
+     "y": 0
+    }
+   },
+   "parameters": {
+    "feeder": 1
+   },
+   "mapper": {
+    "off": "{{if(1.data.stock; \"\"; \"• \")}}{{if(1.data.stock; \"\"; 1.data.item)}}{{if(1.data.stock; \"\"; \" · \")}}{{if(1.data.stock; \"\"; 1.data.name)}}",
+    "on": "{{if(1.data.stock; 1; 0)}}"
+   },
+   "filter": {
+    "name": "Товар",
+    "conditions": [
+     [
+      {
+       "a": "{{1.data.item}}",
+       "o": "exist"
+      }
+     ]
+    ]
+   }
+  },
+  {
+   "id": 3,
+   "module": "telegram:UniversalAPICall",
+   "version": 1,
+   "metadata": {
+    "designer": {
+     "x": 600,
+     "y": 0
+    }
+   },
+   "parameters": {
+    "__IMTCONN__": 11456488
+   },
+   "mapper": {
+    "method": "POST",
+    "bodyType": "assembled_body",
+    "urlMethod": "sendMessage",
+    "body_spec": [
+     {
+      "key": "chat_id",
+      "value": "6883357001"
+     },
+     {
+      "key": "text",
+      "value": "📦 Доброе утро! Проверка наличия RAIV FISH\n\n✅ В продаже: {{sum(map(2.array; \"on\"))}} из {{length(2.array)}}\n❌ Скрыто (нет в наличии):\n{{ifempty(join(remove(map(2.array; \"off\"); \"\"); \"\n\"); \"— всё в наличии\")}}\n\nЧто-то закончилось или появилось? Откройте раздел и нажмите на товар — бот и витрина обновятся сразу."
+     },
+     {
+      "key": "reply_markup",
+      "value": "{\"inline_keyboard\": [[{\"text\": \"🐟 Икра вяленая (100 г)\", \"callback_data\": \"sk|a\"}], [{\"text\": \"🐠 Рыба вяленая (кг)\", \"callback_data\": \"sk|b\"}], [{\"text\": \"🍢 Рыбные снеки (100 г)\", \"callback_data\": \"sk|c\"}], [{\"text\": \"🦑 Снеки к пиву (кг)\", \"callback_data\": \"sk|d\"}], [{\"text\": \"🥫 Консервы\", \"callback_data\": \"sk|e\"}]]}"
+     }
+    ]
+   },
+   "onerror": [
+    {
+     "id": 503,
+     "mapper": null,
+     "module": "builtin:Ignore",
+     "version": 1,
+     "metadata": {
+      "designer": {
+       "x": 600,
+       "y": 0
+      }
+     }
+    }
+   ]
+  }
+ ]
+}
