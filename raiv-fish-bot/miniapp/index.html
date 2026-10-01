@@ -216,7 +216,7 @@ function checkout(){
   }
 }
 
-document.getElementById("chips").onclick = e => { const b = e.target.closest("[data-c]"); if(!b) return; cur = b.dataset.c; chips(); render(); homeScreen(); window.scrollTo({top:0}); };
+document.getElementById("chips").onclick = e => { const b = e.target.closest("[data-c]"); if(!b) return; cur = b.dataset.c; chips(); render(); window.scrollTo({top:0}); };
 document.getElementById("list").onclick = e => { const b = e.target.closest("[data-k]"); if(b) product(b.dataset.k); };
 document.getElementById("q").oninput = e => { qtxt = e.target.value; render(); };
 document.getElementById("cartBtn").onclick = cartView;
@@ -228,7 +228,7 @@ if(tg){
   try{ tg.setHeaderColor("secondary_bg_color"); }catch(e){}
   tg.BackButton.onClick(closeSheet);
 }
-chips(); render();
+chips(); render(); homeScreen();
 </script>
 </body>
 </html>
