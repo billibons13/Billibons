@@ -73,7 +73,14 @@ ol.steps{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:8px}
 .value span{font-size:.88rem;color:var(--muted)}
 .big{background:var(--surface);border:2px solid var(--roe);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:14px}
 .big .row{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 18px}
-.big .price{font-size:2.4rem}
+.big .price{font-size:2.2rem}
+.plans2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.plans2>.big{min-width:0}
+.big.pro{border-color:var(--sea)}
+.big .tag{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--roe)}
+.big.pro .tag{color:var(--sea)}
+.pay{font-size:.9rem;color:var(--muted)}
+@media (max-width:680px){.plans2{grid-template-columns:1fr}}
 .feat{display:grid;grid-template-columns:1fr 1fr;gap:10px 24px}
 .feat>div{min-width:0}
 .feat b{display:block}
@@ -88,7 +95,7 @@ tr.tot td{font-weight:700}
 
 <header class="hero">
   <div>
-    <span class="eyebrow">Коммерческое предложение · пакет Business</span>
+    <span class="eyebrow">Коммерческое предложение · Business и Pro</span>
     <h1>Бот, который принимает заказы на рыбу и сам возвращает покупателей</h1>
     <p class="lead">Сейчас заказы приходят в переписку, и каждый нужно уточнять: что, сколько, куда, на какую сумму. Бот делает это сам и присылает готовый заказ в ваш Telegram-канал. А бонусы, промокоды и рассылки приводят покупателей за повторными заказами.</p>
     <a class="demo" href="https://t.me/RAIV_FISH_bot" target="_blank" rel="noopener">Попробовать вживую: @RAIV_FISH_bot →</a>
@@ -148,21 +155,40 @@ tr.tot td{font-weight:700}
 
 <section>
   <span class="eyebrow">Ваша цена</span>
-  <div class="big">
-    <div class="row"><h2>Пакет Business</h2><span class="price">1 490 €</span></div>
-    <ul class="ticks">
-      <li>Всё перечисленное выше, настроенное под ваш ассортимент</li>
-      <li>Подключение вашего канала заказов и тестовый заказ вместе с вами</li>
-      <li>Короткая инструкция для вас и сотрудников</li>
-      <li>Запуск за 5–7 дней после получения прайса</li>
-    </ul>
-    <div class="row"><b>Оплата:</b><span>50% (745 €) — до старта, 50% (745 €) — после тестового заказа</span></div>
+  <div class="plans2">
+    <div class="big">
+      <span class="tag">Рекомендую</span>
+      <div class="row"><h2>Business</h2><span class="price">1 490 €</span></div>
+      <ul class="ticks">
+        <li>Всё перечисленное выше под ваш ассортимент</li>
+        <li>Подключение канала заказов и тестовый заказ вместе</li>
+        <li>Инструкция для вас и сотрудников</li>
+        <li>Запуск за 5–7 дней</li>
+      </ul>
+      <p class="pay">Оплата: 745 € до старта, 745 € после тестового заказа</p>
+      <p class="pay">Обслуживание: 49 € / мес, первые 3 месяца бесплатно</p>
+    </div>
+    <div class="big pro">
+      <span class="tag">Максимум</span>
+      <div class="row"><h2>Pro</h2><span class="price">2 490 €</span></div>
+      <ul class="ticks">
+        <li>Всё из Business</li>
+        <li><b>Онлайн-оплата</b> в боте: Apple Pay, Google Pay, карты, PayPal — отметка «Оплачено» в канале</li>
+        <li><b>AI-помощник</b>: каждое утро разбирает продажи, клиентов и остатки и подсказывает, что продвигать и кому написать</li>
+        <li><b>Напоминания</b> клиентам, которые давно не заказывали</li>
+        <li><b>Выгрузка</b> заказов и клиентов в Google Таблицы</li>
+        <li>Приоритетная поддержка, ответ до 4 часов</li>
+        <li>Запуск за 2–3 недели</li>
+      </ul>
+      <p class="pay">Оплата: 1 245 € до старта, 1 245 € после запуска</p>
+      <p class="pay">Обслуживание: 79 € / мес, первые 3 месяца бесплатно</p>
+    </div>
   </div>
 </section>
 
 <section>
   <span class="eyebrow">Обслуживание</span>
-  <div class="offer"><span>Полное обслуживание</span><b>49 € / мес</b><span>— первые 3 месяца бесплатно</span></div>
+  <div class="offer"><span>Business</span><b>49 € / мес</b><span>· Pro</span><b>79 € / мес</b><span>— первые 3 месяца бесплатно</span></div>
   <ul class="ticks">
     <li>Работа бота 24/7, контроль и исправление сбоев</li>
     <li>Обновление цен и наличия, новые товары и разделы — без ограничений</li>
@@ -177,7 +203,7 @@ tr.tot td{font-weight:700}
     <table>
       <thead><tr><th>Услуга</th><th class="r">Цена</th></tr></thead>
       <tbody>
-        <tr><td>Онлайн-оплата в боте: Apple Pay, Google Pay, карты, PayPal</td><td class="r">150 €</td></tr>
+        <tr><td>Онлайн-оплата для Business: Apple Pay, Google Pay, карты, PayPal</td><td class="r">150 €</td></tr>
         <tr><td>Бот на немецком или английском</td><td class="r">60 €</td></tr>
         <tr><td>QR-код на бота для упаковки и визиток</td><td class="r">бесплатно</td></tr>
       </tbody>
@@ -190,8 +216,9 @@ tr.tot td{font-weight:700}
   <ol class="steps">
     <li>Откройте <b>@RAIV_FISH_bot</b>, соберите корзину и оформите пробный заказ</li>
     <li>Пришлите прайс, логотип, города и условия доставки</li>
-    <li>Предоплата 745 € — через 5–7 дней бот готов</li>
-    <li>Тестовый заказ вместе → оставшиеся 745 € → бот работает</li>
+    <li>Выберите Business или Pro и внесите 50% предоплаты</li>
+    <li>Business готов через 5–7 дней, Pro — через 2–3 недели</li>
+    <li>Тестовый заказ вместе → оставшиеся 50% → бот работает</li>
   </ol>
   <p class="note">Цены, бонусы и ваши данные меняете только вы. Предложение действует 14 дней.</p>
 </section>
