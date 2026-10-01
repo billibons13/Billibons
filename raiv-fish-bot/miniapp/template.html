@@ -75,6 +75,19 @@ h2{font-size:16px;margin:16px 16px 8px}
 .cartbar[hidden]{display:none}
 .toast{position:fixed;left:50%;top:14px;transform:translateX(-50%);background:rgba(20,23,26,.92);color:#fff;padding:9px 14px;border-radius:12px;font-size:14px;z-index:30;opacity:0;transition:opacity .2s;pointer-events:none}
 .toast.on{opacity:1}
+.gamebtn{display:flex;align-items:center;gap:10px;margin:4px 16px 8px;width:calc(100% - 32px);background:linear-gradient(135deg,#0e6fa8,#19a3c9);color:#fff;border-radius:14px;padding:11px 14px;text-align:left}
+.gamebtn b{font-size:15px;display:block}.gamebtn small{opacity:.85;font-size:12px}.gamebtn .ic{font-size:28px}
+.game{position:fixed;inset:0;z-index:40;background:linear-gradient(#bfe9ff 0,#bfe9ff 18%,#2a8fc9 18%,#0b4f7c 100%);display:none;touch-action:none;user-select:none;-webkit-user-select:none}
+.game.on{display:block}
+.game canvas{position:absolute;inset:0;width:100%;height:100%}
+.ghud{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:calc(10px + env(safe-area-inset-top)) 14px 0;font-weight:700;color:#0b3550;font-size:17px;z-index:2}
+.ghud button{background:rgba(255,255,255,.7);border-radius:50%;width:34px;height:34px;font-size:18px}
+.gover{position:absolute;inset:0;display:none;align-items:center;justify-content:center;z-index:3;padding:20px}
+.gover.on{display:flex}
+.gcard{background:var(--bg);color:var(--text);border-radius:20px;padding:20px;width:100%;max-width:360px;text-align:center}
+.gcard h3{margin:0 0 6px;font-size:22px}.gcard .big{font-size:44px;font-weight:800;margin:6px 0}
+.gcard .note{margin:4px 0 12px}.gcard button{margin-top:8px}
+.glegend{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--hint);margin:8px 0}
 </style>
 </head>
 <body>
@@ -86,6 +99,7 @@ h2{font-size:16px;margin:16px 16px 8px}
   <input class="search" id="q" type="search" placeholder="Поиск: лещ, икра, кальмар…" autocomplete="off">
   <div class="chips" id="chips"></div>
 </div>
+<button class="gamebtn" id="gameBtn"><span class="ic">🎣</span><span><b>Игра «Улов дня»</b><small>30 секунд — сколько рыбы поймаете? Вызовите друга!</small></span></button>
 <button class="homebtn" id="homeBtn" hidden>📲 Добавить RAIV FISH на главный экран</button>
 <div class="perks"><span>🚗 Бесплатно от 20 €</span><span>🕐 Сегодня или завтра</span><span>💎 5% бонусами</span></div>
 <div id="list"></div>
@@ -94,6 +108,11 @@ h2{font-size:16px;margin:16px 16px 8px}
 <button class="cartbar" id="cartBar" hidden></button>
 <div class="shade" id="shade"></div>
 <div class="sheet" id="sheet"></div>
+<div class="game" id="game">
+  <canvas id="gcv"></canvas>
+  <div class="ghud"><span id="gscore">🐟 0</span><span id="gtime">⏱ 30</span><button id="gclose" aria-label="Закрыть">✕</button></div>
+  <div class="gover" id="gover"></div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -231,9 +250,104 @@ document.getElementById("sheet").addEventListener("click", e => { if(e.target.cl
 if(tg){
   tg.ready(); tg.expand();
   try{ tg.setHeaderColor("secondary_bg_color"); }catch(e){}
-  tg.BackButton.onClick(closeSheet);
+  tg.BackButton.onClick(() => { if(Game.isOpen()) Game.close(); else closeSheet(); });
 }
 chips(); render(); homeScreen();
+// 🎣 Мини-игра «Улов дня»: только для удовольствия и приглашения друзей — призов и скидок игра не выдаёт
+// (любые призы — только после решения владельца)
+const Game = (() => {
+  const KINDS = [
+    {e:"🐟", pts:1, w:46, sp:1.0, p:0.42}, {e:"🐠", pts:2, w:44, sp:1.25, p:0.26},
+    {e:"🐡", pts:5, w:40, sp:1.7, p:0.10}, {e:"🦑", pts:3, w:44, sp:1.4, p:0.10},
+    {e:"👢", pts:-3, w:42, sp:0.9, p:0.07}, {e:"🥫", pts:-2, w:38, sp:0.9, p:0.05}];
+  const DUR = 30;
+  let cv, ctx, W, H, dpr, items = [], pops = [], score = 0, left = DUR, run = false, last = 0, spawnAcc = 0, raf = 0, tick = 0;
+  const el = id => document.getElementById(id);
+  function best(){ try{ return +localStorage.getItem("raiv_best") || 0; }catch(e){ return 0; } }
+  function setBest(v){ try{ localStorage.setItem("raiv_best", v); }catch(e){} }
+  function size(){ dpr = window.devicePixelRatio || 1; W = cv.clientWidth; H = cv.clientHeight; cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
+  function pick(){ let r = Math.random(), a = 0; for(const k of KINDS){ a += k.p; if(r < a) return k; } return KINDS[0]; }
+  function spawn(){
+    const k = pick(), dir = Math.random() < .5 ? 1 : -1, top = H * .24, y = top + Math.random() * (H - top - 60);
+    const boost = 1 + (DUR - left) / DUR * .9;
+    items.push({k, x: dir > 0 ? -50 : W + 50, y, dir, v: (70 + Math.random() * 60) * k.sp * boost, ph: Math.random() * 6});
+  }
+  function draw(){
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = "rgba(255,255,255,.12)";
+    for(let i = 0; i < 6; i++){ const bx = (i * 73 + tick * 12) % W, by = H - ((tick * 30 + i * 140) % (H * .8)); ctx.beginPath(); ctx.arc(bx, by, 3 + i % 3, 0, 7); ctx.fill(); }
+    ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = "#000";   // непрозрачная заливка — иначе эмодзи блёклые
+    for(const it of items){
+      ctx.save(); ctx.translate(it.x, it.y + Math.sin(it.ph) * 6);
+      if(it.dir > 0) ctx.scale(-1, 1);                 // эмодзи смотрят влево — разворачиваем по ходу движения
+      ctx.font = it.k.w + "px system-ui, Apple Color Emoji, Segoe UI Emoji, sans-serif"; ctx.fillText(it.k.e, 0, 0); ctx.restore();
+    }
+    for(const p of pops){ ctx.globalAlpha = Math.max(0, p.t); ctx.font = "bold 22px system-ui"; ctx.fillStyle = p.v > 0 ? "#fff" : "#ffb4a8"; ctx.fillText((p.v > 0 ? "+" : "") + p.v, p.x, p.y); ctx.globalAlpha = 1; }
+  }
+  function loop(ts){
+    if(!run) return;
+    const dt = Math.min(.05, (ts - (last || ts)) / 1000); last = ts; tick += dt;
+    left -= dt; if(left <= 0){ left = 0; end(); return; }
+    spawnAcc += dt * (1.6 + (DUR - left) / DUR * 1.6); while(spawnAcc > 1){ spawnAcc -= 1; spawn(); }
+    for(const it of items){ it.x += it.dir * it.v * dt; it.ph += dt * 4; }
+    items = items.filter(it => it.x > -80 && it.x < W + 80);
+    for(const p of pops){ p.y -= 40 * dt; p.t -= dt * 1.4; } pops = pops.filter(p => p.t > 0);
+    el("gtime").textContent = "⏱ " + Math.ceil(left);
+    draw(); raf = requestAnimationFrame(loop);
+  }
+  function tap(ev){
+    if(!run) return; ev.preventDefault();
+    const r = cv.getBoundingClientRect(), pt = ev.touches ? ev.touches[0] : ev, x = pt.clientX - r.left, y = pt.clientY - r.top;
+    for(let i = items.length - 1; i >= 0; i--){
+      const it = items[i], dy = it.y + Math.sin(it.ph) * 6;
+      if(Math.hypot(it.x - x, dy - y) < it.k.w * .75){
+        score = Math.max(0, score + it.k.pts); pops.push({x: it.x, y: dy, v: it.k.pts, t: 1}); items.splice(i, 1);
+        try{ tg && tg.HapticFeedback && (it.k.pts > 0 ? tg.HapticFeedback.impactOccurred(it.k.pts >= 3 ? "heavy" : "light") : tg.HapticFeedback.notificationOccurred("error")); }catch(e){}
+        el("gscore").textContent = "🐟 " + score; return;
+      }
+    }
+  }
+  function card(html){ const o = el("gover"); o.innerHTML = `<div class="gcard">${html}</div>`; o.classList.add("on"); }
+  function intro(){
+    card(`<h3>🎣 Улов дня</h3><div class="note">Ловите рыбу касанием — 30 секунд.<br>Лучший результат: <b>${best()}</b></div>
+      <div class="glegend"><span>🐟 +1</span><span>🐠 +2</span><span>🦑 +3</span><span>🐡 +5</span><span>👢 −3</span><span>🥫 −2</span></div>
+      <button class="primary" id="gstart">Начать</button>`);
+    el("gstart").onclick = start;
+  }
+  function start(){
+    el("gover").classList.remove("on"); items = []; pops = []; score = 0; left = DUR; last = 0; spawnAcc = 1; tick = 0;
+    el("gscore").textContent = "🐟 0"; run = true; raf = requestAnimationFrame(loop);
+  }
+  function end(){
+    run = false; cancelAnimationFrame(raf); draw();
+    const b = best(), rec = score > b; if(rec) setBest(score);
+    try{ tg && tg.HapticFeedback && tg.HapticFeedback.notificationOccurred("success"); }catch(e){}
+    card(`<h3>${rec ? "🏆 Новый рекорд!" : "Ваш улов"}</h3><div class="big">${score}</div>
+      <div class="note">Лучший результат: ${Math.max(b, score)}</div>
+      <button class="share" id="gshare">📤 Вызвать друга — сможет больше?</button>
+      <button class="primary" id="gagain">Ещё раз</button>
+      <button class="share" id="gshop" style="margin-top:8px">🛍 К витрине</button>`);
+    el("gagain").onclick = start; el("gshop").onclick = close;
+    el("gshare").onclick = () => {
+      const text = `🎣 Мой улов в игре RAIV FISH — ${score} очков! Сможешь больше?\nА ещё по моей ссылке — 3 € на первый заказ вяленой рыбы 🐟`;
+      const url = "https://t.me/share/url?url=" + encodeURIComponent(refLink()) + "&text=" + encodeURIComponent(text);
+      if(tg && tg.openTelegramLink) tg.openTelegramLink(url); else window.open(url, "_blank");
+    };
+  }
+  function open(){
+    cv = el("gcv"); ctx = cv.getContext("2d"); el("game").classList.add("on"); size(); draw(); intro();
+    if(tg){ try{ tg.BackButton.show(); }catch(e){} }
+  }
+  function close(){ run = false; cancelAnimationFrame(raf); el("game").classList.remove("on"); el("gover").classList.remove("on"); if(tg){ try{ tg.BackButton.hide(); }catch(e){} } }
+  function init(){
+    el("gameBtn").onclick = open; el("gclose").onclick = close;
+    const c = el("gcv"); c.addEventListener("touchstart", tap, {passive:false}); c.addEventListener("mousedown", tap);
+    window.addEventListener("resize", () => { if(el("game").classList.contains("on")) size(); });
+  }
+  return {init, open, close, isOpen: () => el("game").classList.contains("on")};
+})();
+Game.init();
+
 // живые цены и наличие (владелец меняет их командами /price и /stock в боте)
 (function liveCatalog(){
   if(!DATA.api || !window.fetch) return;
