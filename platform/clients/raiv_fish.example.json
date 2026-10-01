@@ -296,6 +296,12 @@
       "price_list": "on_request",
       "requires_company_data": true
     },
+    "request_quote": {
+      "enabled": false,
+      "fields": ["company", "vat_id", "items_and_qty", "delivery_country", "date", "phone"],
+      "owner_reply_sla_hours": 24,
+      "_comment": "нужен для wholesale"
+    },
     "parcel_shipping": {"enabled": false, "_comment": "см. fulfillment.parcel"}
   },
   "compliance": {

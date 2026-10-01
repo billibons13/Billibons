@@ -193,7 +193,7 @@
 | `owner_reply_sla_hours` | int | нет (24) | |
 | `quote_valid_days` | int | нет (7) | Ответ владельца → кнопка «Принять» → обычный заказ с этой ценой. Цена в заказе берётся из ответа владельца, не из ввода клиента. |
 
-Опт (`modules.wholesale`) и товары `price_mode: "quote"` используют этот же поток.
+Опт (`modules.wholesale`) и товары `price_mode: "quote"` используют этот же поток. В шаблонах, отличных от `request_quote`, форму можно задать коротко: `modules.request_quote.fields` — список ID стандартных полей (`company`, `vat_id`, `items_and_qty`, `delivery_country`, `date`, `guests`, `theme`, `budget`, `photo_reference`, `phone`).
 
 ## 7. `fulfillment` — как получает покупатель
 
