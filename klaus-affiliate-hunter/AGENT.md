@@ -26,6 +26,16 @@
   Успех — `statusCode 200` и `"ok": true`; 400/404 — исправь данные, не повторяй вслепую.
 - Отчёт владельцу в Telegram: инструмент `7713110` (`data: {"text": "..."}`, до 3500 знаков, без Markdown).
 
+## Официальные API (если в config.json → make заполнены ID инструментов)
+- `tool_amazon_searchitems` / `tool_amazon_getitems` — поиск и проверка товаров amazon.de (цена, наличие,
+  продавец, рейтинг, ранг). `partner_tag` = `config.amazon_partner_tag`. Это основной источник данных Amazon.
+- `tool_awin_programmes` — какие программы Awin реально `joined` (сверяй с `config.awin_programmes`;
+  расхождения — в еженедельный отчёт, config сам не меняй).
+- `tool_awin_link` — официальный tracking-link Awin; предпочтительнее, чем `hunter link` для Awin.
+- `tool_awin_transactions` — продажи и комиссии за период → в Make через `target: "status"`
+  (`sales`, `confirmed_commission_eur`, `refunds` по product_id, если транзакцию можно сопоставить с товаром).
+- Ответ API с ошибкой авторизации (401/403) → отчёт владельцу, без повторов.
+
 ## Ежедневный цикл
 1. **Состояние.** Выгрузи базу (limit 1000) в `/tmp/records.json`. Отдели записи `category = "_klaus_scripts"`
    (это недельные сценарии Klaus) от товаров. Список `product_id` товаров — для дедупликации.

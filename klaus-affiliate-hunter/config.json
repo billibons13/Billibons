@@ -15,6 +15,12 @@
   "scenario_status": 7712888,
   "scenario_klaus_scripts": 7712068,
   "hook_intake": "https://hook.eu1.make.com/lrdmvdkf8m3svedd58zei2kn62ptgbam",
-  "hook_status": "https://hook.eu1.make.com/arkbrhuvdrp6fxrzp4vx581lnyayxv81"
+  "hook_status": "https://hook.eu1.make.com/arkbrhuvdrp6fxrzp4vx581lnyayxv81",
+  "credential_request": "https://eu1.make.com/2241615/credentials-requests/inbox?requestId=30a176d1-bfc6-4e3e-8cf3-78dc7167a0e4",
+  "tool_awin_programmes": null,
+  "tool_awin_link": null,
+  "tool_awin_transactions": null,
+  "tool_amazon_getitems": null,
+  "tool_amazon_searchitems": null
  }
 }
