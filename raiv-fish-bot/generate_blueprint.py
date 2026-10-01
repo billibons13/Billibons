@@ -1,5 +1,7 @@
+# ВНИМАНИЕ: генератор собирает v4. Рабочий сценарий 7707233 уже v5 (правился в Make напрямую).
+# Не загружайте bp.json в 7707233, пока логика v5 не перенесена сюда, иначе бот откатится на v4.
 import json
-CONN = 11456488  # RAIV_Fish Telegram Bot
+CONN =11456488  # RAIV_Fish Telegram Bot
 GROUP = "-1004438320479"  # канал RAIVFISH
 HOOK = 3818482  # v2 webhook (рабочий)
 cats = [
