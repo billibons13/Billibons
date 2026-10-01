@@ -1,0 +1,213 @@
+<title>Бот заказов RAIV FISH</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Manrope:wght@400;500;700&display=swap">
+<style>
+/* Layout: одна колонка ~760px; шапка с «чатом» бота, дальше тарифы сеткой 3→1, таблицы в своих контейнерах */
+:root{
+  --bg:#f3f6f8; --surface:#ffffff; --ink:#0f2230; --muted:#56697a; --line:#d6e0e7;
+  --sea:#0d4d6b; --roe:#e8572a; --roe-soft:#fde6dc; --ok:#1f8a5b;
+  --display:"Unbounded","Arial Black",system-ui,sans-serif;
+  --body:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0b1820; --surface:#11232e; --ink:#e6eef3; --muted:#9db0bf; --line:#22394a;
+  --sea:#5fb3d9; --roe:#ff7a4d; --roe-soft:#3a1f16; --ok:#4cc58c; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0b1820; --surface:#11232e; --ink:#e6eef3; --muted:#9db0bf; --line:#22394a;
+  --sea:#5fb3d9; --roe:#ff7a4d; --roe-soft:#3a1f16; --ok:#4cc58c; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:16px/1.6 var(--body);padding-inline:16px;padding-block:32px 56px}
+.wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:48px}
+h1,h2,h3{font-family:var(--display);line-height:1.2;text-wrap:balance;margin:0}
+h1{font-size:clamp(1.6rem,4.5vw,2.4rem);font-weight:700}
+h2{font-size:1.25rem;font-weight:700}
+h3{font-size:1rem;font-weight:500}
+p{margin:0}
+.eyebrow{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--sea);font-weight:700}
+section{display:flex;flex-direction:column;gap:16px}
+.lead{font-size:1.1rem;color:var(--muted);max-width:62ch}
+.hero{display:grid;grid-template-columns:1.2fr 1fr;gap:28px;align-items:center}
+.hero>div{min-width:0;display:flex;flex-direction:column;gap:16px}
+.demo{display:inline-flex;align-self:flex-start;gap:8px;align-items:center;background:var(--sea);color:var(--bg);text-decoration:none;font-weight:700;padding:10px 16px;border-radius:999px}
+.demo:focus-visible{outline:3px solid var(--roe);outline-offset:2px}
+/* мини-чат */
+.chat{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:8px;font-size:.88rem}
+.msg{background:var(--bg);border-radius:12px 12px 12px 4px;padding:8px 10px;max-width:92%}
+.msg.me{align-self:flex-end;background:var(--roe-soft);border-radius:12px 12px 4px 12px}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.btns span{border:1px solid var(--line);border-radius:8px;text-align:center;padding:5px 4px;color:var(--sea);font-weight:500}
+.sum{font-variant-numeric:tabular-nums;font-weight:700}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+.two>div{min-width:0;display:flex;flex-direction:column;gap:10px}
+ul.ticks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+ul.ticks li{padding-left:24px;position:relative}
+ul.ticks li::before{content:"";position:absolute;left:4px;top:.6em;width:9px;height:9px;border-radius:50%;background:var(--roe)}
+.plans{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.plan{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.plan.star{border:2px solid var(--roe)}
+.plan .tag{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--roe)}
+.price{font-family:var(--display);font-size:1.8rem;font-variant-numeric:tabular-nums}
+.plan ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:.92rem}
+.plan .time{margin-top:auto;font-size:.82rem;color:var(--muted)}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:440px;font-variant-numeric:tabular-nums}
+th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+th{font-size:.8rem;color:var(--muted);font-weight:700;letter-spacing:.04em}
+td.c,th.c{text-align:center}
+.yes{color:var(--ok);font-weight:700}
+.offer{background:var(--roe-soft);border-radius:14px;padding:18px 20px;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline}
+.offer b{font-family:var(--display);font-size:1.3rem}
+.offer s{color:var(--muted)}
+ol.steps{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:8px}
+.note{font-size:.9rem;color:var(--muted)}
+.contact{border-top:1px solid var(--line);padding-top:24px;display:flex;flex-direction:column;gap:6px}
+.contact .val{font-weight:700;user-select:all}
+@media (max-width:680px){.hero,.two{grid-template-columns:1fr}.plans{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+
+<header class="hero">
+  <div>
+    <span class="eyebrow">Коммерческое предложение</span>
+    <h1>Telegram-бот, который принимает заказы на рыбу и снеки за вас</h1>
+    <p class="lead">Покупатель сам выбирает товары, вес и город. Бот считает сумму, собирает адрес и телефон и присылает готовый заказ в ваш канал.</p>
+    <a class="demo" href="https://t.me/RAIV_FISH_bot" target="_blank" rel="noopener">Попробовать @RAIV_FISH_bot →</a>
+  </div>
+  <div class="chat" aria-label="Пример заказа в боте">
+    <div class="msg">🐟 Икра кеты — 8,5 € / 100 г<br>Выберите вес:</div>
+    <div class="btns"><span>100 г</span><span>200 г</span><span>300 г</span><span>✏️ Свой вес</span></div>
+    <div class="msg">🧺 В корзине:<br>• Икра кеты 300 г — 25,50 €<br>• Лещ с икрой 0,7 кг — 24,50 €<br><span class="sum">Итого: 50,00 €</span></div>
+    <div class="btns"><span>➕ Ещё товар</span><span>🧾 Оформить</span></div>
+    <div class="msg me">Hauptstraße 1, Heide</div>
+    <div class="msg">✅ Спасибо! Заказ принят.</div>
+  </div>
+</header>
+
+<section class="two">
+  <div>
+    <h2>Покупателю удобно</h2>
+    <ul class="ticks">
+      <li>Весь ассортимент по разделам, наличие видно сразу</li>
+      <li>Всё кнопками: раздел, товар, вес, город</li>
+      <li>Корзина: несколько товаров в одном заказе</li>
+      <li>Готовый вес или свой: «0,7 кг», «350 г», «3 шт»</li>
+      <li>Сумма считается автоматически</li>
+      <li>Подтверждение «Заказ принят»</li>
+    </ul>
+  </div>
+  <div>
+    <h2>Вам удобно</h2>
+    <ul class="ticks">
+      <li>Заказ в вашем канале: товары, вес, сумма, адрес, телефон, имя</li>
+      <li>Маршрут в Google Maps одной ссылкой</li>
+      <li>Кнопка «Написать клиенту»</li>
+      <li>Заказы принимаются 24/7, даже когда вы за рулём</li>
+      <li>Ваше название, логотип, цены, города и условия доставки</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">Пакеты</span>
+  <h2>Выберите, сколько бот будет делать за вас</h2>
+  <div class="plans">
+    <article class="plan">
+      <h3>Start</h3>
+      <div class="price">350 €</div>
+      <ul>
+        <li>Каталог с наличием</li>
+        <li>Корзина и свой вес</li>
+        <li>Доставка, адрес, телефон</li>
+        <li>Заказ в канал с маршрутом</li>
+        <li>Базовый учёт остатков</li>
+      </ul>
+      <p class="time">Запуск за 1–2 дня</p>
+    </article>
+    <article class="plan star">
+      <span class="tag">Чаще всего выбирают</span>
+      <h3>Business</h3>
+      <div class="price">800 €</div>
+      <ul>
+        <li>Всё из Start</li>
+        <li>База клиентов и история заказов</li>
+        <li>Персональные предложения</li>
+        <li>Рассылки, акции, промокоды, бонусы</li>
+        <li>Ежедневный отчёт о продажах</li>
+      </ul>
+      <p class="time">Запуск за 1–2 недели</p>
+    </article>
+    <article class="plan">
+      <h3>Pro</h3>
+      <div class="price">1 500 €</div>
+      <ul>
+        <li>Всё из Business</li>
+        <li>AI-помощник: каждый день разбирает продажи, клиентов и остатки и подсказывает, что сделать</li>
+        <li>Подключение внешних сервисов и автоматизаций под вашу задачу</li>
+      </ul>
+      <p class="time">Запуск за 2–4 недели</p>
+    </article>
+  </div>
+  <p class="note">В любой пакет входит: настройка под ваш магазин, подключение канала заказов, тестовый заказ вместе с вами, короткая инструкция и 30 дней поддержки.</p>
+  <p class="note">Цены, тариф и ваши данные меняете только вы. Помощники могут лишь предложить, решение всегда за вами.</p>
+</section>
+
+<section>
+  <span class="eyebrow">Обслуживание</span>
+  <h2>Чтобы бот работал без перерывов</h2>
+  <p class="note">Обслуживание нужно для работы бота. Два варианта:</p>
+  <div class="tbl">
+    <table>
+      <thead><tr><th></th><th class="c">Базовое</th><th class="c">Полное</th></tr></thead>
+      <tbody>
+        <tr><td>Работа бота 24/7</td><td class="c yes">да</td><td class="c yes">да</td></tr>
+        <tr><td>Контроль и исправление сбоев</td><td class="c yes">да</td><td class="c yes">да</td></tr>
+        <tr><td>Обновление цен и наличия</td><td class="c">1 раз в месяц</td><td class="c">без ограничений</td></tr>
+        <tr><td>Новые товары и разделы</td><td class="c">—</td><td class="c yes">да</td></tr>
+        <tr><td>Время ответа</td><td class="c">до 48 ч</td><td class="c">до 12 ч</td></tr>
+        <tr><td><b>В месяц</b></td><td class="c"><b>25 €</b></td><td class="c"><b>39 €</b></td></tr>
+        <tr><td><b>За год</b> (2 месяца в подарок)</td><td class="c"><b>250 €</b></td><td class="c"><b>390 €</b></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note">Для пакета Pro — «Полное Pro», 49 € в месяц.</p>
+  <div class="offer"><span>Start + 6 месяцев «Базового» обслуживания</span><b>440 €</b><s>500 €</s></div>
+</section>
+
+<section>
+  <span class="eyebrow">Дополнительно</span>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Услуга</th><th>Цена</th></tr></thead>
+      <tbody>
+        <tr><td>Онлайн-оплата в боте: Apple Pay, Google Pay, карты, PayPal, Klarna; отметка «Оплачено» в канале</td><td>150 €</td></tr>
+        <tr><td>Изменение прайса сверх лимита «Базового»</td><td>15 €</td></tr>
+        <tr><td>Перевод бота на немецкий или английский</td><td>60 €</td></tr>
+        <tr><td>Второй бот или второй магазин</td><td>от 250 €</td></tr>
+        <tr><td>QR-код со ссылкой на бота для пакетов и визиток</td><td>бесплатно</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note">Онлайн-оплата подключается к вашему аккаунту Stripe. Комиссия платёжной системы около 1,5 % + 0,25 € с платежа, деньги приходят прямо на ваш счёт.</p>
+</section>
+
+<section>
+  <span class="eyebrow">Как начать</span>
+  <ol class="steps">
+    <li>Откройте <b>@RAIV_FISH_bot</b> и оформите пробный заказ</li>
+    <li>Выберите пакет и обслуживание</li>
+    <li>Пришлите прайс, логотип и города доставки</li>
+    <li>Предоплата 50 % → запуск → тестовый заказ вместе → оставшиеся 50 %</li>
+  </ol>
+</section>
+
+<footer class="contact">
+  <span class="eyebrow">Связаться</span>
+  <p>Telegram: <span class="val">@_______</span></p>
+  <p>WhatsApp: <span class="val">+49 ___</span></p>
+</footer>
+
+</div>
