@@ -68,7 +68,7 @@
      },
      {
       "key": "text",
-      "value": "📊 Отчёт за {{formatDate(now; \"DD.MM.YYYY\"; \"Europe/Berlin\")}} — RAIV FISH\n\n🧾 Заказов: {{ifempty(3.orders; 0)}}\n💶 Выручка: {{formatNumber(ifempty(3.revenue; 0); 2; \",\"; \".\")}} €\n🧮 Средний чек: {{formatNumber(if(ifempty(3.orders; 0) > 0; 3.revenue / 3.orders; 0); 2; \",\"; \".\")}} €\n🆕 Новых клиентов: {{ifempty(3.newcust; 0)}}\n🎟 Скидки по промокодам: {{formatNumber(ifempty(3.disc; 0); 2; \",\"; \".\")}} €\n💎 Оплачено бонусами: {{formatNumber(ifempty(3.bused; 0); 2; \",\"; \".\")}} €\n\n{{ifempty(3.lines; \"Сегодня заказов не было.\")}}"
+      "value": "📊 Отчёт за {{formatDate(now; \"DD.MM.YYYY\"; \"Europe/Berlin\")}} — RAIV FISH\n\n🧾 Заказов: {{ifempty(3.orders; 0)}}\n💶 Выручка: {{formatNumber(ifempty(3.revenue; 0); 2; \",\"; \".\")}} €\n🧮 Средний чек: {{formatNumber(if(ifempty(3.orders; 0) > 0; 3.revenue / 3.orders; 0); 2; \",\"; \".\")}} €\n🆕 Новых клиентов: {{ifempty(3.newcust; 0)}}\n🎟 Скидки по промокодам: {{formatNumber(ifempty(3.disc; 0); 2; \",\"; \".\")}} €\n💎 Оплачено бонусами: {{formatNumber(ifempty(3.bused; 0); 2; \",\"; \".\")}} €\n⭐ Средняя оценка: {{if(ifempty(3.rcount; 0) > 0; formatNumber(3.rsum / 3.rcount; 1; \",\"; \".\"); \"—\")}} (оценок: {{ifempty(3.rcount; 0)}})\n🧺 Напомнили о брошенной корзине: {{ifempty(3.abandoned; 0)}}\n\n{{ifempty(3.lines; \"Сегодня заказов не было.\")}}"
      }
     ]
    }

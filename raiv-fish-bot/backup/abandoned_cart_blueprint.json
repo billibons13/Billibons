@@ -1,0 +1,250 @@
+{
+ "name": "RAIV_Fish — брошенная корзина (каждый час)",
+ "metadata": {
+  "version": 1
+ },
+ "flow": [
+  {
+   "id": 1,
+   "module": "datastore:SearchRecord",
+   "version": 1,
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   },
+   "parameters": {
+    "datastore": 203268,
+    "continueWhenNoRes": false,
+    "limit": 50
+   },
+   "mapper": {
+    "filter": [
+     [
+      {
+       "a": "count",
+       "o": "number:greater",
+       "b": "0"
+      },
+      {
+       "a": "seen",
+       "o": "date:less",
+       "b": "{{addHours(now; -2)}}"
+      },
+      {
+       "a": "seen",
+       "o": "date:greater",
+       "b": "{{addDays(now; -2)}}"
+      }
+     ]
+    ],
+    "sort": []
+   }
+  },
+  {
+   "id": 2,
+   "module": "datastore:GetRecord",
+   "version": 1,
+   "metadata": {
+    "designer": {
+     "x": 300,
+     "y": 0
+    }
+   },
+   "parameters": {
+    "datastore": 203277
+   },
+   "mapper": {
+    "key": "{{1.key}}",
+    "returnWrapped": false
+   },
+   "filter": {
+    "name": "Не напоминали · дневное время",
+    "conditions": [
+     [
+      {
+       "a": "{{1.data.abandon_notified}}",
+       "o": "notexist"
+      },
+      {
+       "a": "{{formatDate(now; \"H\"; \"Europe/Berlin\")}}",
+       "o": "number:greaterorequal",
+       "b": "10"
+      },
+      {
+       "a": "{{formatDate(now; \"H\"; \"Europe/Berlin\")}}",
+       "o": "number:lessorequal",
+       "b": "20"
+      }
+     ],
+     [
+      {
+       "a": "{{1.data.abandon_notified}}",
+       "o": "date:less",
+       "b": "{{1.data.seen}}"
+      },
+      {
+       "a": "{{formatDate(now; \"H\"; \"Europe/Berlin\")}}",
+       "o": "number:greaterorequal",
+       "b": "10"
+      },
+      {
+       "a": "{{formatDate(now; \"H\"; \"Europe/Berlin\")}}",
+       "o": "number:lessorequal",
+       "b": "20"
+      }
+     ]
+    ]
+   }
+  },
+  {
+   "id": 4,
+   "module": "datastore:UpdateRecord",
+   "version": 1,
+   "metadata": {
+    "designer": {
+     "x": 900,
+     "y": 0
+    }
+   },
+   "parameters": {
+    "datastore": 203268
+   },
+   "mapper": {
+    "key": "{{1.key}}",
+    "upsert": false,
+    "overwriteArrays": false,
+    "data": {
+     "abandon_notified": "{{now}}"
+    }
+   },
+   "filter": {
+    "name": "Не отписан",
+    "conditions": [
+     [
+      {
+       "a": "{{2.blocked}}",
+       "o": "notexist"
+      }
+     ],
+     [
+      {
+       "a": "{{2.blocked}}",
+       "o": "boolean:isfalse"
+      }
+     ]
+    ]
+   }
+  },
+  {
+   "id": 3,
+   "module": "telegram:UniversalAPICall",
+   "version": 1,
+   "metadata": {
+    "designer": {
+     "x": 600,
+     "y": 0
+    }
+   },
+   "parameters": {
+    "__IMTCONN__": 11456488
+   },
+   "mapper": {
+    "method": "POST",
+    "bodyType": "assembled_body",
+    "urlMethod": "sendMessage",
+    "body_spec": [
+     {
+      "key": "chat_id",
+      "value": "{{1.key}}"
+     },
+     {
+      "key": "text",
+      "value": "🧺 Вы собрали корзину, но не оформили заказ:\n{{1.data.text}}💶 Итого: {{formatNumber(1.data.total; 2; \",\"; \".\")}} €\n\n{{if(1.data.total >= 20; \"🚗 Доставка бесплатно. \"; \"Добавьте товаров до 20 € — и доставка бесплатно. \")}}Оформление займёт минуту 👇\n\n/stop — не получать сообщения"
+     },
+     {
+      "key": "reply_markup",
+      "value": "{\"inline_keyboard\": [[{\"text\": \"🧾 Оформить заказ\", \"callback_data\": \"o\"}], [{\"text\": \"➕ Добавить ещё\", \"callback_data\": \"m\"}]]}"
+     }
+    ]
+   },
+   "onerror": [
+    {
+     "id": 503,
+     "module": "builtin:Ignore",
+     "version": 1,
+     "metadata": {
+      "designer": {
+       "x": 600,
+       "y": 300
+      }
+     },
+     "mapper": null
+    }
+   ]
+  },
+  {
+   "id": 5,
+   "module": "datastore:UpdateRecord",
+   "version": 1,
+   "metadata": {
+    "designer": {
+     "x": 1200,
+     "y": 0
+    }
+   },
+   "parameters": {
+    "datastore": 203279
+   },
+   "mapper": {
+    "key": "{{formatDate(now; \"YYYY-MM-DD\"; \"Europe/Berlin\")}}",
+    "upsert": true,
+    "overwriteArrays": false,
+    "data": {
+     "day": "{{formatDate(now; \"YYYY-MM-DD\"; \"Europe/Berlin\")}}"
+    }
+   }
+  },
+  {
+   "id": 6,
+   "module": "datastore:GetRecord",
+   "version": 1,
+   "metadata": {
+    "designer": {
+     "x": 1500,
+     "y": 0
+    }
+   },
+   "parameters": {
+    "datastore": 203279
+   },
+   "mapper": {
+    "key": "{{formatDate(now; \"YYYY-MM-DD\"; \"Europe/Berlin\")}}",
+    "returnWrapped": false
+   }
+  },
+  {
+   "id": 7,
+   "module": "datastore:UpdateRecord",
+   "version": 1,
+   "metadata": {
+    "designer": {
+     "x": 1800,
+     "y": 0
+    }
+   },
+   "parameters": {
+    "datastore": 203279
+   },
+   "mapper": {
+    "key": "{{formatDate(now; \"YYYY-MM-DD\"; \"Europe/Berlin\")}}",
+    "upsert": true,
+    "overwriteArrays": false,
+    "data": {
+     "abandoned": "{{ifempty(6.abandoned; 0) + 1}}"
+    }
+   }
+  }
+ ]
+}

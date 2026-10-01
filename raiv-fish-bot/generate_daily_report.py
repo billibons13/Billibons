@@ -8,7 +8,9 @@ text = ("📊 Отчёт за {{formatDate(now; \"DD.MM.YYYY\"; \""+TZ+"\")}} �
  "🧾 Заказов: {{ifempty("+S+".orders; 0)}}\n💶 Выручка: "+FMT("ifempty("+S+".revenue; 0)")+" €\n"
  "🧮 Средний чек: "+FMT("if(ifempty("+S+".orders; 0) > 0; "+S+".revenue / "+S+".orders; 0)")+" €\n"
  "🆕 Новых клиентов: {{ifempty("+S+".newcust; 0)}}\n🎟 Скидки по промокодам: "+FMT("ifempty("+S+".disc; 0)")+" €\n"
- "💎 Оплачено бонусами: "+FMT("ifempty("+S+".bused; 0)")+" €\n\n{{ifempty("+S+".lines; \"Сегодня заказов не было.\")}}")
+ "💎 Оплачено бонусами: "+FMT("ifempty("+S+".bused; 0)")+" €\n"
+ "⭐ Средняя оценка: {{if(ifempty("+S+".rcount; 0) > 0; formatNumber("+S+".rsum / "+S+".rcount; 1; \",\"; \".\"); \"—\")}} (оценок: {{ifempty("+S+".rcount; 0)}})\n"
+ "🧺 Напомнили о брошенной корзине: {{ifempty("+S+".abandoned; 0)}}\n\n{{ifempty("+S+".lines; \"Сегодня заказов не было.\")}}")
 m = lambda i,x: {"designer":{"x":x,"y":0}}
 bp = {"name":"RAIV_Fish — ежедневный отчёт 21:00","metadata":{"version":1},"flow":[
  {"id":1,"module":"datastore:UpdateRecord","version":1,"metadata":m(1,0),"parameters":{"datastore":STATS},"mapper":{"key":DAY,"upsert":True,"overwriteArrays":False,"data":{"day":DAY}}},
