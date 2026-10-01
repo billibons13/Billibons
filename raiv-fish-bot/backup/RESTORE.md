@@ -65,3 +65,11 @@ Blueprint v3: `v3_business_blueprint.json` (генератор: `generate_bluepr
 | Брошенная корзина (2 ч без действий, одно напоминание, 10:00–20:00) | 7707656 (`abandoned_cart_blueprint.json`, `generate_abandoned.py`) | каждый час |
 | Отчёт 21:00 + средняя оценка и брошенные корзины | 7707443 (`daily_report_blueprint.json`) | 21:00 |
 | Меню команд и описание бота (setMyCommands / setMyDescription) | инструмент 7707653 | разово |
+
+## Этап 2: витрина (v6, 01.10.2026)
+
+| Что | Где |
+|---|---|
+| Бот v6: кнопка «🛍 Витрина», корзина из витрины (цены считает бот), цветные кнопки | сценарий 7707233 (`v6_miniapp_blueprint.json`) |
+| Витрина Mini App | GitHub Pages, ветка `gh-pages` → https://billibons13.github.io/Billibons/ (`miniapp/DEPLOY.md`) |
+Откат на v5: загрузить `v5_stage1_blueprint.json` в сценарий 7707233.

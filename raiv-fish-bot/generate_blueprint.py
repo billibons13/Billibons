@@ -413,7 +413,7 @@ walk(bp["flow"])
 # цветные кнопки (Bot API 9.4): главное действие зелёное, удаление красное, статусы заказа в канале
 _t=json.dumps(bp,ensure_ascii=False)
 STYLE={"o":"success","x":"danger"}
-_t=re.sub(r'(\\"callback_data\\":\s?\\"(o|x)\\")', lambda m: m.group(1)+', \\"style\\": \\"'+STYLE[m.group(2)]+'\\"', _t)
+_t=re.sub(r'((?:🧾 Оформить заказ|🧺 Корзина / оформить|🗑 Очистить корзину)\\",\s?\\"callback_data\\":\s?\\"(o|x)\\")', lambda m: m.group(1)+', \\"style\\": \\"'+STYLE[m.group(2)]+'\\"', _t)
 _t=re.sub(r'(\\"callback_data\\":\s?\\"s\|[^"\\]*\|([12])\\")', lambda m: m.group(1)+', \\"style\\": \\"'+("primary" if m.group(2)=="1" else "success")+'\\"', _t)
 bp=json.loads(_t)
 s=json.dumps(bp,ensure_ascii=False)
