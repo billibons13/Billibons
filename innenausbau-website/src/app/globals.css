@@ -1,0 +1,114 @@
+@import "tailwindcss";
+
+/* ───────── Design-Tokens ─────────
+   Off-White · Beton · Anthrazit · Schwarz · ein Akzent (Ziegelrot – Backstein des Nordens) */
+@theme {
+  --color-paper: #f5f3ef;
+  --color-paper-2: #ebe8e2;
+  --color-beton-100: #dedbd5;
+  --color-beton-300: #b9b5ad;
+  --color-beton-500: #8a867f;
+  --color-anthrazit: #2b2d2f;
+  --color-ink: #121314;
+  --color-ziegel: #a8462a;
+  --color-ziegel-dark: #8c3a22;
+
+  --font-sans: var(--font-inter-tight), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --text-display: clamp(2.75rem, 7.2vw, 6.5rem);
+  --text-display--line-height: 0.95;
+  --text-display--letter-spacing: -0.035em;
+  --text-h2: clamp(2rem, 4.2vw, 3.5rem);
+  --text-h2--line-height: 1.02;
+  --text-h2--letter-spacing: -0.03em;
+  --text-h3: clamp(1.25rem, 1.8vw, 1.6rem);
+  --text-h3--line-height: 1.15;
+  --text-h3--letter-spacing: -0.015em;
+
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-padding-top: 5rem;
+  }
+  body {
+    @apply bg-paper text-ink antialiased;
+    font-feature-settings: "ss01", "cv11";
+  }
+  ::selection {
+    @apply bg-ziegel text-paper;
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-ziegel;
+  }
+}
+
+@layer components {
+  .eyebrow {
+    @apply text-[0.72rem] font-semibold tracking-[0.22em] uppercase text-beton-500;
+  }
+  .container-x {
+    @apply mx-auto w-full max-w-[90rem] px-5 sm:px-8 lg:px-12;
+  }
+  .section {
+    @apply py-20 sm:py-28 lg:py-36;
+  }
+  .hairline {
+    @apply border-beton-100;
+  }
+}
+
+/* ───────── Reveal-Animationen (nur mit JS + ohne reduced-motion) ───────── */
+@media (prefers-reduced-motion: no-preference) {
+  .js [data-reveal] {
+    opacity: 0;
+    transform: translateY(24px);
+    transition:
+      opacity 0.9s var(--ease-out-soft),
+      transform 0.9s var(--ease-out-soft);
+    transition-delay: var(--reveal-delay, 0ms);
+  }
+  .js [data-reveal="mask"] {
+    opacity: 1;
+    transform: none;
+    clip-path: inset(12% 0 12% 0);
+    transition: clip-path 1.2s var(--ease-out-soft);
+  }
+  .js [data-reveal].is-visible {
+    opacity: 1;
+    transform: none;
+    clip-path: inset(0 0 0 0);
+  }
+  .img-zoom img {
+    transition: transform 1.2s var(--ease-out-soft);
+  }
+  .img-zoom:hover img {
+    transform: scale(1.04);
+  }
+}
+
+/* Before/After-Slider */
+.ba-range {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+}
+.ba-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 44px;
+  height: 100vh;
+  cursor: ew-resize;
+}
+.ba-range::-moz-range-thumb {
+  width: 44px;
+  height: 100vh;
+  border: 0;
+  background: transparent;
+  cursor: ew-resize;
+}
+
+details > summary::-webkit-details-marker {
+  display: none;
+}

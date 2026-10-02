@@ -1,0 +1,30 @@
+{
+  "name": "innenausbau-website",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Website + Lead-System für einen Innenausbau-/Renovierungsbetrieb in Schleswig-Holstein",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "assets:fetch": "node scripts/fetch-assets.mjs"
+  },
+  "engines": {
+    "node": ">=20.9"
+  },
+  "dependencies": {
+    "next": "^16.3.8",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "^26.6.4",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2"
+  }
+}
