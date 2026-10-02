@@ -1,5 +1,33 @@
 # 06 · Make.com — Automation Hub, Webhook, CRM, Telegram
 
+## ✅ Что уже работает в Make (eu1, команда «My Team»)
+
+| Объект | ID / ссылка | Статус |
+|---|---|---|
+| Сценарий **«Innenausbau — 1. Lead-Intake (Website → Drive → Telegram)»** | `7743356` | **активен**, запуск «immediately» |
+| Webhook «Innenausbau — Website-Anfrage» | `3831348` · `https://hook.eu1.make.com/95tf63ggvw9ph54tiiir97xkebmwrwa1` | заголовки передаются (для проверки секрета) |
+| Папка Drive «Innenausbau – Anfragen» | `16A_1ijmVcGLH2FddWwWpy_q6OPRZjHix` | на каждую заявку — подпапка |
+| Tool «Innenausbau — Test-Anfrage an Lead-Intake senden» | `7743365` | имитирует заявку с сайта (multipart + 1 фото) |
+| Tool «Innenausbau — Drive-Ordner anlegen (einmalig)» | `7743352` | уже выполнен |
+| Data Structure «Innenausbau — Lead» | `613711` | заготовка для Data Store / Sheets |
+
+Blueprint в репозитории: [`make/lead-intake-blueprint.json`](../make/lead-intake-blueprint.json) (секрет заменён плейсхолдером `__LEAD_SECRET__`; настоящий хранится только в Make и в переменных окружения хостинга).
+
+**Цепочка (протестирована, выполнение успешно, 8 операций):**
+`Webhook` → фильтр `X-Lead-Secret` → `Parse JSON (payload)` → `переменные (услуги, приоритет A/B/C, имя папки)` → `Drive: папка «YYYY-MM-DD · Name · Ort · Lead-ID»` → `Drive: карточка «Anfrage <lead_id>.txt»` → `Telegram «🔔 Neue Anfrage» + кнопка «Lead öffnen»` → `Iterator фото` → `Drive: загрузка фото`.
+
+Ошибки: у карточки, Telegram и загрузки фото стоят обработчики «Ignore» (сбой одного шага не блокирует остальные); хранение незавершённых выполнений включено.
+
+**Сознательно не сделано (пока):**
+- **Data Store** — хранилище Make на тарифе заполнено («Not enough space in storage»). До этого хранилищем лидов служит папка Drive с карточкой. Когда освободится место (или будет подключён Google Sheets) — используется структура `613711`.
+- **Письмо-подтверждение клиенту** — должно уходить с почты компании (нужно подключение Gmail/SMTP фирмы), не с личного ящика.
+- **CRM-адаптер** — Router для Sheets/Airtable/HubSpot/Pipedrive, как описано ниже, после выбора CRM.
+- Telegram сейчас идёт через существующего бота (Zulius_Bot) в личный чат владельца. Для команды: создать группу/бота и заменить `chatId` в модуле 7.
+
+**Подключение сайта:** в переменных окружения хостинга: `LEAD_SINK=make`, `MAKE_WEBHOOK_URL=<URL webhook выше>`, `MAKE_WEBHOOK_SECRET=<секрет из фильтра перед модулем 2>`.
+
+---
+
 ## Общая схема
 
 ```

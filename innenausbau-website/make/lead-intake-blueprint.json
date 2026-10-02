@@ -1,0 +1,232 @@
+{
+  "name": "Innenausbau — 1. Lead-Intake (Website → Drive → Telegram)",
+  "flow": [
+    {
+      "id": 1,
+      "module": "gateway:CustomWebHook",
+      "version": 1,
+      "parameters": {
+        "hook": 3831348,
+        "maxResults": 1
+      },
+      "mapper": {},
+      "metadata": {
+        "designer": {
+          "x": 0,
+          "y": 0
+        }
+      }
+    },
+    {
+      "id": 2,
+      "module": "json:ParseJSON",
+      "version": 1,
+      "parameters": {},
+      "mapper": {
+        "json": "{{1.payload}}"
+      },
+      "metadata": {
+        "designer": {
+          "x": 300,
+          "y": 0
+        }
+      },
+      "filter": {
+        "name": "Secret korrekt",
+        "conditions": [
+          [
+            {
+              "a": "{{get(map(1.__IMTHEADERS__; \"value\"; \"name\"; \"x-lead-secret\"); 1)}}",
+              "o": "text:equal",
+              "b": "__LEAD_SECRET__"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "module": "util:SetVariables",
+      "version": 1,
+      "parameters": {},
+      "metadata": {
+        "designer": {
+          "x": 600,
+          "y": 0
+        }
+      },
+      "mapper": {
+        "scope": "roundtrip",
+        "variables": [
+          {
+            "name": "services_text",
+            "value": "{{join(2.services; \", \")}}"
+          },
+          {
+            "name": "priority",
+            "value": "{{if(contains(join(2.services; \",\"); \"Komplettrenovierung\"); \"A\"; if(parseNumber(ifempty(2.area; \"0\")) >= 60; \"A\"; if(length(2.services) >= 2; \"B\"; \"C\")))}}"
+          },
+          {
+            "name": "folder_name",
+            "value": "{{formatDate(2.timestamp; \"YYYY-MM-DD\"; \"Europe/Berlin\")}} · {{2.name}} · {{2.location}} · {{2.lead_id}}"
+          }
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "module": "google-drive:createAFolder",
+      "version": 4,
+      "parameters": {
+        "__IMTCONN__": 9458109
+      },
+      "mapper": {
+        "destination": "drive",
+        "folderId": "16A_1ijmVcGLH2FddWwWpy_q6OPRZjHix",
+        "name": "{{3.folder_name}}",
+        "shared": false
+      },
+      "metadata": {
+        "designer": {
+          "x": 900,
+          "y": 0
+        }
+      }
+    },
+    {
+      "id": 5,
+      "module": "google-drive:createAFileFromText",
+      "version": 4,
+      "parameters": {
+        "__IMTCONN__": 9458109
+      },
+      "mapper": {
+        "destination": "drive",
+        "folderId": "{{4.id}}",
+        "name": "Anfrage {{2.lead_id}}.txt",
+        "content": "ANFRAGE {{2.lead_id}}\nEingang: {{formatDate(2.timestamp; \"DD.MM.YYYY HH:mm\"; \"Europe/Berlin\")}}\nPriorität: {{3.priority}}\nStatus: neu\n\nKONTAKT\nName: {{2.name}}\nTelefon: {{2.phone}}\nE-Mail: {{ifempty(2.email; \"–\")}}\nOrt: {{2.location}}\n\nPROJEKT\nObjekt: {{2.project_type}}\nLeistungen: {{3.services_text}}\nFläche: {{ifempty(2.area; \"–\")}} m²\nZeitraum: {{ifempty(2.preferred_date; \"–\")}}\nBudget: {{ifempty(2.budget; \"–\")}}\n\nNACHRICHT\n{{ifempty(2.message; \"–\")}}\n\nFOTOS: {{length(2.uploaded_files)}} (in diesem Ordner)\n\nHERKUNFT\nSeite: {{2.meta.source_page}}\nUTM: {{ifempty(2.meta.utm.utm_source; \"–\")}} / {{ifempty(2.meta.utm.utm_medium; \"–\")}} / {{ifempty(2.meta.utm.utm_campaign; \"–\")}}\nEinwilligung: {{2.consent.text_version}} · {{2.consent.timestamp}}\n",
+        "convert": false
+      },
+      "metadata": {
+        "designer": {
+          "x": 1200,
+          "y": 0
+        }
+      },
+      "onerror": [
+        {
+          "id": 51,
+          "module": "builtin:Ignore",
+          "version": 1,
+          "mapper": null,
+          "metadata": {
+            "designer": {
+              "x": 1200,
+              "y": 200
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "module": "telegram:SendReplyMessage",
+      "version": 1,
+      "parameters": {
+        "__IMTCONN__": 9469273
+      },
+      "metadata": {
+        "designer": {
+          "x": 1500,
+          "y": 0
+        }
+      },
+      "mapper": {
+        "chatId": "6883357001",
+        "text": "🔔 <b>Neue Anfrage</b> · Priorität {{3.priority}}\n\n<b>Name:</b> {{escapeHTML(2.name)}}\n<b>Telefon:</b> {{escapeHTML(2.phone)}}\n<b>Ort:</b> {{escapeHTML(2.location)}}\n<b>Projekt:</b> {{2.project_type}}\n<b>Leistung:</b> {{3.services_text}}\n<b>Fläche:</b> {{ifempty(escapeHTML(2.area); \"–\")}} m²\n<b>Budget:</b> {{ifempty(2.budget; \"–\")}}\n<b>Zeitraum:</b> {{ifempty(2.preferred_date; \"–\")}}\n<b>Fotos:</b> {{length(2.uploaded_files)}}\n\n{{escapeHTML(substring(ifempty(2.message; \"\"); 0; 500))}}\n\n<code>{{2.lead_id}}</code>",
+        "parseMode": "HTML",
+        "disableWebPagePreview": true,
+        "replyMarkupAssembleType": "reply_markup_enter",
+        "replyMarkup": "{\"inline_keyboard\":[[{\"text\":\"Lead öffnen\",\"url\":\"{{4.webViewLink}}\"}]]}"
+      },
+      "onerror": [
+        {
+          "id": 71,
+          "module": "builtin:Ignore",
+          "version": 1,
+          "mapper": null,
+          "metadata": {
+            "designer": {
+              "x": 1500,
+              "y": 200
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "module": "builtin:BasicFeeder",
+      "version": 1,
+      "parameters": {},
+      "mapper": {
+        "array": "{{2.uploaded_files}}"
+      },
+      "metadata": {
+        "designer": {
+          "x": 1800,
+          "y": 0
+        }
+      }
+    },
+    {
+      "id": 8,
+      "module": "google-drive:uploadAFile",
+      "version": 4,
+      "parameters": {
+        "__IMTCONN__": 9458109
+      },
+      "metadata": {
+        "designer": {
+          "x": 2100,
+          "y": 0
+        }
+      },
+      "mapper": {
+        "select": "map",
+        "folderId": "{{4.id}}",
+        "filename": "{{6.name}}",
+        "data": "{{switch(6.field; \"file_0\"; 1.file_0.data; \"file_1\"; 1.file_1.data; \"file_2\"; 1.file_2.data; \"file_3\"; 1.file_3.data; \"file_4\"; 1.file_4.data; \"file_5\"; 1.file_5.data)}}",
+        "convert": false
+      },
+      "onerror": [
+        {
+          "id": 81,
+          "module": "builtin:Ignore",
+          "version": 1,
+          "mapper": null,
+          "metadata": {
+            "designer": {
+              "x": 2100,
+              "y": 200
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "instant": true,
+    "version": 1,
+    "scenario": {
+      "dlq": true,
+      "dataloss": false,
+      "maxErrors": 3,
+      "autoCommit": true,
+      "roundtrips": 1,
+      "sequential": false,
+      "confidential": false,
+      "autoCommitTriggerLast": true
+    }
+  }
+}
