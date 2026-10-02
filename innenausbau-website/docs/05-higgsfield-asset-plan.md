@@ -137,3 +137,22 @@ Still life photograph of interior renovation material samples on a raw concrete 
 npm run assets:fetch          # скачивает → public/images/<key>.webp (sharp, ≤2560 px, q82) + hero mp4
 # затем в src/content/assets.ts: const ASSET_SOURCE = "local";
 ```
+
+---
+
+## Brand: AKKERMAN SK (сгенерировано по эскизу владельца)
+
+Референс-файлы загрузить в Higgsfield не удалось (сеть контейнера блокирует `upload.higgsfield.ai`), поэтому логотип описан текстом. Мокапы построены на варианте 1 как `image_references`.
+
+| # | Что | Job ID | Промпт (кратко) |
+|---|---|---|---|
+| 1 | Логотип, светлый фон | `b9252ba7-9ce4-4aed-9c2b-d88fbd4bbe55` | flat vector, купол антрацит, база Ziegel `#A8462A`, «AKKERMAN» по дуге, «SK» в центре |
+| 2 | Логотип, тёмный фон | `34b12f2e-f3ad-4306-89ad-f203078aa26f` | тонкая off-white арка, разреженные буквы |
+| 3 | Логотип, монолиния | `c2170ead-6349-4de2-b5b4-1d69b5c8eafa` | жирная линия, condensed-шрифт |
+| 4 | Иконка / favicon | `17576380-51bb-4ebc-982e-a513e63b71f3` | купол + SK, квадрат |
+| 11 | Мокап: фургон | `6d714515-5cd7-492c-ae46-94754191da81` | антрацитовый фургон у кирпичного дома, логотип + «Innenausbau & Renovierung» |
+| 12 | Мокап: рабочая куртка | `0c6f8c86-cb0d-41d3-a40e-9768dbbfe529` | вышивка на груди |
+| 13 | Мокап: визитки | `96c8b125-c4c0-4e6c-8c63-d57d19d76040` | бетон, образец паркета, рулетка |
+| 14 | Мокап: Bauschild | `d5c09512-c376-4a1e-98ee-9834012f0c28` | «Hier entsteht Ihr neues Zuhause» |
+
+⚠️ AI может исказить буквы — перед печатью проверить написание «AKKERMAN». **Для печати и сайта мастер-файлом остаётся вектор** `public/brand/akkerman-logo-*.svg` (точные буквы, масштабируется без потерь). AI-варианты — для выбора стиля и презентации.
