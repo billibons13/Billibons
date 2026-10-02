@@ -28,6 +28,6 @@ npm run assets:fetch         # Higgsfield-Bilder lokal als WebP ablegen
 
 ## Vor dem Livegang
 
-Alle Firmendaten stehen in `src/config/site.ts` (Arbeitstitel „NORDRAUM“, Telefon, Adresse … sind Platzhalter).
+Alle Firmendaten stehen in `src/config/site.ts` (Name „AKKERMAN“ gesetzt; Telefon, Adresse … sind noch Platzhalter).
 Es werden keine Zahlen, Zertifikate oder Bewertungen erfunden – leere Felder werden automatisch ausgeblendet.
 Projektbilder sind KI-Visualisierungen und werden gekennzeichnet, bis echte Fotos vorliegen.

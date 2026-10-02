@@ -3,7 +3,7 @@ import { isPlaceholder, mailHref, site, telHref, whatsappHref } from "@/config/s
 import { legalNav, mainNav } from "@/content/navigation";
 import { services } from "@/content/services";
 import { ButtonLink } from "@/components/ui/Button";
-import { Logo } from "./Logo";
+import { BrandMark } from "./Logo";
 
 export function Footer() {
   const socials = Object.entries(site.social).filter(([, url]) => url);
@@ -13,7 +13,7 @@ export function Footer() {
     <footer className="bg-ink pb-24 text-paper sm:pb-0">
       <div className="container-x grid gap-14 py-20 lg:grid-cols-12 lg:py-24">
         <div className="lg:col-span-4">
-          <Logo tone="light" />
+          <BrandMark tone="light" className="w-52" />
           <p className="mt-6 max-w-sm text-paper/60">
             Innenausbau, Renovierung und Sanierung für Wohnungen, Häuser, Büros und Gewerbe in {site.serviceArea.label}.
           </p>

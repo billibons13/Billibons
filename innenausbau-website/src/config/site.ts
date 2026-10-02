@@ -7,8 +7,8 @@
  * Website und im strukturierten Schema automatisch ausgeblendet.
  */
 export const site = {
-  /** Arbeitstitel – durch den echten Firmennamen ersetzen */
-  name: "NORDRAUM",
+  /** Firmenname (Logo: „AKKERMAN“ im Bogen + „SK“) */
+  name: "AKKERMAN",
   legalName: "[Firmenname GmbH]",
   tagline: "Innenausbau & Renovierung",
   claim: "Wir verwandeln Räume.",

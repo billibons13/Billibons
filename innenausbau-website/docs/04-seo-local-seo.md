@@ -4,7 +4,7 @@
 
 | Элемент | Реализация |
 |---|---|
-| Title / Description | `pageMetadata()` на каждой странице, шаблон `%s | NORDRAUM` |
+| Title / Description | `pageMetadata()` на каждой странице, шаблон `%s | AKKERMAN` |
 | Canonical | абсолютный URL из `NEXT_PUBLIC_SITE_URL` |
 | Open Graph / Twitter | изображение страницы (из манифеста), `de_DE` |
 | H1 | ровно один на страницу (Hero / PageHeader) |
