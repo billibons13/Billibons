@@ -451,6 +451,7 @@ REPORT_TXT = ("📊 Продажи за {{formatDate(now; \"DD.MM.YYYY\"; \""+TZ
 MONTH_TXT = ("\n\n📅 С начала месяца: {{ifempty(@M.orders; 0)}} зак. · "+FMT("ifempty(@M.revenue; 0)")+" € · ⚖️ {{formatNumber(ifempty(@M.kg; 0); 2; \",\"; \".\")}} кг · {{ifempty(@M.pcs; 0)}} шт")
 own.append([ds(179,900,y,"UpdateRecord",{"key":DAY,"upsert":True,"overwriteArrays":False,"data":{"day":DAY}},"/report",[[OWN,NOREPLY,{"a":"{{1.message.text}}","b":"/report","o":"text:startwith"}]],store=STATS),
   ds(180,1200,y,"GetRecord",{"key":DAY,"returnWrapped":False},store=STATS),
+  ds(265,1300,y,"UpdateRecord",{"key":MONTH,"upsert":True,"overwriteArrays":False,"data":{"day":MONTH}},store=STATS),
   ds(263,1350,y,"GetRecord",{"key":MONTH,"returnWrapped":False},store=STATS),
   api(181,1500,y,"sendMessage",[("chat_id",CHAT),("text",REPORT_TXT.replace("@S","180")+MONTH_TXT.replace("@M","263"))])])
 AMOUNT = "{{round(ifempty(120.final; 120.total) * 100)}}"

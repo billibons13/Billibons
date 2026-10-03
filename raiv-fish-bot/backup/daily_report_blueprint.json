@@ -1,5 +1,5 @@
 {
- "name": "RAIV_Fish — ежедневный отчёт 21:00",
+ "name": "RAIV_Fish — ежедневный отчёт 21:00 (кг + месяц)",
  "metadata": {
   "version": 1
  },
@@ -45,6 +45,46 @@
    }
   },
   {
+   "id": 6,
+   "module": "datastore:UpdateRecord",
+   "version": 1,
+   "metadata": {
+    "designer": {
+     "x": 400,
+     "y": 0
+    }
+   },
+   "parameters": {
+    "datastore": 203279
+   },
+   "mapper": {
+    "key": "{{formatDate(now; \"YYYY-MM\"; \"Europe/Berlin\")}}",
+    "upsert": true,
+    "overwriteArrays": false,
+    "data": {
+     "day": "{{formatDate(now; \"YYYY-MM\"; \"Europe/Berlin\")}}"
+    }
+   }
+  },
+  {
+   "id": 5,
+   "module": "datastore:GetRecord",
+   "version": 1,
+   "metadata": {
+    "designer": {
+     "x": 450,
+     "y": 0
+    }
+   },
+   "parameters": {
+    "datastore": 203279
+   },
+   "mapper": {
+    "key": "{{formatDate(now; \"YYYY-MM\"; \"Europe/Berlin\")}}",
+    "returnWrapped": false
+   }
+  },
+  {
    "id": 4,
    "module": "telegram:UniversalAPICall",
    "version": 1,
@@ -68,7 +108,7 @@
      },
      {
       "key": "text",
-      "value": "📊 Отчёт за {{formatDate(now; \"DD.MM.YYYY\"; \"Europe/Berlin\")}} — RAIV FISH\n\n🧾 Заказов: {{ifempty(3.orders; 0)}}\n💶 Выручка: {{formatNumber(ifempty(3.revenue; 0); 2; \",\"; \".\")}} €\n🧮 Средний чек: {{formatNumber(if(ifempty(3.orders; 0) > 0; 3.revenue / 3.orders; 0); 2; \",\"; \".\")}} €\n🆕 Новых клиентов: {{ifempty(3.newcust; 0)}}\n🎟 Скидки по промокодам: {{formatNumber(ifempty(3.disc; 0); 2; \",\"; \".\")}} €\n💎 Оплачено бонусами: {{formatNumber(ifempty(3.bused; 0); 2; \",\"; \".\")}} €\n⭐ Средняя оценка: {{if(ifempty(3.rcount; 0) > 0; formatNumber(3.rsum / 3.rcount; 1; \",\"; \".\"); \"—\")}} (оценок: {{ifempty(3.rcount; 0)}})\n🧺 Напомнили о брошенной корзине: {{ifempty(3.abandoned; 0)}}\n\n{{ifempty(3.lines; \"Сегодня заказов не было.\")}}"
+      "value": "📊 Отчёт за {{formatDate(now; \"DD.MM.YYYY\"; \"Europe/Berlin\")}} — RAIV FISH\n\n🧾 Заказов: {{ifempty(3.orders; 0)}}\n💶 Выручка: {{formatNumber(ifempty(3.revenue; 0); 2; \",\"; \".\")}} €\n🧮 Средний чек: {{formatNumber(if(ifempty(3.orders; 0) > 0; 3.revenue / 3.orders; 0); 2; \",\"; \".\")}} €\n🆕 Новых клиентов: {{ifempty(3.newcust; 0)}}\n🎟 Скидки по промокодам: {{formatNumber(ifempty(3.disc; 0); 2; \",\"; \".\")}} €\n💎 Оплачено бонусами: {{formatNumber(ifempty(3.bused; 0); 2; \",\"; \".\")}} €\n⭐ Средняя оценка: {{if(ifempty(3.rcount; 0) > 0; formatNumber(3.rsum / 3.rcount; 1; \",\"; \".\"); \"—\")}} (оценок: {{ifempty(3.rcount; 0)}})\n⚖️ Продано: {{formatNumber(ifempty(3.kg; 0); 2; \",\"; \".\")}} кг · {{ifempty(3.pcs; 0)}} шт\n🧺 Напомнили о брошенной корзине: {{ifempty(3.abandoned; 0)}}\n\n{{ifempty(3.lines; \"Сегодня заказов не было.\")}}\n\n📅 С начала месяца: {{ifempty(5.orders; 0)}} зак. · {{formatNumber(ifempty(5.revenue; 0); 2; \",\"; \".\")}} € · ⚖️ {{formatNumber(ifempty(5.kg; 0); 2; \",\"; \".\")}} кг · {{ifempty(5.pcs; 0)}} шт"
      }
     ]
    }

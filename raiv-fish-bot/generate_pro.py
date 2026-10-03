@@ -23,6 +23,7 @@ def tg(i,x,chat,text,kb=None,onerror=False):
     return m
 
 # ---------- 1) AI-помощник
+MON = '{{formatDate(now; "YYYY-MM"; "'+TZ+'")}}'
 Y, Y2 = day(-1), day(-2)
 stat = lambda s: ("заказов {{ifempty("+s+".orders; 0)}}, выручка "+FMT("ifempty("+s+".revenue; 0)")+" €, новых клиентов {{ifempty("+s+".newcust; 0)}}, скидки "+FMT("ifempty("+s+".disc; 0)")+" €, бонусами "+FMT("ifempty("+s+".bused; 0)")+" €")
 prompt = ("Ты — помощник владельца небольшого магазина вяленой рыбы и снеков RAIV FISH (доставка: Эдделак, Марне, Брунсбюттель, Хайде; заказы через Telegram-бота). "
@@ -30,14 +31,20 @@ prompt = ("Ты — помощник владельца небольшого м�
  "Правила: ты только советуешь; не меняй цены и не обещай клиентам скидки от имени магазина; учитывай, что товаров «нет в наличии» продвигать нельзя. "
  "Пиши без вступлений, нумерованным списком, каждый пункт 1–2 предложения, в конце одна строка «Идея для рассылки:» с готовым текстом до 300 знаков.\n\n"
  "Вчера: "+stat("2")+".\nПозавчера: "+stat("4")+".\nЗаказы вчера:\n{{ifempty(2.lines; \"нет\")}}\n"
- "Всего клиентов в базе бота: {{6.count}}.\nНет в наличии: "+out_of_stock+".\nАссортимент в наличии: "+catalog+".")
+ "С начала месяца: заказов {{ifempty(12.orders; 0)}}, выручка "+FMT("ifempty(12.revenue; 0)")+" €, продано "+FMT("ifempty(12.kg; 0)")+" кг.\n"
+ "Всего клиентов в базе бота: {{6.count}}.\nКаталог сейчас (живые цены, ✅ есть / ❌ нет в наличии):\n{{join(map(10.array; \"line\"); \"\n\")}}")
 report = ("🤖 AI-помощник RAIV FISH · {{formatDate(now; \"DD.MM\"; \""+TZ+"\")}}\n\n"
- "📊 Вчера: {{ifempty(2.orders; 0)}} зак. · "+FMT("ifempty(2.revenue; 0)")+" € (позавчера "+FMT("ifempty(4.revenue; 0)")+" €) · клиентов в базе: {{6.count}}\n\n"
+ "📊 Вчера: {{ifempty(2.orders; 0)}} зак. · "+FMT("ifempty(2.revenue; 0)")+" € · ⚖️ "+FMT("ifempty(2.kg; 0)")+" кг (позавчера "+FMT("ifempty(4.revenue; 0)")+" €)\n"
+ "📅 Месяц: {{ifempty(12.orders; 0)}} зак. · "+FMT("ifempty(12.revenue; 0)")+" € · "+FMT("ifempty(12.kg; 0)")+" кг · клиентов в базе: {{6.count}}\n\n"
  "{{7.answer}}\n\n"
  "ℹ️ Это советы. Решаете вы: /promo КОД 10 — промокод, /send текст — рассылка.")
-ai = {"name":"RAIV_Fish Pro — AI-помощник 08:30","metadata":{"version":1},"flow":[
+ai = {"name":"RAIV_Fish Pro — AI-помощник 08:30 (живой каталог)","metadata":{"version":1},"flow":[
  touch(1,0,Y), get(2,300,Y,STATS), touch(3,600,Y2), get(4,900,Y2,STATS),
  {"id":6,"module":"datastore:Stats","version":1,"metadata":M(1200),"parameters":{"datastore":CUST},"mapper":{}},
+ touch(11,1250,MON), get(12,1300,MON,STATS),
+ {"id":9,"module":"datastore:SearchRecord","version":1,"metadata":M(1350),"parameters":{"datastore":g.CATALOG if hasattr(g,"CATALOG") else 203278,"continueWhenNoRes":True,"limit":100},"mapper":{"filter":[[{"a":"item","o":"exist"}]],"sort":[]}},
+ {"id":10,"module":"builtin:BasicAggregator","version":1,"metadata":M(1400),"parameters":{"feeder":9},"mapper":{"line":"{{if(9.data.stock; \"✅\"; \"❌\")}} {{9.data.name}} — {{replace(toString(9.data.price); \".\"; \",\")}} {{switch(9.data.cat; \"a\"; \"€/100 г\"; \"c\"; \"€/100 г\"; \"e\"; \"€/шт\"; \"€/кг\")}}"},
+  "filter":{"name":"Товар","conditions":[[{"a":"{{9.data.item}}","o":"exist"}]]}},
  {"id":7,"module":"ai-tools:Ask","version":1,"metadata":M(1500),"parameters":{},"mapper":{"input":prompt}},
  tg(8,1800,OWNER,report)]}
 
