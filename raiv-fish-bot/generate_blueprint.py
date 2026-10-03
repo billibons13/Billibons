@@ -55,7 +55,8 @@ d_val = ("{{1.callback_query.data}}"
          + "{{if(" + IS_W + '; "|"; "")}}'
          + "{{if(" + IS_W + "; " + W_QTY + '; "")}}'
          + '{{if(ifempty(1.message.text; "") = "/orders"; "h"; "")}}'
-         + '{{if(ifempty(1.message.text; "") = "/invite"; "rf"; "")}}')
+         + '{{if(ifempty(1.message.text; "") = "/invite"; "rf"; "")}}'
+         + '{{if(ifempty(1.message.text; "") = "/contacts"; "cn"; "")}}')
 unify = [{"name":"d","value":d_val},
          {"name":"chat","value":"{{1.callback_query.message.chat.id}}{{1.message.chat.id}}"}]
 
@@ -122,7 +123,7 @@ start_text = ("🐟 RAIV FISH — вяленая рыба, икра и снек�
  "Выберите раздел 👇")
 SERVICE_ROWS = [[{"text":"📋 Весь прайс","callback_data":"pl"},{"text":"🔁 Повторить заказ","callback_data":"r"}],
                 [{"text":"📜 Мои заказы","callback_data":"h"},{"text":"🎟 Промокод","callback_data":"pr"}],
-                [{"text":"🎁 Приведи друга — 3 € обоим","callback_data":"rf"}]]
+                [{"text":"🎁 Приведи друга — 3 € обоим","callback_data":"rf"},{"text":"📇 Контакты","callback_data":"cn"}]]
 cat_kb = lambda mode: {"inline_keyboard":[[{"text":t,"callback_data":f"k|{c}|{mode}"}] for c,t,_ in cats]+(SERVICE_ROWS+[OFFER_BTN] if mode=="s" else [])}
 T = {}
 def ph(expr):
@@ -161,7 +162,7 @@ KB = lambda rows: re.sub(r"\{\{.*?\}\}", lambda m: m.group(0).replace('\\"', '"'
 CHAT="{{90.chat}}"; MID="{{1.callback_query.message.message_id}}"
 routes=[]
 chat=ph("{{1.message.chat.id}}")
-CMDS = ["/admin","/promo","/send","/report","/stop","/orders","/help","/invite","/price","/stock","/catalog","/sklad"]
+CMDS = ["/admin","/promo","/send","/report","/stop","/orders","/help","/invite","/price","/stock","/catalog","/sklad","/contacts"]
 REFC = '{{replace(trim(1.message.text); "/start ref_"; "")}}'
 IS_TEXT = [{"a":"{{1.message.text}}","o":"exist"},{"a":"{{1.message.reply_to_message.message_id}}","o":"notexist"}]
 FMT = lambda e: "{{formatNumber("+e+'; 2; ","; ".")}}'
@@ -200,9 +201,25 @@ routes.append([search(213,900,-2400,PROMO,[[{"a":"item","o":"exist"}]],"Весь
 REFLINK = "https://t.me/"+BOT_USER+"?start=ref_{{90.chat}}"
 routes.append([api(106,900,-2300,"sendMessage",[("chat_id",CHAT),("text","🎁 Приведи друга — получите оба по "+str(REF_BONUS)+" €\n\nВаша личная ссылка:\n"+REFLINK+"\n\nДруг получает "+str(REF_BONUS)+" € бонусами сразу, вы — после его первого заказа."),
    ("reply_markup",'{"inline_keyboard":[[{"text":"📤 Отправить другу","url":"https://t.me/share/url?url={{encodeURL(\"https://t.me/'+BOT_USER+'?start=ref_\")}}{{90.chat}}&text={{encodeURL(\"Вяленая рыба и снеки с доставкой — держи 3 € на первый заказ 🐟\")}}"}],[{"text":"📋 К покупкам","callback_data":"m"}]]}')],"Приведи друга",[[eq(D(1),"rf")]])])
+# контакты и медиа (новые ссылки — строкой в CONTACT_LINKS: подпись, url)
+CONTACT_LINKS = [
+  ("🎵 TikTok — видео", "https://www.tiktok.com/@vasya_raivfish"),
+  ("📸 Instagram — фото", "https://www.instagram.com/vasya_ivanchuk_/"),
+  ("👍 Facebook", "https://www.facebook.com/share/1K6wTjKZx9/"),
+  ("📣 Telegram-канал @raiv_fish1", "https://t.me/raiv_fish1"),
+  ("🐟 Поставщик — Василий", "https://t.me/vasyaivancuk"),
+  ("💬 Написать продавцу", "https://t.me/"+SELLER.lstrip("@")),
+]
+CONTACT_TEXT = ("📇 Контакты RAIV FISH\n\n"
+ "🐟 Рыба и икра — от поставщика из Эстонии: @vasyaivancuk\n"
+ "🎬 Видео, фото и новинки — TikTok, Instagram, Facebook и канал @raiv_fish1\n"
+ "💬 Вопросы по заказу — "+SELLER+"\n\n"
+ "🚗 Доставка бесплатно от "+str(MIN_ORDER)+" €: Эдделак, Марне, Брунсбюттель, Хайде")
+routes.append([api(266,900,-2250,"sendMessage",[("chat_id",CHAT),("text",CONTACT_TEXT),
+   ("reply_markup",json.dumps({"inline_keyboard":[[{"text":t,"url":u}] for t,u in CONTACT_LINKS]+[[{"text":"📋 К покупкам","callback_data":"m"}]]},ensure_ascii=False))],"Контакты",[[eq(D(1),"cn")]])])
 # помощь
 routes.append([resp(107,900,-2200,"/help",[[IS_TEXT[1],{"a":"{{1.message.text}}","b":"/help","o":"text:startwith"}]],{"method":"sendMessage","chat_id":chat,
-  "text":"ℹ️ Как заказать\n1. /start → раздел → товар → вес (или «✏️ Свой вес»)\n2. «🧺 Корзина / оформить» → город → время → адрес → телефон\n3. Оплатите онлайн по кнопке или наличными курьеру\n\nДоставка бесплатно от "+str(MIN_ORDER)+" €. С каждого заказа — "+str(BONUS_PCT)+"% бонусами.\n\n/orders — мои заказы и бонусы\n/invite — приведи друга\n/stop — не получать рассылки\nВопросы: "+SELLER})])
+  "text":"ℹ️ Как заказать\n1. /start → раздел → товар → вес (или «✏️ Свой вес»)\n2. «🧺 Корзина / оформить» → город → время → адрес → телефон\n3. Оплатите онлайн по кнопке или наличными курьеру\n\nДоставка бесплатно от "+str(MIN_ORDER)+" €. С каждого заказа — "+str(BONUS_PCT)+"% бонусами.\n\n/orders — мои заказы и бонусы\n/invite — приведи друга\n/contacts — контакты, канал и медиа\n/stop — не получать рассылки\nВопросы: "+SELLER})])
 # повторить прошлый заказ
 routes.append([TOUCH_CUST(110,900,-2000,"Повторить заказ",[[eq(D(1),"r")]]),
  ds(111,1200,-2000,"GetRecord",{"key":CHAT,"returnWrapped":False},store=CUST),
