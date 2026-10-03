@@ -115,9 +115,8 @@ for c,title,lst in cats:
     for n,p,s in lst:
         menu += f"• {n} — {p.replace('.',',')} {ULBL[c]}" + ("❌" if not s else "") + "\n"
     menu += "\n"
-menu += "🚗 Доставка бесплатно от "+str(MIN_ORDER)+" €: Эдделак, Марне, Брунсбюттель, Хайде\nВыберите раздел 👇"
+menu += "Выберите раздел 👇"
 start_text = ("🐟 RAIV FISH — вяленая рыба, икра и снеки к пиву\n\n"
- "🚗 Бесплатная доставка от "+str(MIN_ORDER)+" €: Эдделак, Марне, Брунсбюттель, Хайде\n"
  "🕐 Сегодня или завтра — днём или вечером\n"
  "💳 Онлайн или наличными · 💎 "+str(BONUS_PCT)+"% бонусами с каждого заказа\n\n"
  "Выберите раздел 👇")
@@ -196,7 +195,7 @@ PL_LINE = ('{{switch(213.data.cat; "a"; "🐟"; "b"; "🐠"; "c"; "🍢"; "d"; "
 routes.append([search(213,900,-2400,PROMO,[[{"a":"item","o":"exist"}]],"Весь прайс",[[eq(D(1),"pl")]],limit=100),
   {"id":214,"mapper":{"line":PL_LINE},"module":"builtin:BasicAggregator","version":1,"metadata":meta(1200,-2400),"parameters":{"feeder":213},
    "filter":{"name":"Товар","conditions":[[{"a":"{{213.data.item}}","o":"exist"}]]}},
-  api(105,1500,-2400,"sendMessage",[("chat_id",CHAT),("text","📋 ВЕСЬ ПРАЙС RAIV FISH\n❌ — сейчас нет в наличии\n\n{{join(map(214.array; \"line\"); \"\n\")}}\n\n🚗 Доставка бесплатно от "+str(MIN_ORDER)+" €: Эдделак, Марне, Брунсбюттель, Хайде\nВыберите раздел 👇"),("reply_markup",KB(cat_kb("s")["inline_keyboard"][:len(cats)]))])])
+  api(105,1500,-2400,"sendMessage",[("chat_id",CHAT),("text","📋 ВЕСЬ ПРАЙС RAIV FISH\n❌ — сейчас нет в наличии\n\n{{join(map(214.array; \"line\"); \"\n\")}}\n\nВыберите раздел 👇"),("reply_markup",KB(cat_kb("s")["inline_keyboard"][:len(cats)]))])])
 # приведи друга
 REFLINK = "https://t.me/"+BOT_USER+"?start=ref_{{90.chat}}"
 routes.append([api(106,900,-2300,"sendMessage",[("chat_id",CHAT),("text","🎁 Приведи друга — получите оба по "+str(REF_BONUS)+" €\n\nВаша личная ссылка:\n"+REFLINK+"\n\nДруг получает "+str(REF_BONUS)+" € бонусами сразу, вы — после его первого заказа."),
@@ -213,13 +212,12 @@ CONTACT_LINKS = [
 CONTACT_TEXT = ("📇 Контакты RAIV FISH\n\n"
  "🐟 Рыба и икра — от поставщика из Эстонии: @vasyaivancuk\n"
  "🎬 Видео, фото и новинки — TikTok, Instagram, Facebook и канал @raiv_fish1\n"
- "💬 Вопросы по заказу — "+SELLER+"\n\n"
- "🚗 Доставка бесплатно от "+str(MIN_ORDER)+" €: Эдделак, Марне, Брунсбюттель, Хайде")
+ "💬 Вопросы по заказу — "+SELLER)
 routes.append([api(266,900,-2250,"sendMessage",[("chat_id",CHAT),("text",CONTACT_TEXT),
    ("reply_markup",json.dumps({"inline_keyboard":[[{"text":t,"url":u}] for t,u in CONTACT_LINKS]+[[{"text":"📋 К покупкам","callback_data":"m"}]]},ensure_ascii=False))],"Контакты",[[eq(D(1),"cn")]])])
 # помощь
 routes.append([resp(107,900,-2200,"/help",[[IS_TEXT[1],{"a":"{{1.message.text}}","b":"/help","o":"text:startwith"}]],{"method":"sendMessage","chat_id":chat,
-  "text":"ℹ️ Как заказать\n1. /start → раздел → товар → вес (или «✏️ Свой вес»)\n2. «🧺 Корзина / оформить» → город → время → адрес → телефон\n3. Оплатите онлайн по кнопке или наличными курьеру\n\nДоставка бесплатно от "+str(MIN_ORDER)+" €. С каждого заказа — "+str(BONUS_PCT)+"% бонусами.\n\n/orders — мои заказы и бонусы\n/invite — приведи друга\n/contacts — контакты, канал и медиа\n/stop — не получать рассылки\nВопросы: "+SELLER})])
+  "text":"ℹ️ Как заказать\n1. /start → раздел → товар → вес (или «✏️ Свой вес»)\n2. «🧺 Корзина / оформить» → город → время → адрес → телефон\n3. Оплатите онлайн по кнопке или наличными курьеру\n\nС каждого заказа — "+str(BONUS_PCT)+"% бонусами.\n\n/orders — мои заказы и бонусы\n/invite — приведи друга\n/contacts — контакты, канал и медиа\n/stop — не получать рассылки\nВопросы: "+SELLER})])
 # повторить прошлый заказ
 routes.append([TOUCH_CUST(110,900,-2000,"Повторить заказ",[[eq(D(1),"r")]]),
  ds(111,1200,-2000,"GetRecord",{"key":CHAT,"returnWrapped":False},store=CUST),

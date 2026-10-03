@@ -94,3 +94,8 @@ Blueprint v3: `v3_business_blueprint.json` (генератор: `generate_bluepr
 
 ## Контакты и медиа (v9.4, 03.10.2026)
 Кнопка «📇 Контакты» в главном меню и команда /contacts: TikTok @vasya_raivfish, Instagram vasya_ivanchuk_, Facebook, канал @raiv_fish1, поставщик @vasyaivancuk, продавец. Ссылки — список `CONTACT_LINKS` в generate_blueprint.py. Сценарий 7707233 (`v9_pro_blueprint.json`; предыдущая — `v9_2_blueprint.json`).
+
+## v9.5 (03.10.2026)
+- Убрана строка «Доставка бесплатно от 20 €: Эдделак, Марне, Брунсбюттель, Хайде» из /start, прайса, /help и контактов.
+- Рабочая версия: `backup/v9_pro_blueprint.json`; откат на v9.4 — `backup/v9_4_blueprint.json` через scenarios_update 7707233.
+- Проверено: /start, /contacts, /help — 3/3 успешно.
