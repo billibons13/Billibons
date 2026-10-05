@@ -13,7 +13,7 @@ HOOK20, HOOK03, HOOK10 = 3846694, 3846695, 3846697
 URL20 = "https://hook.eu1.make.com/69syfagsko64kd9oelsekoz11e3k341q"
 URL03 = "https://hook.eu1.make.com/i7nnyj1mxyeez4mgznqk6x58oqhinbdr"
 URL10 = "https://hook.eu1.make.com/2g6fjqg256vhydy4s3swxukppc486udl"
-OWNER_CHAT_ID = "6883357001"  # пишется только в lh_settings (LH-99), в промты не попадает
+OWNER_CHAT_ID = os.environ.get("LH_OWNER_CHAT_ID", "")  # только из окружения; в репозиторий не попадает, пишется в lh_settings через LH-99
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 

@@ -32,7 +32,7 @@ help - как пользоваться
 Компромисс — 3 МБ: lh_leads, lh_log (runs + decisions + events), lh_settings (+ sources).
 
 ## 4. Настройки по умолчанию (lh_settings, запись `main`)
-owner_chat_id 6883357001 · paused false · daily_budget_usd 1 · architect_threshold 60 · hot 80 · warm 60 · cold 40 ·
+owner_chat_id (задаётся при запуске генератора: LH_OWNER_CHAT_ID) · paused false · daily_budget_usd 1 · architect_threshold 60 · hot 80 · warm 60 · cold 40 ·
 minimum_order_eur 500 · timezone Europe/Berlin · analyst_model claude-haiku-4-5 · analyst_max_tokens 1500 ·
 max_retry_attempts 3 · retry_delays "1,5,30" · analyst price in/out 1 / 5 USD за 1M токенов ·
 веса 0.15/0.15/0.12/0.12/0.12/0.10/0.08/0.06/0.05/0.05 · курсы fx_* — заполняет владелец с датой.
