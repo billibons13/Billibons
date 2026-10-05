@@ -1,0 +1,263 @@
+{
+ "name": "LH-98 Lead Hunter — тестовый подаватель (TEST)",
+ "metadata": {
+  "version": 1
+ },
+ "flow": [
+  {
+   "id": 2,
+   "module": "datastore:GetRecord",
+   "version": 1,
+   "mapper": {
+    "key": "main",
+    "returnWrapped": false
+   },
+   "parameters": {
+    "datastore": 207951
+   },
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   }
+  },
+  {
+   "id": 3,
+   "module": "builtin:BasicRouter",
+   "version": 1,
+   "mapper": null,
+   "metadata": {
+    "designer": {
+     "x": 300,
+     "y": 0
+    }
+   },
+   "routes": [
+    {
+     "flow": [
+      {
+       "id": 4,
+       "module": "http:ActionSendData",
+       "version": 3,
+       "mapper": {
+        "url": "https://hook.eu1.make.com/i7nnyj1mxyeez4mgznqk6x58oqhinbdr",
+        "method": "post",
+        "headers": [],
+        "qs": [],
+        "bodyType": "x_www_form_urlencoded",
+        "formFields": [
+         {
+          "key": "token",
+          "value": "{{2.internal_token}}"
+         },
+         {
+          "key": "text",
+          "value": "{{var.input.text}}"
+         },
+         {
+          "key": "text_links",
+          "value": "{{var.input.text_links}}"
+         }
+        ],
+        "parseResponse": false,
+        "serializeUrl": false,
+        "shareCookies": false,
+        "rejectUnauthorized": true,
+        "followRedirect": true,
+        "followAllRedirects": false,
+        "useQuerystring": false,
+        "gzip": true,
+        "useMtls": false
+       },
+       "parameters": {
+        "handleErrors": true,
+        "useNewZLibDeCompress": true
+       },
+       "metadata": {
+        "designer": {
+         "x": 600,
+         "y": 0
+        }
+       },
+       "filter": {
+        "name": "mode=lh03 + [TEST]",
+        "conditions": [
+         [
+          {
+           "a": "{{var.input.mode}}",
+           "o": "text:equal",
+           "b": "lh03"
+          },
+          {
+           "a": "{{var.input.text}}",
+           "o": "text:startsWith",
+           "b": "[TEST]"
+          }
+         ]
+        ]
+       },
+       "onerror": [
+        {
+         "id": 504,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "mapper": null,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 5,
+       "module": "http:ActionSendData",
+       "version": 3,
+       "mapper": {
+        "url": "https://hook.eu1.make.com/i7nnyj1mxyeez4mgznqk6x58oqhinbdr",
+        "method": "post",
+        "headers": [],
+        "qs": [],
+        "bodyType": "x_www_form_urlencoded",
+        "formFields": [
+         {
+          "key": "token",
+          "value": "wrong-token-test"
+         },
+         {
+          "key": "text",
+          "value": "{{var.input.text}}"
+         },
+         {
+          "key": "text_links",
+          "value": "{{var.input.text_links}}"
+         }
+        ],
+        "parseResponse": false,
+        "serializeUrl": false,
+        "shareCookies": false,
+        "rejectUnauthorized": true,
+        "followRedirect": true,
+        "followAllRedirects": false,
+        "useQuerystring": false,
+        "gzip": true,
+        "useMtls": false
+       },
+       "parameters": {
+        "handleErrors": true,
+        "useNewZLibDeCompress": true
+       },
+       "metadata": {
+        "designer": {
+         "x": 600,
+         "y": 200
+        }
+       },
+       "filter": {
+        "name": "mode=lh03_badtoken + [TEST]",
+        "conditions": [
+         [
+          {
+           "a": "{{var.input.mode}}",
+           "o": "text:equal",
+           "b": "lh03_badtoken"
+          },
+          {
+           "a": "{{var.input.text}}",
+           "o": "text:startsWith",
+           "b": "[TEST]"
+          }
+         ]
+        ]
+       },
+       "onerror": [
+        {
+         "id": 505,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "mapper": null,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 6,
+       "module": "http:ActionSendData",
+       "version": 3,
+       "mapper": {
+        "url": "https://hook.eu1.make.com/69syfagsko64kd9oelsekoz11e3k341q",
+        "method": "post",
+        "headers": [],
+        "qs": [],
+        "bodyType": "raw",
+        "contentType": "application/json",
+        "data": "{\"update_id\":1,\"message\":{\"message_id\":1,\"from\":{\"id\":111,\"is_bot\":false,\"first_name\":\"TEST\"},\"chat\":{\"id\":111,\"type\":\"private\"},\"date\":1,\"text\":\"[TEST] security\"}}",
+        "parseResponse": false,
+        "serializeUrl": false,
+        "shareCookies": false,
+        "rejectUnauthorized": true,
+        "followRedirect": true,
+        "followAllRedirects": false,
+        "useQuerystring": false,
+        "gzip": true,
+        "useMtls": false
+       },
+       "parameters": {
+        "handleErrors": true,
+        "useNewZLibDeCompress": true
+       },
+       "metadata": {
+        "designer": {
+         "x": 600,
+         "y": 400
+        }
+       },
+       "filter": {
+        "name": "mode=lh20_nosecret",
+        "conditions": [
+         [
+          {
+           "a": "{{var.input.mode}}",
+           "o": "text:equal",
+           "b": "lh20_nosecret"
+          }
+         ]
+        ]
+       },
+       "onerror": [
+        {
+         "id": 506,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "mapper": null,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         }
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}
