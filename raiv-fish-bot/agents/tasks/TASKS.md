@@ -3,6 +3,36 @@
 Формат и правила — `DIRECTOR.md`, раздел «Поручения владельца — только через директора».
 Новые задачи — сверху.
 
+## T-20261005-0006 · Тесты этапа 3 (5 тестовых лидов)
+- AGENT: 🧪 Тестировщик релизов (`team/QA.md`)
+- PRIORITY: P1
+- OBJECTIVE: доказать критерии приёмки 1–17 этапа 3 фактами.
+- INPUT: ТЗ этапа 3 (п. 37–38), результат T-0005.
+- ACTION: 5 лидов [TEST]: простой бот; бот + CRM; бот + платежи; бот + AI + Mini App; слабый/неполный. Проверка Architect, JSON, валидации, Sales, цен, Telegram, статусов, ошибок; проверка, что клиенту ничего не отправлено.
+- EXPECTED_OUTPUT: таблица 5 тестов × проверки ✅/❌ с ID исполнений Make и записями lh_leads/lh_log.
+- DEADLINE: после T-0005
+- STATUS: NEW (ждёт T-0005)
+
+## T-20261005-0005 · Реализация этапа 3: Architect + Sales + карточка + кнопки
+- AGENT: 🛠 Make-инженер Lead Hunter (`team/LH_ENGINEER.md`)
+- PRIORITY: P1
+- OBJECTIVE: APPROVE → ARCHITECT_v1 (Sonnet) → валидация → TECHNICAL_SPEC_READY → SALES_v1 (Sonnet) → валидация → COMMERCIAL_READY → карточка владельцу (SENT_TO_TELEGRAM) + кнопки Full ТЗ / Offer / Client Message / Questions / More Analysis / Contacted / Won / Lost / Archive.
+- INPUT: план из T-0004, ТЗ этапа 3 (п. 3–35), `lead-hunter/agents/architect.md`, `sales.md`.
+- ACTION: расширить существующие lh_leads и lh_log (без новых хранилищ), промты с версиями, сценарий Architect/Sales в папке 400613, расширение LH-20. Без outreach, без новых источников.
+- EXPECTED_OUTPUT: отчёт по п. 41 (CREATED / MODIFIED / ARCHITECT / SALES / DATA / TELEGRAM / ERRORS / COST / MANUAL ACTION).
+- DEADLINE: после T-0004
+- STATUS: NEW (ждёт T-0004)
+
+## T-20261005-0004 · Аудит этапа 2 и план этапа 3
+- AGENT: 🛠 Make-инженер Lead Hunter
+- PRIORITY: P1
+- OBJECTIVE: по п. 2 и 40 ТЗ — зафиксировать, что реально есть (сценарии, хранилища, поля лида, бот, Analyst, статусы), и составить план изменений без второй параллельной системы.
+- INPUT: результат T-0001, Make (папка 400613, хранилища 207950–207952), генератор.
+- ACTION: проверить; найти отклонения от ТЗ этапа 3 (модели в модуле Claude Make, отдельные lh_runs/lh_events vs единый lh_log, лимит 4096 символов Telegram, ёмкость хранилища); показать их директору.
+- EXPECTED_OUTPUT: список «есть / нет / отклонение» + план изменений + список отклонений для владельца.
+- DEADLINE: сразу после T-0001
+- STATUS: NEW (ждёт T-0001)
+
 ## T-20261005-0003 · chat_id владельца в репозитории
 - AGENT: 🛡 Инженер надёжности (`team/RELIABILITY.md`)
 - PRIORITY: P3
