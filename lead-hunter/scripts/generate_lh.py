@@ -261,7 +261,7 @@ def lh20():
         ("fwd_user_username", "{{" + fo + ".sender_user.username}}"),
         ("fwd_user_name", "{{" + fo + ".sender_user.first_name}}{{" + fo + ".sender_user_name}}"),
         ("fwd_date", "{{" + fo + ".date}}")],
-        name="Пересланная заявка", conds=[MSG + [c("{{3.txt}}", "exist"), c("{{3.txt}}", "text:notstartwith", "/")]]),
+        name="Пересланная заявка", conds=[MSG + [c("{{3.txt}}", "exist"), c("{{3.txt}}", "text:notpattern", "^/")]]),
         tg(81, "sendMessage", [("chat_id", OWNER), ("text", "⏳ Принял, сохраняю…")])])
     routes.append([tg(82, "sendMessage", [("chat_id", OWNER), ("text", "🖼 Скриншоты и файлы без текста пока не разбираю (этап 2). Пришлите текст заявки и ссылку.")],
                       name="Медиа без текста", conds=[MSG + [c("{{3.txt}}", "notexist")]])])

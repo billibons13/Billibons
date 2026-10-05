@@ -1674,8 +1674,8 @@
           },
           {
            "a": "{{3.txt}}",
-           "o": "text:notstartwith",
-           "b": "/"
+           "o": "text:notpattern",
+           "b": "^/"
           }
          ]
         ]
