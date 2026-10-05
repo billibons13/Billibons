@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "lead.analysis — ответ Analyst (проверяется Make перед скорингом)",
+  "type": "object",
+  "required": ["lead_id", "kind", "language", "bot_type", "description_ru", "scores", "reasons", "risk_flags", "duplicate_of"],
+  "properties": {
+    "lead_id": {"type": "string"},
+    "kind": {"enum": ["lead", "prospect"]},
+    "language": {"type": "string"},
+    "bot_type": {"type": "string"},
+    "description_ru": {"type": "string"},
+    "client_name": {"type": ["string", "null"]},
+    "country": {"type": ["string", "null"]},
+    "budget": {"oneOf": [{"type": "null"}, {"type": "object", "required": ["amount", "currency"],
+      "properties": {"amount": {"type": "number"}, "currency": {"type": "string"}, "type": {"enum": ["fixed", "hourly", "unknown"]}}}]},
+    "scores": {"type": "object", "additionalProperties": false,
+      "required": ["telegram_relevance", "budget", "project_clarity", "client_credibility", "commercial_potential", "fit", "urgency", "competition", "source_quality", "complexity_fit"],
+      "patternProperties": {".*": {"type": "number", "minimum": 0, "maximum": 10}}},
+    "reasons": {"type": "object"},
+    "risk_flags": {"type": "array", "items": {"type": "string"}},
+    "duplicate_of": {"type": ["string", "null"]}
+  }
+}

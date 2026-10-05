@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "lead.raw — Scout/Manual Intake → Analyst",
+  "type": "object",
+  "required": ["lead_id", "title", "description_original", "source", "source_url", "found_at"],
+  "properties": {
+    "lead_id": {"type": "string", "pattern": "^LH-[0-9]{8}-[0-9a-f]{6}$"},
+    "title": {"type": "string", "maxLength": 120},
+    "description_original": {"type": "string"},
+    "source": {"type": "string", "description": "manual | telegram:@channel | domain of URL"},
+    "source_url": {"type": ["string", "null"]},
+    "published_at": {"type": ["string", "null"], "format": "date-time"},
+    "found_at": {"type": "string", "format": "date-time"},
+    "client_name": {"type": ["string", "null"]},
+    "country": {"type": ["string", "null"]},
+    "language": {"type": ["string", "null"]},
+    "budget": {"type": ["object", "null"]}
+  }
+}
