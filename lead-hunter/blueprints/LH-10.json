@@ -1,0 +1,1455 @@
+{
+ "name": "LH-10 Lead Hunter — Lead Pipeline (Analyst)",
+ "metadata": {
+  "version": 1,
+  "instant": true
+ },
+ "flow": [
+  {
+   "id": 1,
+   "module": "gateway:CustomWebHook",
+   "version": 1,
+   "mapper": {},
+   "parameters": {
+    "hook": 3846697,
+    "maxResults": 1
+   },
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   }
+  },
+  {
+   "id": 2,
+   "module": "datastore:GetRecord",
+   "version": 1,
+   "mapper": {
+    "key": "main",
+    "returnWrapped": false
+   },
+   "parameters": {
+    "datastore": 207951
+   },
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   }
+  },
+  {
+   "id": 3,
+   "module": "datastore:GetRecord",
+   "version": 1,
+   "mapper": {
+    "key": "{{1.lead_id}}",
+    "returnWrapped": false
+   },
+   "parameters": {
+    "datastore": 207950
+   },
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   },
+   "filter": {
+    "name": "Внутренний токен",
+    "conditions": [
+     [
+      {
+       "a": "{{1.token}}",
+       "o": "text:equal",
+       "b": "{{2.internal_token}}"
+      }
+     ]
+    ]
+   }
+  },
+  {
+   "id": 4,
+   "module": "datastore:UpdateRecord",
+   "version": 1,
+   "mapper": {
+    "key": "day_{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}",
+    "upsert": true,
+    "overwriteArrays": false,
+    "data": {
+     "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+    }
+   },
+   "parameters": {
+    "datastore": 207951
+   },
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   }
+  },
+  {
+   "id": 5,
+   "module": "datastore:GetRecord",
+   "version": 1,
+   "mapper": {
+    "key": "day_{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}",
+    "returnWrapped": false
+   },
+   "parameters": {
+    "datastore": 207951
+   },
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   }
+  },
+  {
+   "id": 6,
+   "module": "builtin:BasicRouter",
+   "version": 1,
+   "mapper": null,
+   "metadata": {
+    "designer": {
+     "x": 900,
+     "y": 0
+    }
+   },
+   "routes": [
+    {
+     "flow": [
+      {
+       "id": 7,
+       "module": "datastore:UpdateRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{1.lead_id}}",
+        "upsert": false,
+        "overwriteArrays": false,
+        "data": {
+         "attempts": "{{ifempty(3.attempts; 0) + 1}}",
+         "updated_at": "{{now}}"
+        }
+       },
+       "parameters": {
+        "datastore": 207950
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "filter": {
+        "name": "Обработка: NEW, без паузы, бюджет есть",
+        "conditions": [
+         [
+          {
+           "a": "{{3.status}}",
+           "o": "text:equal",
+           "b": "NEW"
+          },
+          {
+           "a": "{{2.paused}}",
+           "o": "text:notequal",
+           "b": "true"
+          },
+          {
+           "a": "{{ifempty(5.cost_usd; 0)}}",
+           "o": "number:less",
+           "b": "{{2.daily_budget_usd}}"
+          }
+         ]
+        ]
+       }
+      },
+      {
+       "id": 8,
+       "module": "datastore:AddRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{uuid}}",
+        "overwrite": true,
+        "data": {
+         "table": "events",
+         "event_id": "{{uuid}}",
+         "lead_id": "{{1.lead_id}}",
+         "event": "ANALYST_STARTED",
+         "details": "attempt {{7.attempts}}",
+         "old_status": "",
+         "new_status": "",
+         "created_at": "{{now}}",
+         "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+        }
+       },
+       "parameters": {
+        "datastore": 207952
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      },
+      {
+       "id": 9,
+       "module": "anthropic-claude:simpleTextPrompt",
+       "version": 1,
+       "mapper": {
+        "model": "claude-haiku-4-5",
+        "textPrompt": "You are Analyst, the lead qualification specialist of a small studio that builds Telegram bots\n(shops, booking, support, sales, AI and CRM bots, Mini Apps; ready-made base: an e-commerce Telegram bot\nwith catalog, cart, delivery, bonuses, Mini App and Stripe, sold from 500 EUR).\n\nYou receive ONE lead (a job post or request forwarded by the owner) and return ONLY a JSON object.\nNo markdown, no code fences, no text before or after the JSON.\n\nRules:\n- Never invent facts. Unknown client -> null. Unknown country -> null. No published budget -> \"budget\": null.\n- Unknown requirement -> \"UNKNOWN / NEEDS CLARIFICATION\".\n- \"budget\" is filled ONLY if an amount is explicitly written in the lead. Copy the amount and the currency as written\n  (ISO code: EUR, USD, GBP, CHF, PLN, UAH, CAD, AUD, INR, RUB). type: \"fixed\" | \"hourly\" | \"unknown\".\n- \"kind\": \"lead\" if the text is an actual request/order/job post; \"prospect\" if it is only a business that might need a bot.\n- Each score is an integer 0-10. Each reason is one short sentence in Russian based only on the text.\n- Scales (10 = best for us):\n  telegram_relevance: 10 = explicitly a Telegram bot / Mini App; 0 = Telegram does not fit.\n  budget: 10 = >= 2000 EUR; 7 = 1000-2000; 5 = 500-1000; 2 = < 500; 3 = budget not published.\n  project_clarity: 10 = clear features and examples; 0 = one vague sentence.\n  client_credibility: 10 = verified payment/history/company site visible; 0 = anonymous, nothing known. Unknown -> 3-4.\n  commercial_potential: 10 = ongoing work, subscription, several bots; 0 = tiny one-off.\n  fit: 10 = can be built mostly from the ready e-commerce bot / Make + Claude; 0 = unrelated stack from scratch.\n  urgency: 10 = posted < 24 h or explicit deadline soon; 0 = older than 14 days. Unknown date -> 5.\n  competition: 10 = < 5 proposals; 0 = > 50 proposals. Unknown -> 5.\n  source_quality: 10 = official platform with payment protection; 0 = anonymous chat. Unknown -> 4.\n  complexity_fit: 10 = small/medium (S-M); 0 = huge (XL) with small budget.\n- risk_flags (array of short snake_case strings, empty if none): off_platform_payment, test_task_unpaid, crypto_scheme,\n  gambling, betting, spam_bot, account_farming, fake_engagement, adult, illegal, budget_unrealistic, personal_data_scraping.\n- duplicate_of: always null unless the input explicitly lists a matching earlier lead_id.\n- description_ru: 2-4 sentences in Russian: what the client wants, without additions.\n- bot_type: one of shop, booking, support, sales, ai_assistant, crm_integration, payments, notifications, community,\n  mini_app, automation, other, unknown.\n- language: ISO 639-1 code of the lead text (en, de, ru, uk, es, fr, it, nl, pl, ...).\n\nOutput exactly this structure:\n{\"lead_id\":\"\",\"kind\":\"lead\",\"language\":\"\",\"bot_type\":\"\",\"description_ru\":\"\",\"client_name\":null,\"country\":null,\n\"budget\":null,\n\"scores\":{\"telegram_relevance\":0,\"budget\":0,\"project_clarity\":0,\"client_credibility\":0,\"commercial_potential\":0,\"fit\":0,\"urgency\":0,\"competition\":0,\"source_quality\":0,\"complexity_fit\":0},\n\"reasons\":{\"telegram_relevance\":\"\",\"budget\":\"\",\"project_clarity\":\"\",\"client_credibility\":\"\",\"commercial_potential\":\"\",\"fit\":\"\",\"urgency\":\"\",\"competition\":\"\",\"source_quality\":\"\",\"complexity_fit\":\"\"},\n\"risk_flags\":[],\"duplicate_of\":null}\nWhen budget is known: \"budget\":{\"amount\":800,\"currency\":\"GBP\",\"type\":\"fixed\"}.\n\nLEAD (JSON fields, description separately):\n{\"lead_id\":\"{{3.lead_id}}\",\"title\":\"{{3.title}}\",\"source\":\"{{3.source}}\",\"source_url\":\"{{ifempty(3.source_url; \"null\")}}\",\"published_at\":\"{{ifempty(3.published_at; \"null\")}}\",\"client_hint\":\"{{if(contains(3.client_hint; \"noclient-\"); \"null\"; 3.client_hint)}}\",\"found_at\":\"{{3.found_at}}\"}\n<description_original>\n{{3.description_original}}\n</description_original>\nReturn ONLY the JSON object for lead_id {{3.lead_id}}.",
+        "max_tokens": "{{ifempty(2.analyst_max_tokens; 1500)}}"
+       },
+       "parameters": {},
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "onerror": [
+        {
+         "id": 509,
+         "module": "builtin:Resume",
+         "version": 1,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         },
+         "mapper": {
+          "result": "",
+          "stop_reason": "error",
+          "usage": {
+           "input_tokens": 0,
+           "output_tokens": 0
+          }
+         }
+        }
+       ]
+      },
+      {
+       "id": 10,
+       "module": "json:ParseJSON",
+       "version": 1,
+       "mapper": {
+        "json": "{{trim(replace(replace(9.result; \"/^\\s*```(json)?/\"; \"\"); \"/```\\s*$/\"; \"\"))}}"
+       },
+       "parameters": {
+        "type": 618689
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "onerror": [
+        {
+         "id": 510,
+         "module": "builtin:Resume",
+         "version": 1,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         },
+         "mapper": {
+          "lead_id": ""
+         }
+        }
+       ]
+      },
+      {
+       "id": 11,
+       "module": "builtin:BasicRouter",
+       "version": 1,
+       "mapper": null,
+       "metadata": {
+        "designer": {
+         "x": 2400,
+         "y": 0
+        }
+       },
+       "routes": [
+        {
+         "flow": [
+          {
+           "id": 12,
+           "module": "util:SetVariables",
+           "version": 1,
+           "mapper": {
+            "variables": [
+             {
+              "name": "raw",
+              "value": "{{round(10 * (2.w_telegram_relevance * parseNumber(10.scores.telegram_relevance; \".\") + 2.w_budget * parseNumber(10.scores.budget; \".\") + 2.w_project_clarity * parseNumber(10.scores.project_clarity; \".\") + 2.w_client_credibility * parseNumber(10.scores.client_credibility; \".\") + 2.w_commercial_potential * parseNumber(10.scores.commercial_potential; \".\") + 2.w_fit * parseNumber(10.scores.fit; \".\") + 2.w_urgency * parseNumber(10.scores.urgency; \".\") + 2.w_competition * parseNumber(10.scores.competition; \".\") + 2.w_source_quality * parseNumber(10.scores.source_quality; \".\") + 2.w_complexity_fit * parseNumber(10.scores.complexity_fit; \".\")))}}"
+             },
+             {
+              "name": "beur",
+              "value": "{{if(10.budget.amount; if(switch(upper(ifempty(10.budget.currency; \"\")); \"EUR\"; 1; \"USD\"; 2.fx_usd; \"GBP\"; 2.fx_gbp; \"CHF\"; 2.fx_chf; \"PLN\"; 2.fx_pln; \"UAH\"; 2.fx_uah; \"CAD\"; 2.fx_cad; \"AUD\"; 2.fx_aud; \"INR\"; 2.fx_inr; \"RUB\"; 2.fx_rub; \"\"); round(10.budget.amount * switch(upper(ifempty(10.budget.currency; \"\")); \"EUR\"; 1; \"USD\"; 2.fx_usd; \"GBP\"; 2.fx_gbp; \"CHF\"; 2.fx_chf; \"PLN\"; 2.fx_pln; \"UAH\"; 2.fx_uah; \"CAD\"; 2.fx_cad; \"AUD\"; 2.fx_aud; \"INR\"; 2.fx_inr; \"RUB\"; 2.fx_rub; \"\"); 2); \"\"); \"\")}}"
+             },
+             {
+              "name": "cost",
+              "value": "{{ifempty(9.usage.input_tokens; 0) * ifempty(2.analyst_price_in_mtok; 1) / 1000000 + ifempty(9.usage.output_tokens; 0) * ifempty(2.analyst_price_out_mtok; 5) / 1000000}}"
+             },
+             {
+              "name": "flags",
+              "value": "{{join(10.risk_flags; \", \")}}"
+             }
+            ],
+            "scope": "roundtrip"
+           },
+           "parameters": {},
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "filter": {
+            "name": "JSON валиден",
+            "conditions": [
+             [
+              {
+               "a": "{{10.lead_id}}",
+               "o": "text:equal",
+               "b": "{{1.lead_id}}"
+              },
+              {
+               "a": "{{10.kind}}",
+               "o": "text:pattern",
+               "b": "^(lead|prospect)$"
+              },
+              {
+               "a": "{{10.scores.telegram_relevance}}",
+               "o": "text:pattern",
+               "b": "^(10(\\.0+)?|[0-9](\\.[0-9]+)?)$"
+              },
+              {
+               "a": "{{10.scores.budget}}",
+               "o": "text:pattern",
+               "b": "^(10(\\.0+)?|[0-9](\\.[0-9]+)?)$"
+              },
+              {
+               "a": "{{10.scores.project_clarity}}",
+               "o": "text:pattern",
+               "b": "^(10(\\.0+)?|[0-9](\\.[0-9]+)?)$"
+              },
+              {
+               "a": "{{10.scores.client_credibility}}",
+               "o": "text:pattern",
+               "b": "^(10(\\.0+)?|[0-9](\\.[0-9]+)?)$"
+              },
+              {
+               "a": "{{10.scores.commercial_potential}}",
+               "o": "text:pattern",
+               "b": "^(10(\\.0+)?|[0-9](\\.[0-9]+)?)$"
+              },
+              {
+               "a": "{{10.scores.fit}}",
+               "o": "text:pattern",
+               "b": "^(10(\\.0+)?|[0-9](\\.[0-9]+)?)$"
+              },
+              {
+               "a": "{{10.scores.urgency}}",
+               "o": "text:pattern",
+               "b": "^(10(\\.0+)?|[0-9](\\.[0-9]+)?)$"
+              },
+              {
+               "a": "{{10.scores.competition}}",
+               "o": "text:pattern",
+               "b": "^(10(\\.0+)?|[0-9](\\.[0-9]+)?)$"
+              },
+              {
+               "a": "{{10.scores.source_quality}}",
+               "o": "text:pattern",
+               "b": "^(10(\\.0+)?|[0-9](\\.[0-9]+)?)$"
+              },
+              {
+               "a": "{{10.scores.complexity_fit}}",
+               "o": "text:pattern",
+               "b": "^(10(\\.0+)?|[0-9](\\.[0-9]+)?)$"
+              }
+             ]
+            ]
+           }
+          },
+          {
+           "id": 13,
+           "module": "util:SetVariables",
+           "version": 1,
+           "mapper": {
+            "variables": [
+             {
+              "name": "score",
+              "value": "{{min(12.raw; if(3.source_url; 100; 59); if(12.flags; 39; 100); if(12.beur; if(12.beur < 2.minimum_order_eur; 59; 100); 100); if(10.kind = \"prospect\"; 59; 100))}}"
+             },
+             {
+              "name": "cap_reason",
+              "value": "{{if(3.source_url; \"\"; \"нет source_url — не выше COLD (59); \")}}{{if(12.flags; \"risk_flags: \" + 12.flags + \" — не выше 39; \"; \"\")}}{{if(12.beur; if(12.beur < 2.minimum_order_eur; \"бюджет ≈ \" + 12.beur + \" € < \" + 2.minimum_order_eur + \" € — не выше 59; \"; \"\"); \"\")}}{{if(10.kind = \"prospect\"; \"prospect — не выше 59; \"; \"\")}}"
+             }
+            ],
+            "scope": "roundtrip"
+           },
+           "parameters": {},
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           }
+          },
+          {
+           "id": 14,
+           "module": "util:SetVariables",
+           "version": 1,
+           "mapper": {
+            "variables": [
+             {
+              "name": "grade",
+              "value": "{{if(13.score >= 2.hot_threshold; \"HOT\"; if(13.score >= 2.warm_threshold; \"WARM\"; if(13.score >= 2.cold_threshold; \"COLD\"; \"REJECT\")))}}"
+             }
+            ],
+            "scope": "roundtrip"
+           },
+           "parameters": {},
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           }
+          },
+          {
+           "id": 15,
+           "module": "util:SetVariables",
+           "version": 1,
+           "mapper": {
+            "variables": [
+             {
+              "name": "card",
+              "value": "{{switch(14.grade; \"HOT\"; \"🔥\"; \"WARM\"; \"🌤\"; \"COLD\"; \"❄️\"; \"⛔\")}} {{14.grade}} · {{13.score}}/100\n📌 {{3.title}}\n🌍 {{ifempty(10.country; \"страна неизвестна\")}} · 🌐 {{ifempty(10.language; \"?\")}} · 📍 {{3.source}}\n💰 Бюджет: {{if(10.budget.amount; 10.budget.amount + \" \" + 10.budget.currency + if(12.beur; \" ≈ \" + 12.beur + \" EUR\"; \" (курс не задан)\"); \"не указан\")}}\n🎯 Тип: {{ifempty(10.bot_type; \"unknown\")}} · {{10.kind}}\n🧠 Суть: {{10.description_ru}}\n\n📊 Оценка:\nTelegram relevance: {{10.scores.telegram_relevance}}/10 — {{10.reasons.telegram_relevance}}\nBudget: {{10.scores.budget}}/10 — {{10.reasons.budget}}\nClarity: {{10.scores.project_clarity}}/10 — {{10.reasons.project_clarity}}\nCredibility: {{10.scores.client_credibility}}/10 — {{10.reasons.client_credibility}}\nCommercial: {{10.scores.commercial_potential}}/10 — {{10.reasons.commercial_potential}}\nFit: {{10.scores.fit}}/10 — {{10.reasons.fit}}\nUrgency: {{10.scores.urgency}}/10 — {{10.reasons.urgency}}\nCompetition: {{10.scores.competition}}/10 — {{10.reasons.competition}}\nSource: {{10.scores.source_quality}}/10 — {{10.reasons.source_quality}}\nComplexity fit: {{10.scores.complexity_fit}}/10 — {{10.reasons.complexity_fit}}\n\n⚠️ Risk: {{ifempty(12.flags; \"None\")}}\n{{if(13.cap_reason; \"🧮 Ограничение: \" + 13.cap_reason + newline; \"\")}}🔗 Original: {{ifempty(3.source_url; \"нет ссылки\")}}\n🆔 {{1.lead_id}}"
+             },
+             {
+              "name": "next",
+              "value": "{{if(14.grade = \"HOT\"; \"SENT_TO_TELEGRAM\"; if(14.grade = \"WARM\"; \"SENT_TO_TELEGRAM\"; \"ARCHIVED\"))}}"
+             }
+            ],
+            "scope": "roundtrip"
+           },
+           "parameters": {},
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           }
+          },
+          {
+           "id": 16,
+           "module": "datastore:UpdateRecord",
+           "version": 1,
+           "mapper": {
+            "key": "{{1.lead_id}}",
+            "upsert": false,
+            "overwriteArrays": false,
+            "data": {
+             "kind": "{{10.kind}}",
+             "language": "{{10.language}}",
+             "bot_type": "{{10.bot_type}}",
+             "description_ru": "{{10.description_ru}}",
+             "client_name": "{{10.client_name}}",
+             "country": "{{10.country}}",
+             "budget_amount": "{{10.budget.amount}}",
+             "budget_currency": "{{10.budget.currency}}",
+             "budget_type": "{{10.budget.type}}",
+             "budget_eur": "{{12.beur}}",
+             "scores": "{\"telegram_relevance\":{{parseNumber(10.scores.telegram_relevance; \".\")}},\"budget\":{{parseNumber(10.scores.budget; \".\")}},\"project_clarity\":{{parseNumber(10.scores.project_clarity; \".\")}},\"client_credibility\":{{parseNumber(10.scores.client_credibility; \".\")}},\"commercial_potential\":{{parseNumber(10.scores.commercial_potential; \".\")}},\"fit\":{{parseNumber(10.scores.fit; \".\")}},\"urgency\":{{parseNumber(10.scores.urgency; \".\")}},\"competition\":{{parseNumber(10.scores.competition; \".\")}},\"source_quality\":{{parseNumber(10.scores.source_quality; \".\")}},\"complexity_fit\":{{parseNumber(10.scores.complexity_fit; \".\")}}}",
+             "reasons": "{{9.result}}",
+             "score_raw": "{{12.raw}}",
+             "score": "{{13.score}}",
+             "score_cap_reason": "{{13.cap_reason}}",
+             "grade": "{{14.grade}}",
+             "risk_flags": "{{12.flags}}",
+             "duplicate_of": "{{10.duplicate_of}}",
+             "card_text": "{{15.card}}",
+             "status": "ANALYZED",
+             "status_at": "{{now}}",
+             "error_code": "",
+             "error_message": "",
+             "updated_at": "{{now}}"
+            }
+           },
+           "parameters": {
+            "datastore": 207950
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           }
+          },
+          {
+           "id": 17,
+           "module": "datastore:AddRecord",
+           "version": 1,
+           "mapper": {
+            "key": "{{uuid}}",
+            "overwrite": true,
+            "data": {
+             "table": "runs",
+             "run_id": "{{uuid}}",
+             "lead_id": "{{1.lead_id}}",
+             "agent": "analyst",
+             "model": "{{ifempty(9.model; \"claude-haiku-4-5\")}}",
+             "started_at": "{{7.updated_at}}",
+             "finished_at": "{{now}}",
+             "input_tokens": "{{9.usage.input_tokens}}",
+             "output_tokens": "{{9.usage.output_tokens}}",
+             "estimated_cost_usd": "{{12.cost}}",
+             "status": "OK",
+             "attempt": "{{7.attempts}}",
+             "created_at": "{{now}}",
+             "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+            }
+           },
+           "parameters": {
+            "datastore": 207952
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           }
+          },
+          {
+           "id": 18,
+           "module": "datastore:UpdateRecord",
+           "version": 1,
+           "mapper": {
+            "key": "day_{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}",
+            "upsert": true,
+            "overwriteArrays": false,
+            "data": {
+             "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}",
+             "cost_usd": "{{ifempty(5.cost_usd; 0) + 12.cost}}"
+            }
+           },
+           "parameters": {
+            "datastore": 207951
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           }
+          },
+          {
+           "id": 19,
+           "module": "datastore:AddRecord",
+           "version": 1,
+           "mapper": {
+            "key": "{{uuid}}",
+            "overwrite": true,
+            "data": {
+             "table": "events",
+             "event_id": "{{uuid}}",
+             "lead_id": "{{1.lead_id}}",
+             "event": "ANALYST_COMPLETED",
+             "details": "tokens in/out {{9.usage.input_tokens}}/{{9.usage.output_tokens}}, ${{12.cost}}",
+             "old_status": "NEW",
+             "new_status": "ANALYZED",
+             "created_at": "{{now}}",
+             "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+            }
+           },
+           "parameters": {
+            "datastore": 207952
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           }
+          },
+          {
+           "id": 26,
+           "module": "datastore:AddRecord",
+           "version": 1,
+           "mapper": {
+            "key": "{{uuid}}",
+            "overwrite": true,
+            "data": {
+             "table": "events",
+             "event_id": "{{uuid}}",
+             "lead_id": "{{1.lead_id}}",
+             "event": "SCORE_CALCULATED",
+             "details": "raw {{12.raw}} → {{13.score}} {{14.grade}}; {{13.cap_reason}}",
+             "old_status": "",
+             "new_status": "",
+             "created_at": "{{now}}",
+             "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+            }
+           },
+           "parameters": {
+            "datastore": 207952
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           }
+          },
+          {
+           "id": 27,
+           "module": "telegram:UniversalAPICall",
+           "version": 1,
+           "mapper": {
+            "method": "POST",
+            "bodyType": "assembled_body",
+            "body_spec": [
+             {
+              "key": "chat_id",
+              "value": "{{2.owner_chat_id}}"
+             },
+             {
+              "key": "text",
+              "value": "{{15.card}}"
+             },
+             {
+              "key": "reply_markup",
+              "value": "{\"inline_keyboard\": [[{\"text\": \"✅ Approve\", \"callback_data\": \"ap|{{1.lead_id}}\"}, {\"text\": \"❌ Reject\", \"callback_data\": \"rj|{{1.lead_id}}\"}], [{\"text\": \"🔍 More analysis\", \"callback_data\": \"ma|{{1.lead_id}}\"}]]}"
+             }
+            ],
+            "urlMethod": "sendMessage"
+           },
+           "parameters": {
+            "__IMTCONN__": 9480305
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "onerror": [
+            {
+             "id": 527,
+             "module": "datastore:UpdateRecord",
+             "version": 1,
+             "mapper": {
+              "key": "{{1.lead_id}}",
+              "upsert": false,
+              "overwriteArrays": false,
+              "data": {
+               "status": "ERROR",
+               "error_code": "TELEGRAM_SEND",
+               "error_message": "sendMessage failed",
+               "status_at": "{{now}}"
+              }
+             },
+             "parameters": {
+              "datastore": 207950
+             },
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             }
+            },
+            {
+             "id": 627,
+             "module": "builtin:Ignore",
+             "version": 1,
+             "mapper": null,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             }
+            }
+           ]
+          },
+          {
+           "id": 28,
+           "module": "datastore:UpdateRecord",
+           "version": 1,
+           "mapper": {
+            "key": "{{1.lead_id}}",
+            "upsert": false,
+            "overwriteArrays": false,
+            "data": {
+             "status": "{{15.next}}",
+             "tg_message_id": "{{27.body.result.message_id}}",
+             "status_at": "{{now}}"
+            }
+           },
+           "parameters": {
+            "datastore": 207950
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           }
+          },
+          {
+           "id": 29,
+           "module": "datastore:AddRecord",
+           "version": 1,
+           "mapper": {
+            "key": "{{uuid}}",
+            "overwrite": true,
+            "data": {
+             "table": "events",
+             "event_id": "{{uuid}}",
+             "lead_id": "{{1.lead_id}}",
+             "event": "TELEGRAM_SENT",
+             "details": "message {{27.body.result.message_id}}",
+             "old_status": "ANALYZED",
+             "new_status": "{{15.next}}",
+             "created_at": "{{now}}",
+             "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+            }
+           },
+           "parameters": {
+            "datastore": 207952
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           }
+          },
+          {
+           "id": 30,
+           "module": "builtin:BasicRouter",
+           "version": 1,
+           "mapper": null,
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "routes": [
+            {
+             "flow": [
+              {
+               "id": 31,
+               "module": "datastore:UpdateRecord",
+               "version": 1,
+               "mapper": {
+                "key": "main",
+                "upsert": true,
+                "overwriteArrays": false,
+                "data": {
+                 "warned_80": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+                }
+               },
+               "parameters": {
+                "datastore": 207951
+               },
+               "metadata": {
+                "designer": {
+                 "x": 0,
+                 "y": 0
+                }
+               },
+               "filter": {
+                "name": "80 % бюджета",
+                "conditions": [
+                 [
+                  {
+                   "a": "{{(ifempty(5.cost_usd; 0) + 12.cost)}}",
+                   "o": "number:greaterorequal",
+                   "b": "{{2.daily_budget_usd * 0.8}}"
+                  },
+                  {
+                   "a": "{{(ifempty(5.cost_usd; 0) + 12.cost)}}",
+                   "o": "number:less",
+                   "b": "{{2.daily_budget_usd}}"
+                  },
+                  {
+                   "a": "{{2.warned_80}}",
+                   "o": "text:notequal",
+                   "b": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+                  }
+                 ]
+                ]
+               }
+              },
+              {
+               "id": 32,
+               "module": "telegram:UniversalAPICall",
+               "version": 1,
+               "mapper": {
+                "method": "POST",
+                "bodyType": "assembled_body",
+                "body_spec": [
+                 {
+                  "key": "chat_id",
+                  "value": "{{2.owner_chat_id}}"
+                 },
+                 {
+                  "key": "text",
+                  "value": "⚠️ Израсходовано 80 % дневного бюджета Claude: ${{formatNumber((ifempty(5.cost_usd; 0) + 12.cost); 4; \".\"; \"\")}} из ${{2.daily_budget_usd}}."
+                 }
+                ],
+                "urlMethod": "sendMessage"
+               },
+               "parameters": {
+                "__IMTCONN__": 9480305
+               },
+               "metadata": {
+                "designer": {
+                 "x": 0,
+                 "y": 0
+                }
+               },
+               "onerror": [
+                {
+                 "id": 532,
+                 "module": "builtin:Ignore",
+                 "version": 1,
+                 "mapper": null,
+                 "metadata": {
+                  "designer": {
+                   "x": 0,
+                   "y": 0
+                  }
+                 }
+                }
+               ]
+              }
+             ]
+            },
+            {
+             "flow": [
+              {
+               "id": 33,
+               "module": "datastore:UpdateRecord",
+               "version": 1,
+               "mapper": {
+                "key": "main",
+                "upsert": true,
+                "overwriteArrays": false,
+                "data": {
+                 "paused": true,
+                 "paused_reason": "дневной бюджет исчерпан",
+                 "updated_at": "{{now}}"
+                }
+               },
+               "parameters": {
+                "datastore": 207951
+               },
+               "metadata": {
+                "designer": {
+                 "x": 0,
+                 "y": 0
+                }
+               },
+               "filter": {
+                "name": "100 % бюджета",
+                "conditions": [
+                 [
+                  {
+                   "a": "{{(ifempty(5.cost_usd; 0) + 12.cost)}}",
+                   "o": "number:greaterorequal",
+                   "b": "{{2.daily_budget_usd}}"
+                  }
+                 ]
+                ]
+               }
+              },
+              {
+               "id": 34,
+               "module": "datastore:AddRecord",
+               "version": 1,
+               "mapper": {
+                "key": "{{uuid}}",
+                "overwrite": true,
+                "data": {
+                 "table": "events",
+                 "event_id": "{{uuid}}",
+                 "lead_id": "",
+                 "event": "BUDGET_PAUSED",
+                 "details": "spent ${{(ifempty(5.cost_usd; 0) + 12.cost)}}",
+                 "old_status": "",
+                 "new_status": "",
+                 "created_at": "{{now}}",
+                 "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+                }
+               },
+               "parameters": {
+                "datastore": 207952
+               },
+               "metadata": {
+                "designer": {
+                 "x": 0,
+                 "y": 0
+                }
+               }
+              },
+              {
+               "id": 35,
+               "module": "telegram:UniversalAPICall",
+               "version": 1,
+               "mapper": {
+                "method": "POST",
+                "bodyType": "assembled_body",
+                "body_spec": [
+                 {
+                  "key": "chat_id",
+                  "value": "{{2.owner_chat_id}}"
+                 },
+                 {
+                  "key": "text",
+                  "value": "⛔ Дневной бюджет Claude исчерпан (${{2.daily_budget_usd}}). AI-обработка на паузе, новые заявки копятся в очереди. /resume — продолжить."
+                 }
+                ],
+                "urlMethod": "sendMessage"
+               },
+               "parameters": {
+                "__IMTCONN__": 9480305
+               },
+               "metadata": {
+                "designer": {
+                 "x": 0,
+                 "y": 0
+                }
+               },
+               "onerror": [
+                {
+                 "id": 535,
+                 "module": "builtin:Ignore",
+                 "version": 1,
+                 "mapper": null,
+                 "metadata": {
+                  "designer": {
+                   "x": 0,
+                   "y": 0
+                  }
+                 }
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "flow": [
+          {
+           "id": 40,
+           "module": "datastore:AddRecord",
+           "version": 1,
+           "mapper": {
+            "key": "{{uuid}}",
+            "overwrite": true,
+            "data": {
+             "table": "runs",
+             "run_id": "{{uuid}}",
+             "lead_id": "{{1.lead_id}}",
+             "agent": "analyst",
+             "model": "claude-haiku-4-5",
+             "started_at": "{{7.updated_at}}",
+             "finished_at": "{{now}}",
+             "input_tokens": "{{ifempty(9.usage.input_tokens; 0)}}",
+             "output_tokens": "{{ifempty(9.usage.output_tokens; 0)}}",
+             "estimated_cost_usd": "{{ifempty(9.usage.input_tokens; 0) * ifempty(2.analyst_price_in_mtok; 1) / 1000000 + ifempty(9.usage.output_tokens; 0) * ifempty(2.analyst_price_out_mtok; 5) / 1000000}}",
+             "status": "FAILED",
+             "error_code": "{{if(9.stop_reason = \"error\"; \"MODEL_ERROR\"; if(9.stop_reason = \"refusal\"; \"REFUSAL\"; \"JSON_INVALID\"))}}",
+             "error_message": "{{substring(ifempty(9.result; \"(empty)\"); 0; 300)}}",
+             "attempt": "{{ifempty(7.attempts; 1)}}",
+             "created_at": "{{now}}",
+             "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+            }
+           },
+           "parameters": {
+            "datastore": 207952
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "filter": {
+            "name": "JSON невалиден",
+            "conditions": [
+             [
+              {
+               "a": "{{10.lead_id}}",
+               "o": "text:notequal",
+               "b": "{{1.lead_id}}"
+              }
+             ],
+             [
+              {
+               "a": "{{10.kind}}",
+               "o": "text:notpattern",
+               "b": "^(lead|prospect)$"
+              }
+             ],
+             [
+              {
+               "a": "{{10.scores.telegram_relevance}}",
+               "o": "text:notpattern",
+               "b": "^(10(\\.0+)?|[0-9](\\.[0-9]+)?)$"
+              }
+             ],
+             [
+              {
+               "a": "{{10.scores.budget}}",
+               "o": "text:notpattern",
+               "b": "^(10(\\.0+)?|[0-9](\\.[0-9]+)?)$"
+              }
+             ],
+             [
+              {
+               "a": "{{10.scores.project_clarity}}",
+               "o": "text:notpattern",
+               "b": "^(10(\\.0+)?|[0-9](\\.[0-9]+)?)$"
+              }
+             ],
+             [
+              {
+               "a": "{{10.scores.client_credibility}}",
+               "o": "text:notpattern",
+               "b": "^(10(\\.0+)?|[0-9](\\.[0-9]+)?)$"
+              }
+             ],
+             [
+              {
+               "a": "{{10.scores.commercial_potential}}",
+               "o": "text:notpattern",
+               "b": "^(10(\\.0+)?|[0-9](\\.[0-9]+)?)$"
+              }
+             ],
+             [
+              {
+               "a": "{{10.scores.fit}}",
+               "o": "text:notpattern",
+               "b": "^(10(\\.0+)?|[0-9](\\.[0-9]+)?)$"
+              }
+             ],
+             [
+              {
+               "a": "{{10.scores.urgency}}",
+               "o": "text:notpattern",
+               "b": "^(10(\\.0+)?|[0-9](\\.[0-9]+)?)$"
+              }
+             ],
+             [
+              {
+               "a": "{{10.scores.competition}}",
+               "o": "text:notpattern",
+               "b": "^(10(\\.0+)?|[0-9](\\.[0-9]+)?)$"
+              }
+             ],
+             [
+              {
+               "a": "{{10.scores.source_quality}}",
+               "o": "text:notpattern",
+               "b": "^(10(\\.0+)?|[0-9](\\.[0-9]+)?)$"
+              }
+             ],
+             [
+              {
+               "a": "{{10.scores.complexity_fit}}",
+               "o": "text:notpattern",
+               "b": "^(10(\\.0+)?|[0-9](\\.[0-9]+)?)$"
+              }
+             ]
+            ]
+           }
+          },
+          {
+           "id": 41,
+           "module": "datastore:UpdateRecord",
+           "version": 1,
+           "mapper": {
+            "key": "day_{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}",
+            "upsert": true,
+            "overwriteArrays": false,
+            "data": {
+             "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}",
+             "cost_usd": "{{ifempty(5.cost_usd; 0) + ifempty(9.usage.input_tokens; 0) * ifempty(2.analyst_price_in_mtok; 1) / 1000000 + ifempty(9.usage.output_tokens; 0) * ifempty(2.analyst_price_out_mtok; 5) / 1000000}}"
+            }
+           },
+           "parameters": {
+            "datastore": 207951
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           }
+          },
+          {
+           "id": 42,
+           "module": "builtin:BasicRouter",
+           "version": 1,
+           "mapper": null,
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "routes": [
+            {
+             "flow": [
+              {
+               "id": 43,
+               "module": "datastore:AddRecord",
+               "version": 1,
+               "mapper": {
+                "key": "{{uuid}}",
+                "overwrite": true,
+                "data": {
+                 "table": "events",
+                 "event_id": "{{uuid}}",
+                 "lead_id": "{{1.lead_id}}",
+                 "event": "ANALYST_RETRY",
+                 "details": "attempt {{ifempty(7.attempts; 1)}} failed, retry in {{min(300; parseNumber(ifempty(get(split(2.retry_delays; \",\"); ifempty(7.attempts; 1)); \"1\"); \".\") * 60)}} s",
+                 "old_status": "",
+                 "new_status": "",
+                 "created_at": "{{now}}",
+                 "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+                }
+               },
+               "parameters": {
+                "datastore": 207952
+               },
+               "metadata": {
+                "designer": {
+                 "x": 0,
+                 "y": 0
+                }
+               },
+               "filter": {
+                "name": "Повтор",
+                "conditions": [
+                 [
+                  {
+                   "a": "{{ifempty(7.attempts; 1)}}",
+                   "o": "number:less",
+                   "b": "{{ifempty(2.max_retry_attempts; 3)}}"
+                  }
+                 ]
+                ]
+               }
+              },
+              {
+               "id": 44,
+               "module": "util:FunctionSleep",
+               "version": 1,
+               "mapper": {
+                "duration": "{{min(300; parseNumber(ifempty(get(split(2.retry_delays; \",\"); ifempty(7.attempts; 1)); \"1\"); \".\") * 60)}}"
+               },
+               "parameters": {},
+               "metadata": {
+                "designer": {
+                 "x": 0,
+                 "y": 0
+                }
+               }
+              },
+              {
+               "id": 45,
+               "module": "http:ActionSendData",
+               "version": 3,
+               "mapper": {
+                "url": "https://hook.eu1.make.com/2g6fjqg256vhydy4s3swxukppc486udl",
+                "method": "post",
+                "headers": [],
+                "qs": [],
+                "bodyType": "x_www_form_urlencoded",
+                "formFields": [
+                 {
+                  "key": "token",
+                  "value": "{{2.internal_token}}"
+                 },
+                 {
+                  "key": "lead_id",
+                  "value": "{{1.lead_id}}"
+                 }
+                ],
+                "parseResponse": false,
+                "serializeUrl": false,
+                "shareCookies": false,
+                "rejectUnauthorized": true,
+                "followRedirect": true,
+                "followAllRedirects": false,
+                "useQuerystring": false,
+                "gzip": true,
+                "useMtls": false
+               },
+               "parameters": {
+                "handleErrors": true,
+                "useNewZLibDeCompress": true
+               },
+               "metadata": {
+                "designer": {
+                 "x": 0,
+                 "y": 0
+                }
+               },
+               "onerror": [
+                {
+                 "id": 545,
+                 "module": "builtin:Ignore",
+                 "version": 1,
+                 "mapper": null,
+                 "metadata": {
+                  "designer": {
+                   "x": 0,
+                   "y": 0
+                  }
+                 }
+                }
+               ]
+              }
+             ]
+            },
+            {
+             "flow": [
+              {
+               "id": 46,
+               "module": "datastore:UpdateRecord",
+               "version": 1,
+               "mapper": {
+                "key": "{{1.lead_id}}",
+                "upsert": false,
+                "overwriteArrays": false,
+                "data": {
+                 "status": "ERROR",
+                 "status_at": "{{now}}",
+                 "error_code": "ANALYST_FAILED",
+                 "error_message": "{{substring(ifempty(9.result; ifempty(9.stop_reason; \"empty\")); 0; 300)}}",
+                 "updated_at": "{{now}}"
+                }
+               },
+               "parameters": {
+                "datastore": 207950
+               },
+               "metadata": {
+                "designer": {
+                 "x": 0,
+                 "y": 0
+                }
+               },
+               "filter": {
+                "name": "Попытки исчерпаны",
+                "conditions": [
+                 [
+                  {
+                   "a": "{{ifempty(7.attempts; 1)}}",
+                   "o": "number:greaterorequal",
+                   "b": "{{ifempty(2.max_retry_attempts; 3)}}"
+                  }
+                 ]
+                ]
+               }
+              },
+              {
+               "id": 47,
+               "module": "datastore:AddRecord",
+               "version": 1,
+               "mapper": {
+                "key": "{{uuid}}",
+                "overwrite": true,
+                "data": {
+                 "table": "events",
+                 "event_id": "{{uuid}}",
+                 "lead_id": "{{1.lead_id}}",
+                 "event": "ERROR",
+                 "details": "Analyst failed after {{ifempty(7.attempts; 1)}} attempts",
+                 "old_status": "NEW",
+                 "new_status": "ERROR",
+                 "created_at": "{{now}}",
+                 "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+                }
+               },
+               "parameters": {
+                "datastore": 207952
+               },
+               "metadata": {
+                "designer": {
+                 "x": 0,
+                 "y": 0
+                }
+               }
+              },
+              {
+               "id": 48,
+               "module": "telegram:UniversalAPICall",
+               "version": 1,
+               "mapper": {
+                "method": "POST",
+                "bodyType": "assembled_body",
+                "body_spec": [
+                 {
+                  "key": "chat_id",
+                  "value": "{{2.owner_chat_id}}"
+                 },
+                 {
+                  "key": "text",
+                  "value": "⚠️ {{1.lead_id}}: Analyst не дал корректный ответ после {{ifempty(7.attempts; 1)}} попыток. Лид сохранён со статусом ERROR, заявка не потеряна."
+                 }
+                ],
+                "urlMethod": "sendMessage"
+               },
+               "parameters": {
+                "__IMTCONN__": 9480305
+               },
+               "metadata": {
+                "designer": {
+                 "x": 0,
+                 "y": 0
+                }
+               },
+               "onerror": [
+                {
+                 "id": 548,
+                 "module": "builtin:Ignore",
+                 "version": 1,
+                 "mapper": null,
+                 "metadata": {
+                  "designer": {
+                   "x": 0,
+                   "y": 0
+                  }
+                 }
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 50,
+       "module": "datastore:UpdateRecord",
+       "version": 1,
+       "mapper": {
+        "key": "main",
+        "upsert": true,
+        "overwriteArrays": false,
+        "data": {
+         "paused": true,
+         "paused_reason": "дневной бюджет исчерпан",
+         "updated_at": "{{now}}"
+        }
+       },
+       "parameters": {
+        "datastore": 207951
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "filter": {
+        "name": "Бюджет исчерпан до вызова",
+        "conditions": [
+         [
+          {
+           "a": "{{3.status}}",
+           "o": "text:equal",
+           "b": "NEW"
+          },
+          {
+           "a": "{{2.paused}}",
+           "o": "text:notequal",
+           "b": "true"
+          },
+          {
+           "a": "{{ifempty(5.cost_usd; 0)}}",
+           "o": "number:greaterorequal",
+           "b": "{{2.daily_budget_usd}}"
+          }
+         ]
+        ]
+       }
+      },
+      {
+       "id": 51,
+       "module": "telegram:UniversalAPICall",
+       "version": 1,
+       "mapper": {
+        "method": "POST",
+        "bodyType": "assembled_body",
+        "body_spec": [
+         {
+          "key": "chat_id",
+          "value": "{{2.owner_chat_id}}"
+         },
+         {
+          "key": "text",
+          "value": "⛔ Дневной бюджет Claude исчерпан — {{1.lead_id}} ждёт в очереди. /resume — продолжить."
+         }
+        ],
+        "urlMethod": "sendMessage"
+       },
+       "parameters": {
+        "__IMTCONN__": 9480305
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "onerror": [
+        {
+         "id": 551,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "mapper": null,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         }
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

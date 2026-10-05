@@ -1,0 +1,603 @@
+{
+ "name": "LH-03 Lead Hunter — Manual Intake",
+ "metadata": {
+  "version": 1,
+  "instant": true
+ },
+ "flow": [
+  {
+   "id": 1,
+   "module": "gateway:CustomWebHook",
+   "version": 1,
+   "mapper": {},
+   "parameters": {
+    "hook": 3846695,
+    "maxResults": 1
+   },
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   }
+  },
+  {
+   "id": 2,
+   "module": "datastore:GetRecord",
+   "version": 1,
+   "mapper": {
+    "key": "main",
+    "returnWrapped": false
+   },
+   "parameters": {
+    "datastore": 207951
+   },
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   }
+  },
+  {
+   "id": 3,
+   "module": "util:SetVariables",
+   "version": 1,
+   "mapper": {
+    "variables": [
+     {
+      "name": "raw",
+      "value": "{{trim(1.text)}}"
+     },
+     {
+      "name": "u",
+      "value": "{{ifempty(if(contains(1.text; \"http\"); replace(1.text; \"/^[\\s\\S]*?(https?:\\/\\/[^\\s<>)\\]]+)[\\s\\S]*$/\"; \"$1\"); \"\"); ifempty(first(split(1.text_links; \" \")); if(1.fwd_chat_username; \"https://t.me/\" + 1.fwd_chat_username + \"/\" + 1.fwd_message_id; \"\")))}}"
+     },
+     {
+      "name": "source",
+      "value": "{{if(1.fwd_chat_username; \"telegram:@\" + 1.fwd_chat_username; if(1.fwd_type = \"channel\"; \"telegram:\" + 1.fwd_chat_title; \"manual\"))}}"
+     },
+     {
+      "name": "client_hint",
+      "value": "{{lower(ifempty(1.fwd_user_username; ifempty(1.fwd_chat_username; ifempty(1.fwd_user_name; \"\"))))}}"
+     },
+     {
+      "name": "published_at",
+      "value": "{{if(1.fwd_date; parseDate(1.fwd_date; \"X\"); \"\")}}"
+     }
+    ],
+    "scope": "roundtrip"
+   },
+   "parameters": {},
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   },
+   "filter": {
+    "name": "Внутренний токен",
+    "conditions": [
+     [
+      {
+       "a": "{{1.token}}",
+       "o": "text:equal",
+       "b": "{{2.internal_token}}"
+      }
+     ]
+    ]
+   }
+  },
+  {
+   "id": 4,
+   "module": "util:SetVariables",
+   "version": 1,
+   "mapper": {
+    "variables": [
+     {
+      "name": "url",
+      "value": "{{if(3.u; \"https://\" + lower(replace(replace(replace(replace(replace(replace(3.u; \"/#.*$/\"; \"\"); \"/([?&])(utm_[^=&]*|fbclid|gclid|yclid|igsh|igshid|mibextid|si|ref|ref_src)=[^&]*/g\"; \"$1\"); \"/&&+/g\"; \"&\"); \"/\\?&/\"; \"?\"); \"/[?&]+$/\"; \"\"); \"/^https?:\\/\\/(www\\.)?([^\\/?#]+).*$/i\"; \"$2\")) + replace(replace(replace(replace(replace(replace(replace(3.u; \"/#.*$/\"; \"\"); \"/([?&])(utm_[^=&]*|fbclid|gclid|yclid|igsh|igshid|mibextid|si|ref|ref_src)=[^&]*/g\"; \"$1\"); \"/&&+/g\"; \"&\"); \"/\\?&/\"; \"?\"); \"/[?&]+$/\"; \"\"); \"/^https?:\\/\\/(www\\.)?[^\\/?#]+/i\"; \"\"); \"/\\/$/\"; \"\"); \"\")}}"
+     },
+     {
+      "name": "text_norm",
+      "value": "{{lower(trim(replace(replace(3.raw; \"/https?:\\/\\/\\S+/g\"; \"\"); \"/\\s+/g\"; \" \")))}}"
+     },
+     {
+      "name": "title",
+      "value": "{{substring(trim(replace(3.raw; \"/\\n[\\s\\S]*$/\"; \"\")); 0; 120)}}"
+     }
+    ],
+    "scope": "roundtrip"
+   },
+   "parameters": {},
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   }
+  },
+  {
+   "id": 5,
+   "module": "util:SetVariables",
+   "version": 1,
+   "mapper": {
+    "variables": [
+     {
+      "name": "text_hash",
+      "value": "{{sha256(4.text_norm)}}"
+     },
+     {
+      "name": "url_hash",
+      "value": "{{if(4.url; sha256(4.url); \"nourl-\" + sha256(4.text_norm))}}"
+     },
+     {
+      "name": "lead_id",
+      "value": "{{\"LH-\" + formatDate(now; \"YYYYMMDD\"; 2.timezone) + \"-\" + substring(sha256(4.text_norm + \"|\" + 4.url); 0; 6)}}"
+     },
+     {
+      "name": "title_key",
+      "value": "{{substring(lower(replace(4.title; \"/[\\s.,:;!?()\\[\\]«»\\-–—_*#]+/g\"; \"\")); 0; 40)}}"
+     },
+     {
+      "name": "client_key",
+      "value": "{{if(3.client_hint; 3.client_hint; \"noclient-\" + sha256(4.text_norm))}}"
+     },
+     {
+      "name": "source",
+      "value": "{{if(3.source = \"manual\"; if(4.url; replace(4.url; \"/^https:\\/\\/([^\\/]+).*$/\"; \"$1\"); \"manual\"); 3.source)}}"
+     }
+    ],
+    "scope": "roundtrip"
+   },
+   "parameters": {},
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   }
+  },
+  {
+   "id": 6,
+   "module": "datastore:SearchRecord",
+   "version": 1,
+   "mapper": {
+    "filter": [
+     [
+      {
+       "a": "url_hash",
+       "o": "text:equal",
+       "b": "{{5.url_hash}}"
+      }
+     ],
+     [
+      {
+       "a": "text_hash",
+       "o": "text:equal",
+       "b": "{{5.text_hash}}"
+      }
+     ],
+     [
+      {
+       "a": "client_hint",
+       "o": "text:equal",
+       "b": "{{5.client_key}}"
+      },
+      {
+       "a": "title_key",
+       "o": "text:equal",
+       "b": "{{5.title_key}}"
+      }
+     ]
+    ],
+    "sort": []
+   },
+   "parameters": {
+    "datastore": 207950,
+    "continueWhenNoRes": true,
+    "limit": 1
+   },
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   }
+  },
+  {
+   "id": 7,
+   "module": "builtin:BasicRouter",
+   "version": 1,
+   "mapper": null,
+   "metadata": {
+    "designer": {
+     "x": 1500,
+     "y": 0
+    }
+   },
+   "routes": [
+    {
+     "flow": [
+      {
+       "id": 10,
+       "module": "datastore:UpdateRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{6.key}}",
+        "upsert": false,
+        "overwriteArrays": false,
+        "data": {
+         "duplicates": "{{if(6.data.duplicates; 6.data.duplicates + \" | \"; \"\")}}{{ifempty(4.url; \"text:\" + 5.lead_id)}}",
+         "updated_at": "{{now}}"
+        }
+       },
+       "parameters": {
+        "datastore": 207950
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "filter": {
+        "name": "Дубликат",
+        "conditions": [
+         [
+          {
+           "a": "{{6.key}}",
+           "o": "exist"
+          }
+         ]
+        ]
+       }
+      },
+      {
+       "id": 11,
+       "module": "datastore:AddRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{uuid}}",
+        "overwrite": true,
+        "data": {
+         "table": "events",
+         "event_id": "{{uuid}}",
+         "lead_id": "{{6.key}}",
+         "event": "DUPLICATE_DETECTED",
+         "details": "new={{5.lead_id}} url={{4.url}}",
+         "old_status": "",
+         "new_status": "",
+         "created_at": "{{now}}",
+         "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+        }
+       },
+       "parameters": {
+        "datastore": 207952
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      },
+      {
+       "id": 12,
+       "module": "telegram:UniversalAPICall",
+       "version": 1,
+       "mapper": {
+        "method": "POST",
+        "bodyType": "assembled_body",
+        "body_spec": [
+         {
+          "key": "chat_id",
+          "value": "{{2.owner_chat_id}}"
+         },
+         {
+          "key": "text",
+          "value": "♻️ Дубликат: эта заявка уже есть — {{6.key}} ({{ifempty(6.data.grade; 6.data.status)}} {{6.data.score}}).\nНовый лид не создан, ссылка добавлена в duplicates."
+         }
+        ],
+        "urlMethod": "sendMessage"
+       },
+       "parameters": {
+        "__IMTCONN__": 9480305
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "onerror": [
+        {
+         "id": 512,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "mapper": null,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 20,
+       "module": "datastore:AddRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{5.lead_id}}",
+        "overwrite": true,
+        "data": {
+         "lead_id": "{{5.lead_id}}",
+         "kind": "lead",
+         "title": "{{4.title}}",
+         "title_key": "{{5.title_key}}",
+         "description_original": "{{3.raw}}",
+         "source": "{{5.source}}",
+         "source_url": "{{4.url}}",
+         "url_hash": "{{5.url_hash}}",
+         "text_hash": "{{5.text_hash}}",
+         "client_hint": "{{5.client_key}}",
+         "published_at": "{{3.published_at}}",
+         "found_at": "{{now}}",
+         "status": "NEW",
+         "status_at": "{{now}}",
+         "attempts": 0,
+         "duplicates": "",
+         "created_at": "{{now}}",
+         "updated_at": "{{now}}",
+         "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+        }
+       },
+       "parameters": {
+        "datastore": 207950
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "filter": {
+        "name": "Новый лид",
+        "conditions": [
+         [
+          {
+           "a": "{{6.key}}",
+           "o": "notexist"
+          }
+         ]
+        ]
+       }
+      },
+      {
+       "id": 21,
+       "module": "datastore:AddRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{uuid}}",
+        "overwrite": true,
+        "data": {
+         "table": "events",
+         "event_id": "{{uuid}}",
+         "lead_id": "{{5.lead_id}}",
+         "event": "LEAD_CREATED",
+         "details": "source={{5.source}} url={{ifempty(4.url; \"none\")}}",
+         "old_status": "",
+         "new_status": "NEW",
+         "created_at": "{{now}}",
+         "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+        }
+       },
+       "parameters": {
+        "datastore": 207952
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      },
+      {
+       "id": 22,
+       "module": "builtin:BasicRouter",
+       "version": 1,
+       "mapper": null,
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "routes": [
+        {
+         "flow": [
+          {
+           "id": 23,
+           "module": "telegram:UniversalAPICall",
+           "version": 1,
+           "mapper": {
+            "method": "POST",
+            "bodyType": "assembled_body",
+            "body_spec": [
+             {
+              "key": "chat_id",
+              "value": "{{2.owner_chat_id}}"
+             },
+             {
+              "key": "text",
+              "value": "⏸ Пауза: {{5.lead_id}} сохранён в очередь (NEW). Разберу после /resume."
+             }
+            ],
+            "urlMethod": "sendMessage"
+           },
+           "parameters": {
+            "__IMTCONN__": 9480305
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "filter": {
+            "name": "Пауза",
+            "conditions": [
+             [
+              {
+               "a": "{{2.paused}}",
+               "o": "text:equal",
+               "b": "true"
+              }
+             ]
+            ]
+           },
+           "onerror": [
+            {
+             "id": 523,
+             "module": "builtin:Ignore",
+             "version": 1,
+             "mapper": null,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             }
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "flow": [
+          {
+           "id": 24,
+           "module": "telegram:UniversalAPICall",
+           "version": 1,
+           "mapper": {
+            "method": "POST",
+            "bodyType": "assembled_body",
+            "body_spec": [
+             {
+              "key": "chat_id",
+              "value": "{{2.owner_chat_id}}"
+             },
+             {
+              "key": "text",
+              "value": "📥 {{5.lead_id}} создан{{if(4.url; \"\"; \" (без ссылки — не выше COLD)\")}}. Analyst оценивает…"
+             }
+            ],
+            "urlMethod": "sendMessage"
+           },
+           "parameters": {
+            "__IMTCONN__": 9480305
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "filter": {
+            "name": "Работаем",
+            "conditions": [
+             [
+              {
+               "a": "{{2.paused}}",
+               "o": "text:notequal",
+               "b": "true"
+              }
+             ]
+            ]
+           },
+           "onerror": [
+            {
+             "id": 524,
+             "module": "builtin:Ignore",
+             "version": 1,
+             "mapper": null,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             }
+            }
+           ]
+          },
+          {
+           "id": 25,
+           "module": "http:ActionSendData",
+           "version": 3,
+           "mapper": {
+            "url": "https://hook.eu1.make.com/2g6fjqg256vhydy4s3swxukppc486udl",
+            "method": "post",
+            "headers": [],
+            "qs": [],
+            "bodyType": "x_www_form_urlencoded",
+            "formFields": [
+             {
+              "key": "token",
+              "value": "{{2.internal_token}}"
+             },
+             {
+              "key": "lead_id",
+              "value": "{{5.lead_id}}"
+             }
+            ],
+            "parseResponse": false,
+            "serializeUrl": false,
+            "shareCookies": false,
+            "rejectUnauthorized": true,
+            "followRedirect": true,
+            "followAllRedirects": false,
+            "useQuerystring": false,
+            "gzip": true,
+            "useMtls": false
+           },
+           "parameters": {
+            "handleErrors": true,
+            "useNewZLibDeCompress": true
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "onerror": [
+            {
+             "id": 525,
+             "module": "builtin:Ignore",
+             "version": 1,
+             "mapper": null,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             }
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

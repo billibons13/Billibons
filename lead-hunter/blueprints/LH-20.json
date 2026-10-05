@@ -1,0 +1,2757 @@
+{
+ "name": "LH-20 Lead Hunter — Telegram Owner Panel",
+ "metadata": {
+  "version": 1,
+  "instant": true
+ },
+ "flow": [
+  {
+   "id": 1,
+   "module": "gateway:CustomWebHook",
+   "version": 1,
+   "mapper": {},
+   "parameters": {
+    "hook": 3846694,
+    "maxResults": 1
+   },
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   }
+  },
+  {
+   "id": 2,
+   "module": "datastore:GetRecord",
+   "version": 1,
+   "mapper": {
+    "key": "main",
+    "returnWrapped": false
+   },
+   "parameters": {
+    "datastore": 207951
+   },
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   }
+  },
+  {
+   "id": 3,
+   "module": "util:SetVariables",
+   "version": 1,
+   "mapper": {
+    "variables": [
+     {
+      "name": "from",
+      "value": "{{1.message.from.id}}{{1.callback_query.from.id}}"
+     },
+     {
+      "name": "chat",
+      "value": "{{1.message.chat.id}}{{1.callback_query.message.chat.id}}"
+     },
+     {
+      "name": "secret",
+      "value": "{{ifempty(get(map(1.`__IMTHEADERS__`; \"value\"; \"name\"; \"x-telegram-bot-api-secret-token\"); 1); get(map(1.`__IMTHEADERS__`; \"value\"; \"name\"; \"X-Telegram-Bot-Api-Secret-Token\"); 1))}}"
+     },
+     {
+      "name": "txt",
+      "value": "{{trim(ifempty(1.message.text; ifempty(1.message.caption; \"\")))}}"
+     },
+     {
+      "name": "cmd",
+      "value": "{{lower(first(split(first(split(trim(ifempty(1.message.text; ifempty(1.message.caption; \"\"))); \" \")); \"@\")))}}"
+     },
+     {
+      "name": "a",
+      "value": "{{first(split(ifempty(1.callback_query.data; \"-\"); \"|\"))}}"
+     },
+     {
+      "name": "lead",
+      "value": "{{get(split(ifempty(1.callback_query.data; \"-\"); \"|\"); 2)}}"
+     },
+     {
+      "name": "r",
+      "value": "{{get(split(ifempty(1.callback_query.data; \"-\"); \"|\"); 3)}}"
+     },
+     {
+      "name": "mid",
+      "value": "{{1.callback_query.message.message_id}}"
+     },
+     {
+      "name": "cbid",
+      "value": "{{1.callback_query.id}}"
+     }
+    ],
+    "scope": "roundtrip"
+   },
+   "parameters": {},
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   }
+  },
+  {
+   "id": 4,
+   "module": "builtin:BasicRouter",
+   "version": 1,
+   "mapper": null,
+   "metadata": {
+    "designer": {
+     "x": 600,
+     "y": 0
+    }
+   },
+   "routes": [
+    {
+     "flow": [
+      {
+       "id": 10,
+       "module": "datastore:AddRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{uuid}}",
+        "overwrite": true,
+        "data": {
+         "table": "events",
+         "event_id": "{{uuid}}",
+         "lead_id": "",
+         "event": "SECURITY_DENIED",
+         "details": "from={{3.from}} secret_ok={{if(3.secret = 2.webhook_secret; \"yes\"; \"no\")}}",
+         "old_status": "",
+         "new_status": "",
+         "created_at": "{{now}}",
+         "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+        }
+       },
+       "parameters": {
+        "datastore": 207952
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "filter": {
+        "name": "Чужой chat_id или неверный secret",
+        "conditions": [
+         [
+          {
+           "a": "{{3.secret}}",
+           "o": "text:notequal",
+           "b": "{{2.webhook_secret}}"
+          }
+         ],
+         [
+          {
+           "a": "{{3.from}}",
+           "o": "text:notequal",
+           "b": "{{2.owner_chat_id}}"
+          }
+         ]
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 11,
+       "module": "telegram:UniversalAPICall",
+       "version": 1,
+       "mapper": {
+        "method": "POST",
+        "bodyType": "assembled_body",
+        "body_spec": [
+         {
+          "key": "chat_id",
+          "value": "{{3.chat}}"
+         },
+         {
+          "key": "text",
+          "value": "Access denied"
+         }
+        ],
+        "urlMethod": "sendMessage"
+       },
+       "parameters": {
+        "__IMTCONN__": 9480305
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "filter": {
+        "name": "Ответ чужому (только настоящий Telegram)",
+        "conditions": [
+         [
+          {
+           "a": "{{3.secret}}",
+           "o": "text:equal",
+           "b": "{{2.webhook_secret}}"
+          },
+          {
+           "a": "{{3.from}}",
+           "o": "text:notequal",
+           "b": "{{2.owner_chat_id}}"
+          },
+          {
+           "a": "{{1.message.message_id}}",
+           "o": "exist"
+          }
+         ]
+        ]
+       },
+       "onerror": [
+        {
+         "id": 511,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "mapper": null,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 20,
+       "module": "datastore:SearchRecord",
+       "version": 1,
+       "mapper": {
+        "filter": [
+         [
+          {
+           "a": "status",
+           "o": "text:equal",
+           "b": "NEW"
+          }
+         ],
+         [
+          {
+           "a": "status",
+           "o": "text:equal",
+           "b": "SENT_TO_TELEGRAM"
+          }
+         ]
+        ],
+        "sort": []
+       },
+       "parameters": {
+        "datastore": 207950,
+        "continueWhenNoRes": true,
+        "limit": 500
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "filter": {
+        "name": "/start",
+        "conditions": [
+         [
+          {
+           "a": "{{3.secret}}",
+           "o": "text:equal",
+           "b": "{{2.webhook_secret}}"
+          },
+          {
+           "a": "{{3.from}}",
+           "o": "text:equal",
+           "b": "{{2.owner_chat_id}}"
+          },
+          {
+           "a": "{{1.message.message_id}}",
+           "o": "exist"
+          },
+          {
+           "a": "{{3.cmd}}",
+           "o": "text:equal",
+           "b": "/start"
+          }
+         ]
+        ]
+       }
+      },
+      {
+       "id": 21,
+       "module": "builtin:BasicAggregator",
+       "version": 1,
+       "mapper": {
+        "status": "{{20.data.status}}",
+        "grade": "{{20.data.grade}}",
+        "lead_id": "{{20.key}}"
+       },
+       "parameters": {
+        "feeder": 20
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      },
+      {
+       "id": 22,
+       "module": "datastore:UpdateRecord",
+       "version": 1,
+       "mapper": {
+        "key": "day_{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}",
+        "upsert": true,
+        "overwriteArrays": false,
+        "data": {
+         "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+        }
+       },
+       "parameters": {
+        "datastore": 207951
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      },
+      {
+       "id": 23,
+       "module": "datastore:GetRecord",
+       "version": 1,
+       "mapper": {
+        "key": "day_{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}",
+        "returnWrapped": false
+       },
+       "parameters": {
+        "datastore": 207951
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      },
+      {
+       "id": 24,
+       "module": "telegram:UniversalAPICall",
+       "version": 1,
+       "mapper": {
+        "method": "POST",
+        "bodyType": "assembled_body",
+        "body_spec": [
+         {
+          "key": "chat_id",
+          "value": "{{2.owner_chat_id}}"
+         },
+         {
+          "key": "text",
+          "value": "🧭 Lead Hunter — пульт\nСтатус: {{if(2.paused; \"⏸ пауза\"; \"▶️ работает\")}}{{if(2.paused; \" (\" + ifempty(2.paused_reason; \"владелец\") + \")\"; \"\")}}\n📥 В очереди (NEW): {{length(map(21.array; \"lead_id\"; \"status\"; \"NEW\"))}}\n🆕 Без решения: {{length(map(21.array; \"lead_id\"; \"status\"; \"SENT_TO_TELEGRAM\"))}} · 🔥 HOT: {{length(map(21.array; \"lead_id\"; \"grade\"; \"HOT\"))}}\n💵 Claude сегодня: ${{formatNumber(ifempty(23.cost_usd; 0); 4; \".\"; \"\")}} из ${{2.daily_budget_usd}}\n📡 Источники: ✅ ручной ввод · ⏸ автоисточники выключены (этап 2)\n\nПерешлите заявку (текст + ссылка) — пришлю карточку с оценкой.\n/new /today /stats /pause /resume /settings /help"
+         }
+        ],
+        "urlMethod": "sendMessage"
+       },
+       "parameters": {
+        "__IMTCONN__": 9480305
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "onerror": [
+        {
+         "id": 524,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "mapper": null,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 30,
+       "module": "telegram:UniversalAPICall",
+       "version": 1,
+       "mapper": {
+        "method": "POST",
+        "bodyType": "assembled_body",
+        "body_spec": [
+         {
+          "key": "chat_id",
+          "value": "{{2.owner_chat_id}}"
+         },
+         {
+          "key": "text",
+          "value": "ℹ️ Lead Hunter — пульт владельца\n\n1. Перешлите сюда заявку: текст, текст + ссылка или пост из канала.\n2. Через ~1 мин придёт карточка: оценка 0–100, HOT/WARM/COLD/REJECT, причины.\n3. Кнопки: ✅ Approve — отметить (клиенту ничего не отправляется), ❌ Reject — с причиной, 🔍 More analysis.\n\n/new — новые HOT/WARM без решения (до 5)\n/today — итоги дня\n/stats — 7 и 30 дней\n/pause — пауза AI (заявки копятся в очереди)\n/resume — продолжить и разобрать очередь\n/settings — настройки\n\nСкриншоты и файлы пока не разбираются — пришлите текст и ссылку."
+         }
+        ],
+        "urlMethod": "sendMessage"
+       },
+       "parameters": {
+        "__IMTCONN__": 9480305
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "filter": {
+        "name": "/help",
+        "conditions": [
+         [
+          {
+           "a": "{{3.secret}}",
+           "o": "text:equal",
+           "b": "{{2.webhook_secret}}"
+          },
+          {
+           "a": "{{3.from}}",
+           "o": "text:equal",
+           "b": "{{2.owner_chat_id}}"
+          },
+          {
+           "a": "{{1.message.message_id}}",
+           "o": "exist"
+          },
+          {
+           "a": "{{3.cmd}}",
+           "o": "text:equal",
+           "b": "/help"
+          }
+         ]
+        ]
+       },
+       "onerror": [
+        {
+         "id": 530,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "mapper": null,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 31,
+       "module": "telegram:UniversalAPICall",
+       "version": 1,
+       "mapper": {
+        "method": "POST",
+        "bodyType": "assembled_body",
+        "body_spec": [
+         {
+          "key": "chat_id",
+          "value": "{{2.owner_chat_id}}"
+         },
+         {
+          "key": "text",
+          "value": "⚙️ Настройки (lh_settings → main)\nПауза: {{if(2.paused; \"да\"; \"нет\")}} · бюджет в день: ${{2.daily_budget_usd}}\nПороги: HOT ≥ {{2.hot_threshold}} · WARM ≥ {{2.warm_threshold}} · COLD ≥ {{2.cold_threshold}} · Architect ≥ {{2.architect_threshold}}\nМин. заказ: {{2.minimum_order_eur}} € · часовой пояс: {{2.timezone}}\nAnalyst: {{2.analyst_model}} (до {{2.analyst_max_tokens}} токенов), цена ${{2.analyst_price_in_mtok}}/${{2.analyst_price_out_mtok}} за 1M\nПовторы: до {{2.max_retry_attempts}}, задержки {{2.retry_delays}} мин\nВеса: Telegram relevance {{2.w_telegram_relevance}} · Budget {{2.w_budget}} · Clarity {{2.w_project_clarity}} · Credibility {{2.w_client_credibility}} · Commercial {{2.w_commercial_potential}} · Fit {{2.w_fit}} · Urgency {{2.w_urgency}} · Competition {{2.w_competition}} · Source {{2.w_source_quality}} · Complexity fit {{2.w_complexity_fit}}\nКурсы к EUR ({{ifempty(2.fx_date; \"не заданы\")}}): USD {{2.fx_usd}} · GBP {{2.fx_gbp}} · CHF {{2.fx_chf}} · PLN {{2.fx_pln}} · UAH {{2.fx_uah}}\n\nИзменить: Make → Data stores → lh_settings → запись main."
+         }
+        ],
+        "urlMethod": "sendMessage"
+       },
+       "parameters": {
+        "__IMTCONN__": 9480305
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "filter": {
+        "name": "/settings",
+        "conditions": [
+         [
+          {
+           "a": "{{3.secret}}",
+           "o": "text:equal",
+           "b": "{{2.webhook_secret}}"
+          },
+          {
+           "a": "{{3.from}}",
+           "o": "text:equal",
+           "b": "{{2.owner_chat_id}}"
+          },
+          {
+           "a": "{{1.message.message_id}}",
+           "o": "exist"
+          },
+          {
+           "a": "{{3.cmd}}",
+           "o": "text:equal",
+           "b": "/settings"
+          }
+         ]
+        ]
+       },
+       "onerror": [
+        {
+         "id": 531,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "mapper": null,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 40,
+       "module": "datastore:UpdateRecord",
+       "version": 1,
+       "mapper": {
+        "key": "main",
+        "upsert": true,
+        "overwriteArrays": false,
+        "data": {
+         "paused": true,
+         "paused_reason": "владелец (/pause)",
+         "updated_at": "{{now}}"
+        }
+       },
+       "parameters": {
+        "datastore": 207951
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "filter": {
+        "name": "/pause",
+        "conditions": [
+         [
+          {
+           "a": "{{3.secret}}",
+           "o": "text:equal",
+           "b": "{{2.webhook_secret}}"
+          },
+          {
+           "a": "{{3.from}}",
+           "o": "text:equal",
+           "b": "{{2.owner_chat_id}}"
+          },
+          {
+           "a": "{{1.message.message_id}}",
+           "o": "exist"
+          },
+          {
+           "a": "{{3.cmd}}",
+           "o": "text:equal",
+           "b": "/pause"
+          }
+         ]
+        ]
+       }
+      },
+      {
+       "id": 41,
+       "module": "datastore:AddRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{uuid}}",
+        "overwrite": true,
+        "data": {
+         "table": "events",
+         "event_id": "{{uuid}}",
+         "lead_id": "",
+         "event": "PAUSED",
+         "details": "owner /pause",
+         "old_status": "",
+         "new_status": "",
+         "created_at": "{{now}}",
+         "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+        }
+       },
+       "parameters": {
+        "datastore": 207952
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      },
+      {
+       "id": 42,
+       "module": "telegram:UniversalAPICall",
+       "version": 1,
+       "mapper": {
+        "method": "POST",
+        "bodyType": "assembled_body",
+        "body_spec": [
+         {
+          "key": "chat_id",
+          "value": "{{2.owner_chat_id}}"
+         },
+         {
+          "key": "text",
+          "value": "⏸ AI-обработка на паузе. Пересланные заявки сохраняются в очередь (NEW) без вызова Claude. /resume — продолжить."
+         }
+        ],
+        "urlMethod": "sendMessage"
+       },
+       "parameters": {
+        "__IMTCONN__": 9480305
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "onerror": [
+        {
+         "id": 542,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "mapper": null,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 43,
+       "module": "datastore:UpdateRecord",
+       "version": 1,
+       "mapper": {
+        "key": "main",
+        "upsert": true,
+        "overwriteArrays": false,
+        "data": {
+         "paused": false,
+         "paused_reason": "",
+         "updated_at": "{{now}}"
+        }
+       },
+       "parameters": {
+        "datastore": 207951
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "filter": {
+        "name": "/resume",
+        "conditions": [
+         [
+          {
+           "a": "{{3.secret}}",
+           "o": "text:equal",
+           "b": "{{2.webhook_secret}}"
+          },
+          {
+           "a": "{{3.from}}",
+           "o": "text:equal",
+           "b": "{{2.owner_chat_id}}"
+          },
+          {
+           "a": "{{1.message.message_id}}",
+           "o": "exist"
+          },
+          {
+           "a": "{{3.cmd}}",
+           "o": "text:equal",
+           "b": "/resume"
+          }
+         ]
+        ]
+       }
+      },
+      {
+       "id": 44,
+       "module": "datastore:AddRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{uuid}}",
+        "overwrite": true,
+        "data": {
+         "table": "events",
+         "event_id": "{{uuid}}",
+         "lead_id": "",
+         "event": "RESUMED",
+         "details": "owner /resume",
+         "old_status": "",
+         "new_status": "",
+         "created_at": "{{now}}",
+         "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+        }
+       },
+       "parameters": {
+        "datastore": 207952
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      },
+      {
+       "id": 45,
+       "module": "telegram:UniversalAPICall",
+       "version": 1,
+       "mapper": {
+        "method": "POST",
+        "bodyType": "assembled_body",
+        "body_spec": [
+         {
+          "key": "chat_id",
+          "value": "{{2.owner_chat_id}}"
+         },
+         {
+          "key": "text",
+          "value": "▶️ Продолжаю. Разбираю очередь — карточки придут по одной."
+         }
+        ],
+        "urlMethod": "sendMessage"
+       },
+       "parameters": {
+        "__IMTCONN__": 9480305
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "onerror": [
+        {
+         "id": 545,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "mapper": null,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         }
+        }
+       ]
+      },
+      {
+       "id": 46,
+       "module": "datastore:SearchRecord",
+       "version": 1,
+       "mapper": {
+        "filter": [
+         [
+          {
+           "a": "status",
+           "o": "text:equal",
+           "b": "NEW"
+          }
+         ]
+        ],
+        "sort": []
+       },
+       "parameters": {
+        "datastore": 207950,
+        "continueWhenNoRes": false,
+        "limit": 20
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      },
+      {
+       "id": 47,
+       "module": "http:ActionSendData",
+       "version": 3,
+       "mapper": {
+        "url": "https://hook.eu1.make.com/2g6fjqg256vhydy4s3swxukppc486udl",
+        "method": "post",
+        "headers": [],
+        "qs": [],
+        "bodyType": "x_www_form_urlencoded",
+        "formFields": [
+         {
+          "key": "token",
+          "value": "{{2.internal_token}}"
+         },
+         {
+          "key": "lead_id",
+          "value": "{{46.key}}"
+         }
+        ],
+        "parseResponse": false,
+        "serializeUrl": false,
+        "shareCookies": false,
+        "rejectUnauthorized": true,
+        "followRedirect": true,
+        "followAllRedirects": false,
+        "useQuerystring": false,
+        "gzip": true,
+        "useMtls": false
+       },
+       "parameters": {
+        "handleErrors": true,
+        "useNewZLibDeCompress": true
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "onerror": [
+        {
+         "id": 547,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "mapper": null,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 50,
+       "module": "datastore:SearchRecord",
+       "version": 1,
+       "mapper": {
+        "filter": [
+         [
+          {
+           "a": "status",
+           "o": "text:equal",
+           "b": "SENT_TO_TELEGRAM"
+          },
+          {
+           "a": "grade",
+           "o": "text:equal",
+           "b": "HOT"
+          }
+         ],
+         [
+          {
+           "a": "status",
+           "o": "text:equal",
+           "b": "SENT_TO_TELEGRAM"
+          },
+          {
+           "a": "grade",
+           "o": "text:equal",
+           "b": "WARM"
+          }
+         ]
+        ],
+        "sort": []
+       },
+       "parameters": {
+        "datastore": 207950,
+        "continueWhenNoRes": true,
+        "limit": 5
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "filter": {
+        "name": "/new",
+        "conditions": [
+         [
+          {
+           "a": "{{3.secret}}",
+           "o": "text:equal",
+           "b": "{{2.webhook_secret}}"
+          },
+          {
+           "a": "{{3.from}}",
+           "o": "text:equal",
+           "b": "{{2.owner_chat_id}}"
+          },
+          {
+           "a": "{{1.message.message_id}}",
+           "o": "exist"
+          },
+          {
+           "a": "{{3.cmd}}",
+           "o": "text:equal",
+           "b": "/new"
+          }
+         ]
+        ]
+       }
+      },
+      {
+       "id": 51,
+       "module": "builtin:BasicRouter",
+       "version": 1,
+       "mapper": null,
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "routes": [
+        {
+         "flow": [
+          {
+           "id": 52,
+           "module": "telegram:UniversalAPICall",
+           "version": 1,
+           "mapper": {
+            "method": "POST",
+            "bodyType": "assembled_body",
+            "body_spec": [
+             {
+              "key": "chat_id",
+              "value": "{{2.owner_chat_id}}"
+             },
+             {
+              "key": "text",
+              "value": "{{50.data.card_text}}"
+             },
+             {
+              "key": "reply_markup",
+              "value": "{\"inline_keyboard\": [[{\"text\": \"✅ Approve\", \"callback_data\": \"ap|{{50.key}}\"}, {\"text\": \"❌ Reject\", \"callback_data\": \"rj|{{50.key}}\"}], [{\"text\": \"🔍 More analysis\", \"callback_data\": \"ma|{{50.key}}\"}]]}"
+             }
+            ],
+            "urlMethod": "sendMessage"
+           },
+           "parameters": {
+            "__IMTCONN__": 9480305
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "filter": {
+            "name": "Есть лид",
+            "conditions": [
+             [
+              {
+               "a": "{{50.key}}",
+               "o": "exist"
+              }
+             ]
+            ]
+           },
+           "onerror": [
+            {
+             "id": 552,
+             "module": "builtin:Ignore",
+             "version": 1,
+             "mapper": null,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             }
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "flow": [
+          {
+           "id": 53,
+           "module": "telegram:UniversalAPICall",
+           "version": 1,
+           "mapper": {
+            "method": "POST",
+            "bodyType": "assembled_body",
+            "body_spec": [
+             {
+              "key": "chat_id",
+              "value": "{{2.owner_chat_id}}"
+             },
+             {
+              "key": "text",
+              "value": "Новых HOT/WARM без решения нет."
+             }
+            ],
+            "urlMethod": "sendMessage"
+           },
+           "parameters": {
+            "__IMTCONN__": 9480305
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "filter": {
+            "name": "Пусто",
+            "conditions": [
+             [
+              {
+               "a": "{{50.key}}",
+               "o": "notexist"
+              }
+             ]
+            ]
+           },
+           "onerror": [
+            {
+             "id": 553,
+             "module": "builtin:Ignore",
+             "version": 1,
+             "mapper": null,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             }
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 60,
+       "module": "datastore:SearchRecord",
+       "version": 1,
+       "mapper": {
+        "filter": [
+         [
+          {
+           "a": "day",
+           "o": "text:equal",
+           "b": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+          }
+         ]
+        ],
+        "sort": []
+       },
+       "parameters": {
+        "datastore": 207950,
+        "continueWhenNoRes": true,
+        "limit": 500
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "filter": {
+        "name": "/today",
+        "conditions": [
+         [
+          {
+           "a": "{{3.secret}}",
+           "o": "text:equal",
+           "b": "{{2.webhook_secret}}"
+          },
+          {
+           "a": "{{3.from}}",
+           "o": "text:equal",
+           "b": "{{2.owner_chat_id}}"
+          },
+          {
+           "a": "{{1.message.message_id}}",
+           "o": "exist"
+          },
+          {
+           "a": "{{3.cmd}}",
+           "o": "text:equal",
+           "b": "/today"
+          }
+         ]
+        ]
+       }
+      },
+      {
+       "id": 61,
+       "module": "builtin:BasicAggregator",
+       "version": 1,
+       "mapper": {
+        "lead_id": "{{60.key}}",
+        "has": "{{if(60.key; \"1\"; \"\")}}",
+        "grade": "{{60.data.grade}}",
+        "status": "{{60.data.status}}"
+       },
+       "parameters": {
+        "feeder": 60
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      },
+      {
+       "id": 62,
+       "module": "datastore:SearchRecord",
+       "version": 1,
+       "mapper": {
+        "filter": [
+         [
+          {
+           "a": "table",
+           "o": "text:equal",
+           "b": "decisions"
+          },
+          {
+           "a": "day",
+           "o": "text:equal",
+           "b": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+          }
+         ]
+        ],
+        "sort": []
+       },
+       "parameters": {
+        "datastore": 207952,
+        "continueWhenNoRes": true,
+        "limit": 500
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      },
+      {
+       "id": 63,
+       "module": "builtin:BasicAggregator",
+       "version": 1,
+       "mapper": {
+        "id": "{{62.key}}",
+        "action": "{{62.data.action}}"
+       },
+       "parameters": {
+        "feeder": 62
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      },
+      {
+       "id": 64,
+       "module": "datastore:UpdateRecord",
+       "version": 1,
+       "mapper": {
+        "key": "day_{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}",
+        "upsert": true,
+        "overwriteArrays": false,
+        "data": {
+         "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+        }
+       },
+       "parameters": {
+        "datastore": 207951
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      },
+      {
+       "id": 65,
+       "module": "datastore:GetRecord",
+       "version": 1,
+       "mapper": {
+        "key": "day_{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}",
+        "returnWrapped": false
+       },
+       "parameters": {
+        "datastore": 207951
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      },
+      {
+       "id": 66,
+       "module": "telegram:UniversalAPICall",
+       "version": 1,
+       "mapper": {
+        "method": "POST",
+        "bodyType": "assembled_body",
+        "body_spec": [
+         {
+          "key": "chat_id",
+          "value": "{{2.owner_chat_id}}"
+         },
+         {
+          "key": "text",
+          "value": "📅 Сегодня {{formatDate(now; \"DD.MM.YYYY\"; 2.timezone)}}\nFound: {{length(map(61.array; \"lead_id\"; \"has\"; \"1\"))}}\nAnalyzed: {{length(map(61.array; \"lead_id\"; \"grade\"; \"HOT\")) + length(map(61.array; \"lead_id\"; \"grade\"; \"WARM\")) + length(map(61.array; \"lead_id\"; \"grade\"; \"COLD\")) + length(map(61.array; \"lead_id\"; \"grade\"; \"REJECT\"))}}\n🔥 HOT: {{length(map(61.array; \"lead_id\"; \"grade\"; \"HOT\"))}} · 🌤 WARM: {{length(map(61.array; \"lead_id\"; \"grade\"; \"WARM\"))}}\n✅ Approved: {{length(map(63.array; \"id\"; \"action\"; \"APPROVE\"))}} · ❌ Rejected: {{length(map(63.array; \"id\"; \"action\"; \"REJECT\"))}}\n⚠️ Errors: {{length(map(61.array; \"lead_id\"; \"status\"; \"ERROR\"))}}\n💵 Claude cost: ${{formatNumber(ifempty(65.cost_usd; 0); 4; \".\"; \"\")}}"
+         }
+        ],
+        "urlMethod": "sendMessage"
+       },
+       "parameters": {
+        "__IMTCONN__": 9480305
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "onerror": [
+        {
+         "id": 566,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "mapper": null,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 70,
+       "module": "datastore:SearchRecord",
+       "version": 1,
+       "mapper": {
+        "filter": [
+         [
+          {
+           "a": "created_at",
+           "o": "date:greaterorequal",
+           "b": "{{addDays(now; -7)}}"
+          }
+         ]
+        ],
+        "sort": []
+       },
+       "parameters": {
+        "datastore": 207950,
+        "continueWhenNoRes": true,
+        "limit": 1000
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "filter": {
+        "name": "/stats",
+        "conditions": [
+         [
+          {
+           "a": "{{3.secret}}",
+           "o": "text:equal",
+           "b": "{{2.webhook_secret}}"
+          },
+          {
+           "a": "{{3.from}}",
+           "o": "text:equal",
+           "b": "{{2.owner_chat_id}}"
+          },
+          {
+           "a": "{{1.message.message_id}}",
+           "o": "exist"
+          },
+          {
+           "a": "{{3.cmd}}",
+           "o": "text:equal",
+           "b": "/stats"
+          }
+         ]
+        ]
+       }
+      },
+      {
+       "id": 71,
+       "module": "builtin:BasicAggregator",
+       "version": 1,
+       "mapper": {
+        "lead_id": "{{70.key}}",
+        "has": "{{if(70.key; \"1\"; \"\")}}",
+        "grade": "{{70.data.grade}}",
+        "status": "{{70.data.status}}",
+        "score": "{{ifempty(70.data.score; 0)}}",
+        "budget_eur": "{{ifempty(70.data.budget_eur; 0)}}",
+        "hb": "{{if(70.data.budget_eur; \"1\"; \"\")}}"
+       },
+       "parameters": {
+        "feeder": 70
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      },
+      {
+       "id": 72,
+       "module": "datastore:SearchRecord",
+       "version": 1,
+       "mapper": {
+        "filter": [
+         [
+          {
+           "a": "table",
+           "o": "text:equal",
+           "b": "runs"
+          },
+          {
+           "a": "created_at",
+           "o": "date:greaterorequal",
+           "b": "{{addDays(now; -7)}}"
+          }
+         ]
+        ],
+        "sort": []
+       },
+       "parameters": {
+        "datastore": 207952,
+        "continueWhenNoRes": true,
+        "limit": 1000
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      },
+      {
+       "id": 73,
+       "module": "builtin:BasicAggregator",
+       "version": 1,
+       "mapper": {
+        "cost": "{{ifempty(72.data.estimated_cost_usd; 0)}}"
+       },
+       "parameters": {
+        "feeder": 72
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      },
+      {
+       "id": 74,
+       "module": "datastore:SearchRecord",
+       "version": 1,
+       "mapper": {
+        "filter": [
+         [
+          {
+           "a": "created_at",
+           "o": "date:greaterorequal",
+           "b": "{{addDays(now; -30)}}"
+          }
+         ]
+        ],
+        "sort": []
+       },
+       "parameters": {
+        "datastore": 207950,
+        "continueWhenNoRes": true,
+        "limit": 1000
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      },
+      {
+       "id": 75,
+       "module": "builtin:BasicAggregator",
+       "version": 1,
+       "mapper": {
+        "lead_id": "{{74.key}}",
+        "has": "{{if(74.key; \"1\"; \"\")}}",
+        "grade": "{{74.data.grade}}",
+        "status": "{{74.data.status}}",
+        "score": "{{ifempty(74.data.score; 0)}}",
+        "budget_eur": "{{ifempty(74.data.budget_eur; 0)}}",
+        "hb": "{{if(74.data.budget_eur; \"1\"; \"\")}}"
+       },
+       "parameters": {
+        "feeder": 74
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      },
+      {
+       "id": 76,
+       "module": "datastore:SearchRecord",
+       "version": 1,
+       "mapper": {
+        "filter": [
+         [
+          {
+           "a": "table",
+           "o": "text:equal",
+           "b": "runs"
+          },
+          {
+           "a": "created_at",
+           "o": "date:greaterorequal",
+           "b": "{{addDays(now; -30)}}"
+          }
+         ]
+        ],
+        "sort": []
+       },
+       "parameters": {
+        "datastore": 207952,
+        "continueWhenNoRes": true,
+        "limit": 1000
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      },
+      {
+       "id": 77,
+       "module": "builtin:BasicAggregator",
+       "version": 1,
+       "mapper": {
+        "cost": "{{ifempty(76.data.estimated_cost_usd; 0)}}"
+       },
+       "parameters": {
+        "feeder": 76
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      },
+      {
+       "id": 78,
+       "module": "telegram:UniversalAPICall",
+       "version": 1,
+       "mapper": {
+        "method": "POST",
+        "bodyType": "assembled_body",
+        "body_spec": [
+         {
+          "key": "chat_id",
+          "value": "{{2.owner_chat_id}}"
+         },
+         {
+          "key": "text",
+          "value": "📊 Статистика\n\n— 7 дней\nFound: {{length(map(71.array; \"lead_id\"; \"has\"; \"1\"))}} · HOT: {{length(map(71.array; \"lead_id\"; \"grade\"; \"HOT\"))}} · WARM: {{length(map(71.array; \"lead_id\"; \"grade\"; \"WARM\"))}} · REJECT: {{length(map(71.array; \"lead_id\"; \"grade\"; \"REJECT\"))}}\nApproved: {{length(map(71.array; \"lead_id\"; \"status\"; \"APPROVED\"))}} · Contacted: {{length(map(71.array; \"lead_id\"; \"status\"; \"CONTACTED\"))}} · Won: {{length(map(71.array; \"lead_id\"; \"status\"; \"WON\"))}} · Lost: {{length(map(71.array; \"lead_id\"; \"status\"; \"LOST\"))}}\nAvg score: {{round(sum(map(71.array; \"score\")) / max(1; length(map(71.array; \"lead_id\"; \"grade\"; \"HOT\")) + length(map(71.array; \"lead_id\"; \"grade\"; \"WARM\")) + length(map(71.array; \"lead_id\"; \"grade\"; \"COLD\")) + length(map(71.array; \"lead_id\"; \"grade\"; \"REJECT\"))))}} · Avg budget: {{if(length(map(71.array; \"lead_id\"; \"hb\"; \"1\")) > 0; round(sum(map(71.array; \"budget_eur\")) / length(map(71.array; \"lead_id\"; \"hb\"; \"1\"))) + \" €\"; \"—\")}}\nClaude cost: ${{formatNumber(sum(map(73.array; \"cost\")); 4; \".\"; \"\")}}\n\n— 30 дней\nFound: {{length(map(75.array; \"lead_id\"; \"has\"; \"1\"))}} · HOT: {{length(map(75.array; \"lead_id\"; \"grade\"; \"HOT\"))}} · WARM: {{length(map(75.array; \"lead_id\"; \"grade\"; \"WARM\"))}} · REJECT: {{length(map(75.array; \"lead_id\"; \"grade\"; \"REJECT\"))}}\nApproved: {{length(map(75.array; \"lead_id\"; \"status\"; \"APPROVED\"))}} · Contacted: {{length(map(75.array; \"lead_id\"; \"status\"; \"CONTACTED\"))}} · Won: {{length(map(75.array; \"lead_id\"; \"status\"; \"WON\"))}} · Lost: {{length(map(75.array; \"lead_id\"; \"status\"; \"LOST\"))}}\nAvg score: {{round(sum(map(75.array; \"score\")) / max(1; length(map(75.array; \"lead_id\"; \"grade\"; \"HOT\")) + length(map(75.array; \"lead_id\"; \"grade\"; \"WARM\")) + length(map(75.array; \"lead_id\"; \"grade\"; \"COLD\")) + length(map(75.array; \"lead_id\"; \"grade\"; \"REJECT\"))))}} · Avg budget: {{if(length(map(75.array; \"lead_id\"; \"hb\"; \"1\")) > 0; round(sum(map(75.array; \"budget_eur\")) / length(map(75.array; \"lead_id\"; \"hb\"; \"1\"))) + \" €\"; \"—\")}}\nClaude cost: ${{formatNumber(sum(map(77.array; \"cost\")); 4; \".\"; \"\")}}\n\nПока данных мало — нули реальные, а не оценки."
+         }
+        ],
+        "urlMethod": "sendMessage"
+       },
+       "parameters": {
+        "__IMTCONN__": 9480305
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "onerror": [
+        {
+         "id": 578,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "mapper": null,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 80,
+       "module": "http:ActionSendData",
+       "version": 3,
+       "mapper": {
+        "url": "https://hook.eu1.make.com/i7nnyj1mxyeez4mgznqk6x58oqhinbdr",
+        "method": "post",
+        "headers": [],
+        "qs": [],
+        "bodyType": "x_www_form_urlencoded",
+        "formFields": [
+         {
+          "key": "token",
+          "value": "{{2.internal_token}}"
+         },
+         {
+          "key": "text",
+          "value": "{{3.txt}}"
+         },
+         {
+          "key": "message_id",
+          "value": "{{1.message.message_id}}"
+         },
+         {
+          "key": "text_links",
+          "value": "{{join(map(ifempty(1.message.entities; 1.message.caption_entities); \"url\"; \"type\"; \"text_link\"); \" \")}}"
+         },
+         {
+          "key": "fwd_type",
+          "value": "{{1.message.forward_origin.type}}"
+         },
+         {
+          "key": "fwd_chat_username",
+          "value": "{{1.message.forward_origin.chat.username}}"
+         },
+         {
+          "key": "fwd_chat_title",
+          "value": "{{1.message.forward_origin.chat.title}}"
+         },
+         {
+          "key": "fwd_message_id",
+          "value": "{{1.message.forward_origin.message_id}}"
+         },
+         {
+          "key": "fwd_user_username",
+          "value": "{{1.message.forward_origin.sender_user.username}}"
+         },
+         {
+          "key": "fwd_user_name",
+          "value": "{{1.message.forward_origin.sender_user.first_name}}{{1.message.forward_origin.sender_user_name}}"
+         },
+         {
+          "key": "fwd_date",
+          "value": "{{1.message.forward_origin.date}}"
+         }
+        ],
+        "parseResponse": false,
+        "serializeUrl": false,
+        "shareCookies": false,
+        "rejectUnauthorized": true,
+        "followRedirect": true,
+        "followAllRedirects": false,
+        "useQuerystring": false,
+        "gzip": true,
+        "useMtls": false
+       },
+       "parameters": {
+        "handleErrors": true,
+        "useNewZLibDeCompress": true
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "filter": {
+        "name": "Пересланная заявка",
+        "conditions": [
+         [
+          {
+           "a": "{{3.secret}}",
+           "o": "text:equal",
+           "b": "{{2.webhook_secret}}"
+          },
+          {
+           "a": "{{3.from}}",
+           "o": "text:equal",
+           "b": "{{2.owner_chat_id}}"
+          },
+          {
+           "a": "{{1.message.message_id}}",
+           "o": "exist"
+          },
+          {
+           "a": "{{3.txt}}",
+           "o": "exist"
+          },
+          {
+           "a": "{{3.txt}}",
+           "o": "text:notstartwith",
+           "b": "/"
+          }
+         ]
+        ]
+       },
+       "onerror": [
+        {
+         "id": 580,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "mapper": null,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         }
+        }
+       ]
+      },
+      {
+       "id": 81,
+       "module": "telegram:UniversalAPICall",
+       "version": 1,
+       "mapper": {
+        "method": "POST",
+        "bodyType": "assembled_body",
+        "body_spec": [
+         {
+          "key": "chat_id",
+          "value": "{{2.owner_chat_id}}"
+         },
+         {
+          "key": "text",
+          "value": "⏳ Принял, сохраняю…"
+         }
+        ],
+        "urlMethod": "sendMessage"
+       },
+       "parameters": {
+        "__IMTCONN__": 9480305
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "onerror": [
+        {
+         "id": 581,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "mapper": null,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 82,
+       "module": "telegram:UniversalAPICall",
+       "version": 1,
+       "mapper": {
+        "method": "POST",
+        "bodyType": "assembled_body",
+        "body_spec": [
+         {
+          "key": "chat_id",
+          "value": "{{2.owner_chat_id}}"
+         },
+         {
+          "key": "text",
+          "value": "🖼 Скриншоты и файлы без текста пока не разбираю (этап 2). Пришлите текст заявки и ссылку."
+         }
+        ],
+        "urlMethod": "sendMessage"
+       },
+       "parameters": {
+        "__IMTCONN__": 9480305
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "filter": {
+        "name": "Медиа без текста",
+        "conditions": [
+         [
+          {
+           "a": "{{3.secret}}",
+           "o": "text:equal",
+           "b": "{{2.webhook_secret}}"
+          },
+          {
+           "a": "{{3.from}}",
+           "o": "text:equal",
+           "b": "{{2.owner_chat_id}}"
+          },
+          {
+           "a": "{{1.message.message_id}}",
+           "o": "exist"
+          },
+          {
+           "a": "{{3.txt}}",
+           "o": "notexist"
+          }
+         ]
+        ]
+       },
+       "onerror": [
+        {
+         "id": 582,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "mapper": null,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 90,
+       "module": "datastore:GetRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{3.lead}}",
+        "returnWrapped": false
+       },
+       "parameters": {
+        "datastore": 207950
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "filter": {
+        "name": "✅ Approve",
+        "conditions": [
+         [
+          {
+           "a": "{{3.secret}}",
+           "o": "text:equal",
+           "b": "{{2.webhook_secret}}"
+          },
+          {
+           "a": "{{3.from}}",
+           "o": "text:equal",
+           "b": "{{2.owner_chat_id}}"
+          },
+          {
+           "a": "{{1.callback_query.id}}",
+           "o": "exist"
+          },
+          {
+           "a": "{{3.a}}",
+           "o": "text:equal",
+           "b": "ap"
+          }
+         ]
+        ]
+       }
+      },
+      {
+       "id": 91,
+       "module": "datastore:UpdateRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{3.lead}}",
+        "upsert": false,
+        "overwriteArrays": false,
+        "data": {
+         "status": "APPROVED",
+         "status_at": "{{now}}",
+         "updated_at": "{{now}}"
+        }
+       },
+       "parameters": {
+        "datastore": 207950
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      },
+      {
+       "id": 92,
+       "module": "datastore:AddRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{uuid}}",
+        "overwrite": true,
+        "data": {
+         "table": "decisions",
+         "decision_id": "{{uuid}}",
+         "lead_id": "{{3.lead}}",
+         "owner_chat_id": "{{3.from}}",
+         "action": "APPROVE",
+         "reason": "",
+         "telegram_message_id": "{{3.mid}}",
+         "created_at": "{{now}}",
+         "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+        }
+       },
+       "parameters": {
+        "datastore": 207952
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      },
+      {
+       "id": 93,
+       "module": "datastore:AddRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{uuid}}",
+        "overwrite": true,
+        "data": {
+         "table": "events",
+         "event_id": "{{uuid}}",
+         "lead_id": "{{3.lead}}",
+         "event": "OWNER_APPROVED",
+         "details": "button",
+         "old_status": "{{90.status}}",
+         "new_status": "APPROVED",
+         "created_at": "{{now}}",
+         "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+        }
+       },
+       "parameters": {
+        "datastore": 207952
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      },
+      {
+       "id": 94,
+       "module": "telegram:UniversalAPICall",
+       "version": 1,
+       "mapper": {
+        "method": "POST",
+        "bodyType": "assembled_body",
+        "body_spec": [
+         {
+          "key": "callback_query_id",
+          "value": "{{3.cbid}}"
+         },
+         {
+          "key": "text",
+          "value": "Approved"
+         }
+        ],
+        "urlMethod": "answerCallbackQuery"
+       },
+       "parameters": {
+        "__IMTCONN__": 9480305
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "onerror": [
+        {
+         "id": 594,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "mapper": null,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         }
+        }
+       ]
+      },
+      {
+       "id": 95,
+       "module": "telegram:UniversalAPICall",
+       "version": 1,
+       "mapper": {
+        "method": "POST",
+        "bodyType": "assembled_body",
+        "body_spec": [
+         {
+          "key": "chat_id",
+          "value": "{{2.owner_chat_id}}"
+         },
+         {
+          "key": "message_id",
+          "value": "{{3.mid}}"
+         },
+         {
+          "key": "reply_markup",
+          "value": "{\"inline_keyboard\": [[{\"text\": \"✅ Approved\", \"callback_data\": \"z\"}]]}"
+         }
+        ],
+        "urlMethod": "editMessageReplyMarkup"
+       },
+       "parameters": {
+        "__IMTCONN__": 9480305
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "onerror": [
+        {
+         "id": 595,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "mapper": null,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         }
+        }
+       ]
+      },
+      {
+       "id": 96,
+       "module": "telegram:UniversalAPICall",
+       "version": 1,
+       "mapper": {
+        "method": "POST",
+        "bodyType": "assembled_body",
+        "body_spec": [
+         {
+          "key": "chat_id",
+          "value": "{{2.owner_chat_id}}"
+         },
+         {
+          "key": "text",
+          "value": "Lead approved. Client contact is still manual.\n{{3.lead}}"
+         }
+        ],
+        "urlMethod": "sendMessage"
+       },
+       "parameters": {
+        "__IMTCONN__": 9480305
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "onerror": [
+        {
+         "id": 596,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "mapper": null,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 100,
+       "module": "telegram:UniversalAPICall",
+       "version": 1,
+       "mapper": {
+        "method": "POST",
+        "bodyType": "assembled_body",
+        "body_spec": [
+         {
+          "key": "callback_query_id",
+          "value": "{{3.cbid}}"
+         },
+         {
+          "key": "text",
+          "value": "Причина?"
+         }
+        ],
+        "urlMethod": "answerCallbackQuery"
+       },
+       "parameters": {
+        "__IMTCONN__": 9480305
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "filter": {
+        "name": "❌ Reject → причины",
+        "conditions": [
+         [
+          {
+           "a": "{{3.secret}}",
+           "o": "text:equal",
+           "b": "{{2.webhook_secret}}"
+          },
+          {
+           "a": "{{3.from}}",
+           "o": "text:equal",
+           "b": "{{2.owner_chat_id}}"
+          },
+          {
+           "a": "{{1.callback_query.id}}",
+           "o": "exist"
+          },
+          {
+           "a": "{{3.a}}",
+           "o": "text:equal",
+           "b": "rj"
+          }
+         ]
+        ]
+       },
+       "onerror": [
+        {
+         "id": 600,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "mapper": null,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         }
+        }
+       ]
+      },
+      {
+       "id": 101,
+       "module": "telegram:UniversalAPICall",
+       "version": 1,
+       "mapper": {
+        "method": "POST",
+        "bodyType": "assembled_body",
+        "body_spec": [
+         {
+          "key": "chat_id",
+          "value": "{{2.owner_chat_id}}"
+         },
+         {
+          "key": "message_id",
+          "value": "{{3.mid}}"
+         },
+         {
+          "key": "reply_markup",
+          "value": "{\"inline_keyboard\": [[{\"text\": \"💰 Too cheap\", \"callback_data\": \"rr|{{3.lead}}|1\"}], [{\"text\": \"🎯 Not our profile\", \"callback_data\": \"rr|{{3.lead}}|2\"}], [{\"text\": \"⚠️ Suspicious\", \"callback_data\": \"rr|{{3.lead}}|3\"}], [{\"text\": \"🏗 Too complex\", \"callback_data\": \"rr|{{3.lead}}|4\"}], [{\"text\": \"❌ Other\", \"callback_data\": \"rr|{{3.lead}}|5\"}]]}"
+         }
+        ],
+        "urlMethod": "editMessageReplyMarkup"
+       },
+       "parameters": {
+        "__IMTCONN__": 9480305
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "onerror": [
+        {
+         "id": 601,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "mapper": null,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 110,
+       "module": "datastore:GetRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{3.lead}}",
+        "returnWrapped": false
+       },
+       "parameters": {
+        "datastore": 207950
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "filter": {
+        "name": "❌ Reject с причиной",
+        "conditions": [
+         [
+          {
+           "a": "{{3.secret}}",
+           "o": "text:equal",
+           "b": "{{2.webhook_secret}}"
+          },
+          {
+           "a": "{{3.from}}",
+           "o": "text:equal",
+           "b": "{{2.owner_chat_id}}"
+          },
+          {
+           "a": "{{1.callback_query.id}}",
+           "o": "exist"
+          },
+          {
+           "a": "{{3.a}}",
+           "o": "text:equal",
+           "b": "rr"
+          }
+         ]
+        ]
+       }
+      },
+      {
+       "id": 111,
+       "module": "datastore:UpdateRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{3.lead}}",
+        "upsert": false,
+        "overwriteArrays": false,
+        "data": {
+         "status": "REJECTED",
+         "status_at": "{{now}}",
+         "updated_at": "{{now}}"
+        }
+       },
+       "parameters": {
+        "datastore": 207950
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      },
+      {
+       "id": 112,
+       "module": "datastore:AddRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{uuid}}",
+        "overwrite": true,
+        "data": {
+         "table": "decisions",
+         "decision_id": "{{uuid}}",
+         "lead_id": "{{3.lead}}",
+         "owner_chat_id": "{{3.from}}",
+         "action": "REJECT",
+         "reason": "{{switch(3.r; \"1\"; \"💰 Too cheap\"; \"2\"; \"🎯 Not our profile\"; \"3\"; \"⚠️ Suspicious\"; \"4\"; \"🏗 Too complex\"; \"5\"; \"❌ Other\"; \"Other\")}}",
+         "telegram_message_id": "{{3.mid}}",
+         "created_at": "{{now}}",
+         "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+        }
+       },
+       "parameters": {
+        "datastore": 207952
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      },
+      {
+       "id": 113,
+       "module": "datastore:AddRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{uuid}}",
+        "overwrite": true,
+        "data": {
+         "table": "events",
+         "event_id": "{{uuid}}",
+         "lead_id": "{{3.lead}}",
+         "event": "OWNER_REJECTED",
+         "details": "{{switch(3.r; \"1\"; \"💰 Too cheap\"; \"2\"; \"🎯 Not our profile\"; \"3\"; \"⚠️ Suspicious\"; \"4\"; \"🏗 Too complex\"; \"5\"; \"❌ Other\"; \"Other\")}}",
+         "old_status": "{{110.status}}",
+         "new_status": "REJECTED",
+         "created_at": "{{now}}",
+         "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+        }
+       },
+       "parameters": {
+        "datastore": 207952
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      },
+      {
+       "id": 114,
+       "module": "telegram:UniversalAPICall",
+       "version": 1,
+       "mapper": {
+        "method": "POST",
+        "bodyType": "assembled_body",
+        "body_spec": [
+         {
+          "key": "callback_query_id",
+          "value": "{{3.cbid}}"
+         },
+         {
+          "key": "text",
+          "value": "Rejected"
+         }
+        ],
+        "urlMethod": "answerCallbackQuery"
+       },
+       "parameters": {
+        "__IMTCONN__": 9480305
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "onerror": [
+        {
+         "id": 614,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "mapper": null,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         }
+        }
+       ]
+      },
+      {
+       "id": 115,
+       "module": "telegram:UniversalAPICall",
+       "version": 1,
+       "mapper": {
+        "method": "POST",
+        "bodyType": "assembled_body",
+        "body_spec": [
+         {
+          "key": "chat_id",
+          "value": "{{2.owner_chat_id}}"
+         },
+         {
+          "key": "message_id",
+          "value": "{{3.mid}}"
+         },
+         {
+          "key": "reply_markup",
+          "value": "{\"inline_keyboard\": [[{\"text\": \"❌ Rejected\", \"callback_data\": \"z\"}]]}"
+         }
+        ],
+        "urlMethod": "editMessageReplyMarkup"
+       },
+       "parameters": {
+        "__IMTCONN__": 9480305
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "onerror": [
+        {
+         "id": 615,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "mapper": null,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 120,
+       "module": "datastore:AddRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{uuid}}",
+        "overwrite": true,
+        "data": {
+         "table": "decisions",
+         "decision_id": "{{uuid}}",
+         "lead_id": "{{3.lead}}",
+         "owner_chat_id": "{{3.from}}",
+         "action": "MORE_ANALYSIS_REQUESTED",
+         "reason": "",
+         "telegram_message_id": "{{3.mid}}",
+         "created_at": "{{now}}",
+         "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+        }
+       },
+       "parameters": {
+        "datastore": 207952
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "filter": {
+        "name": "🔍 More analysis",
+        "conditions": [
+         [
+          {
+           "a": "{{3.secret}}",
+           "o": "text:equal",
+           "b": "{{2.webhook_secret}}"
+          },
+          {
+           "a": "{{3.from}}",
+           "o": "text:equal",
+           "b": "{{2.owner_chat_id}}"
+          },
+          {
+           "a": "{{1.callback_query.id}}",
+           "o": "exist"
+          },
+          {
+           "a": "{{3.a}}",
+           "o": "text:equal",
+           "b": "ma"
+          }
+         ]
+        ]
+       }
+      },
+      {
+       "id": 121,
+       "module": "datastore:AddRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{uuid}}",
+        "overwrite": true,
+        "data": {
+         "table": "events",
+         "event_id": "{{uuid}}",
+         "lead_id": "{{3.lead}}",
+         "event": "MORE_ANALYSIS_REQUESTED",
+         "details": "button",
+         "old_status": "",
+         "new_status": "",
+         "created_at": "{{now}}",
+         "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+        }
+       },
+       "parameters": {
+        "datastore": 207952
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      },
+      {
+       "id": 122,
+       "module": "telegram:UniversalAPICall",
+       "version": 1,
+       "mapper": {
+        "method": "POST",
+        "bodyType": "assembled_body",
+        "body_spec": [
+         {
+          "key": "callback_query_id",
+          "value": "{{3.cbid}}"
+         },
+         {
+          "key": "text",
+          "value": "OK"
+         }
+        ],
+        "urlMethod": "answerCallbackQuery"
+       },
+       "parameters": {
+        "__IMTCONN__": 9480305
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "onerror": [
+        {
+         "id": 622,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "mapper": null,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         }
+        }
+       ]
+      },
+      {
+       "id": 123,
+       "module": "telegram:UniversalAPICall",
+       "version": 1,
+       "mapper": {
+        "method": "POST",
+        "bodyType": "assembled_body",
+        "body_spec": [
+         {
+          "key": "chat_id",
+          "value": "{{2.owner_chat_id}}"
+         },
+         {
+          "key": "text",
+          "value": "Detailed Architect analysis will be available in the next phase.\n{{3.lead}}"
+         }
+        ],
+        "urlMethod": "sendMessage"
+       },
+       "parameters": {
+        "__IMTCONN__": 9480305
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "onerror": [
+        {
+         "id": 623,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "mapper": null,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 130,
+       "module": "telegram:UniversalAPICall",
+       "version": 1,
+       "mapper": {
+        "method": "POST",
+        "bodyType": "assembled_body",
+        "body_spec": [
+         {
+          "key": "callback_query_id",
+          "value": "{{3.cbid}}"
+         }
+        ],
+        "urlMethod": "answerCallbackQuery"
+       },
+       "parameters": {
+        "__IMTCONN__": 9480305
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "filter": {
+        "name": "Служебная кнопка",
+        "conditions": [
+         [
+          {
+           "a": "{{3.secret}}",
+           "o": "text:equal",
+           "b": "{{2.webhook_secret}}"
+          },
+          {
+           "a": "{{3.from}}",
+           "o": "text:equal",
+           "b": "{{2.owner_chat_id}}"
+          },
+          {
+           "a": "{{1.callback_query.id}}",
+           "o": "exist"
+          },
+          {
+           "a": "{{3.a}}",
+           "o": "text:equal",
+           "b": "z"
+          }
+         ]
+        ]
+       },
+       "onerror": [
+        {
+         "id": 630,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "mapper": null,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 131,
+       "module": "telegram:UniversalAPICall",
+       "version": 1,
+       "mapper": {
+        "method": "POST",
+        "bodyType": "assembled_body",
+        "body_spec": [
+         {
+          "key": "callback_query_id",
+          "value": "{{3.cbid}}"
+         },
+         {
+          "key": "text",
+          "value": "Эта кнопка из старой системы и больше не используется."
+         }
+        ],
+        "urlMethod": "answerCallbackQuery"
+       },
+       "parameters": {
+        "__IMTCONN__": 9480305
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "filter": {
+        "name": "Неизвестная кнопка",
+        "conditions": [
+         [
+          {
+           "a": "{{3.secret}}",
+           "o": "text:equal",
+           "b": "{{2.webhook_secret}}"
+          },
+          {
+           "a": "{{3.from}}",
+           "o": "text:equal",
+           "b": "{{2.owner_chat_id}}"
+          },
+          {
+           "a": "{{1.callback_query.id}}",
+           "o": "exist"
+          },
+          {
+           "a": "{{3.a}}",
+           "o": "text:notequal",
+           "b": "ap"
+          },
+          {
+           "a": "{{3.a}}",
+           "o": "text:notequal",
+           "b": "rj"
+          },
+          {
+           "a": "{{3.a}}",
+           "o": "text:notequal",
+           "b": "rr"
+          },
+          {
+           "a": "{{3.a}}",
+           "o": "text:notequal",
+           "b": "ma"
+          },
+          {
+           "a": "{{3.a}}",
+           "o": "text:notequal",
+           "b": "z"
+          }
+         ]
+        ]
+       },
+       "onerror": [
+        {
+         "id": 631,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "mapper": null,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         }
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

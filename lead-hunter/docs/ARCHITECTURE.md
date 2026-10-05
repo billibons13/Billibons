@@ -25,3 +25,11 @@ Grade: HOT ≥ hot_threshold (80), WARM ≥ warm_threshold (60), COLD ≥ cold_t
 ## Пауза
 /pause: ручной ввод не блокируется — заявка сохраняется (NEW, в очереди), AI не вызывается.
 /resume: все лиды NEW отправляются в LH-10. Так владелец ничего не теряет и не тратит деньги во время паузы.
+
+## Этап 2.5 — LH DIRECTOR (архитектура на согласовании)
+
+Документ: https://claude.ai/code/artifact/b1005ba2-b738-4a0b-9120-4fdbf72d0ef8
+Статус: ждёт утверждения владельца. Реализация не начата.
+Кратко: LH-30 DIRECTOR Gate (детерминированные проверки в Make), LH-31 Feedback,
+LH-40 Daily Review (Claude по агрегатам + валидатор evidence), LH-41 Improvement Apply
+(только по кнопке владельца, белый список ключей, откат), LH-42 Weekly Review.
