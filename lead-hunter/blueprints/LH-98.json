@@ -344,6 +344,94 @@
        }
       }
      ]
+    },
+    {
+     "flow": [
+      {
+       "id": 9,
+       "module": "json:TransformToJSON",
+       "version": 1,
+       "parameters": {},
+       "filter": {
+        "name": "mode=lh20_button + data LH-id",
+        "conditions": [
+         [
+          {
+           "a": "{{var.input.mode}}",
+           "b": "lh20_button",
+           "o": "text:equal"
+          },
+          {
+           "a": "{{var.input.data}}",
+           "b": "^[a-z]{1,3}\\|LH-[0-9]{8}-[0-9a-f]{6}",
+           "o": "text:pattern"
+          }
+         ]
+        ]
+       },
+       "mapper": {
+        "object": "{{var.input.data}}"
+       },
+       "metadata": {
+        "designer": {
+         "x": 600,
+         "y": 800
+        }
+       }
+      },
+      {
+       "id": 10,
+       "module": "http:ActionSendData",
+       "version": 3,
+       "parameters": {
+        "handleErrors": true,
+        "useNewZLibDeCompress": true
+       },
+       "mapper": {
+        "qs": [],
+        "url": "https://hook.eu1.make.com/69syfagsko64kd9oelsekoz11e3k341q",
+        "data": "{\"update_id\":{{timestamp}},\"callback_query\":{\"id\":\"test-{{timestamp}}\",\"from\":{\"id\":{{2.owner_chat_id}},\"is_bot\":false,\"first_name\":\"Owner\"},\"message\":{\"message_id\":1,\"chat\":{\"id\":{{2.owner_chat_id}},\"type\":\"private\"},\"date\":{{timestamp}},\"text\":\"[TEST] card\"},\"chat_instance\":\"test\",\"data\":{{9.json}}}}",
+        "gzip": true,
+        "method": "post",
+        "headers": [
+         {
+          "name": "X-Telegram-Bot-Api-Secret-Token",
+          "value": "{{2.webhook_secret}}"
+         }
+        ],
+        "useMtls": false,
+        "bodyType": "raw",
+        "contentType": "application/json",
+        "serializeUrl": false,
+        "shareCookies": false,
+        "parseResponse": false,
+        "followRedirect": true,
+        "useQuerystring": false,
+        "followAllRedirects": false,
+        "rejectUnauthorized": true
+       },
+       "onerror": [
+        {
+         "id": 510,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "mapper": null,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         }
+        }
+       ],
+       "metadata": {
+        "designer": {
+         "x": 900,
+         "y": 800
+        }
+       }
+      }
+     ]
     }
    ]
   }
