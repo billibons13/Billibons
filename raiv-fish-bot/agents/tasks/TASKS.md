@@ -22,7 +22,7 @@
 - ACTION: (1) в generate_lh.py заменить text:notstartwith "/" на text:notpattern "^/"; перегенерировать; обновить LH-20 7789394 полным blueprint (scenarios_update), остальное в LH-20 не менять; проверить, что других startwith нет; (2) в LH-98 7789449 добавить режим lh20_owner: апдейт Telegram в хук LH-20 с заголовком X-Telegram-Bot-Api-Secret-Token = секрет из main и from/chat = owner_chat_id из main, текст только с префиксом [TEST]; секреты не выводить, детали исполнений с модулем 2 не открывать.
 - EXPECTED_OUTPUT: что изменено (diff генератора), подтверждение обновления LH-20 и LH-98, без тестовых прогонов (их делает T-0002).
 - DEADLINE: 05.10.2026
-- STATUS: ASSIGNED
+- STATUS: DONE (06.10) — LH-20 фильтр text:notpattern ^/ в Make (совпадает с LH-20.json); LH-98: маршрут lh20_owner (json:TransformToJSON + POST с секретным заголовком), интерфейс обновлён. Не проверено: экранирование и формат owner_chat_id — проверит T-0002.
 
 ## T-20261005-0009 · Два решения владельца для этапа 3 (не блокируют старт)
 - AGENT: владелец (вопрос директора)
@@ -117,7 +117,7 @@
 - ACTION: прогон после T-0001; проверка записей lh_leads/lh_log, дубликатов, caps, чужого chat_id.
 - EXPECTED_OUTPUT: таблица тестов ✅/❌ с ID исполнений Make; тестовые записи помечены TEST.
 - DEADLINE: после T-0001
-- STATUS: BLOCKED → ждёт T-0010 (T-0008 готов) (05.10: прокси 403 к hook.eu1.make.com; убраны zz_formula_test и сценарий 7789177; lh_leads и lh_log пусты)
+- STATUS: ASSIGNED (06.10, повтор через LH-98) (05.10: прокси 403 к hook.eu1.make.com; убраны zz_formula_test и сценарий 7789177; lh_leads и lh_log пусты)
 
 ## T-20261005-0001 · Доделать этап 2 Lead Hunter (уже утверждён владельцем)
 - AGENT: 🛠 Make-инженер Lead Hunter (`team/LH_ENGINEER.md`)

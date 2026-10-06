@@ -256,6 +256,94 @@
        ]
       }
      ]
+    },
+    {
+     "flow": [
+      {
+       "id": 7,
+       "module": "json:TransformToJSON",
+       "version": 1,
+       "parameters": {},
+       "filter": {
+        "name": "mode=lh20_owner + [TEST]",
+        "conditions": [
+         [
+          {
+           "a": "{{var.input.mode}}",
+           "b": "lh20_owner",
+           "o": "text:equal"
+          },
+          {
+           "a": "{{var.input.text}}",
+           "b": "^\\[TEST\\]",
+           "o": "text:pattern"
+          }
+         ]
+        ]
+       },
+       "mapper": {
+        "object": "{{var.input.text}}"
+       },
+       "metadata": {
+        "designer": {
+         "x": 600,
+         "y": 600
+        }
+       }
+      },
+      {
+       "id": 8,
+       "module": "http:ActionSendData",
+       "version": 3,
+       "parameters": {
+        "handleErrors": true,
+        "useNewZLibDeCompress": true
+       },
+       "mapper": {
+        "qs": [],
+        "url": "https://hook.eu1.make.com/69syfagsko64kd9oelsekoz11e3k341q",
+        "data": "{\"update_id\":{{timestamp}},\"message\":{\"message_id\":{{timestamp}},\"from\":{\"id\":{{2.owner_chat_id}},\"is_bot\":false,\"first_name\":\"TEST\"},\"chat\":{\"id\":{{2.owner_chat_id}},\"type\":\"private\"},\"date\":{{timestamp}},\"text\":{{7.json}}}}",
+        "gzip": true,
+        "method": "post",
+        "headers": [
+         {
+          "name": "X-Telegram-Bot-Api-Secret-Token",
+          "value": "{{2.webhook_secret}}"
+         }
+        ],
+        "useMtls": false,
+        "bodyType": "raw",
+        "contentType": "application/json",
+        "serializeUrl": false,
+        "shareCookies": false,
+        "parseResponse": false,
+        "followRedirect": true,
+        "useQuerystring": false,
+        "followAllRedirects": false,
+        "rejectUnauthorized": true
+       },
+       "onerror": [
+        {
+         "id": 508,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "mapper": null,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         }
+        }
+       ],
+       "metadata": {
+        "designer": {
+         "x": 900,
+         "y": 600
+        }
+       }
+      }
+     ]
     }
    ]
   }
