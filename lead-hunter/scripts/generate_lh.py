@@ -10,6 +10,9 @@ CONN_TG = 9480305            # Zulius Passport Queue Bot (Telegram-подклю�
 S_LEADS, S_SET, S_LOG = 207950, 207951, 207952
 DS_ANALYSIS = 618689         # data structure ответа Analyst для Parse JSON
 HOOK20, HOOK03, HOOK10 = 3846694, 3846695, 3846697
+HOOK11 = 3853986             # LH-11 Architect+Sales (внутренний, только с internal_token)
+URL11 = "https://hook.eu1.make.com/x6cnrfo2bt495fg5od84c49lui47todk"
+DS_ARCH, DS_SALES = 620802, 620803   # data structures ответов Architect / Sales для Parse JSON
 URL20 = "https://hook.eu1.make.com/69syfagsko64kd9oelsekoz11e3k341q"
 URL03 = "https://hook.eu1.make.com/i7nnyj1mxyeez4mgznqk6x58oqhinbdr"
 URL10 = "https://hook.eu1.make.com/2g6fjqg256vhydy4s3swxukppc486udl"
@@ -20,6 +23,14 @@ ROOT = os.path.dirname(HERE)
 PROMPT = open(os.path.join(ROOT, "agents", "analyst.md"), encoding="utf-8").read()
 PROMPT_VERSION = re.search(r"Версия промта: \*\*(ANALYST_v\d+)\*\*", PROMPT).group(1)  # пишется в run-запись
 PROMPT = PROMPT.split("## SYSTEM PROMPT", 1)[1].split("## END SYSTEM PROMPT", 1)[0].strip()
+
+def load_prompt(fname, tag):
+    txt = open(os.path.join(ROOT, "agents", fname), encoding="utf-8").read()
+    ver = re.search(r"Версия промта: \*\*(" + tag + r"_v\d+)\*\*", txt).group(1)
+    return txt.split("## SYSTEM PROMPT", 1)[1].split("## END SYSTEM PROMPT", 1)[0].strip(), ver
+
+ARCH_PROMPT, ARCH_VERSION = load_prompt("architect.md", "ARCHITECT")
+SALES_PROMPT, SALES_VERSION = load_prompt("sales.md", "SALES")
 
 KEYS = ["telegram_relevance", "budget", "project_clarity", "client_credibility", "commercial_potential",
         "fit", "urgency", "competition", "source_quality", "complexity_fit"]
@@ -95,12 +106,14 @@ OWNER = "{{2.owner_chat_id}}"
 
 # ================= LH-99: установка (запускается один раз вручную) =================
 def lh99():
-    defaults = {"owner_chat_id": OWNER_CHAT_ID, "paused": False, "paused_reason": "", "daily_budget_usd": 1,
+    defaults = {"owner_chat_id": OWNER_CHAT_ID, "paused": False, "paused_reason": "", "daily_budget_usd": 3,
                 "architect_threshold": 60, "hot_threshold": 80, "warm_threshold": 60, "cold_threshold": 40,
                 "minimum_order_eur": 500, "timezone": "Europe/Berlin", "analyst_model": "claude-haiku-4-5",
                 "analyst_max_tokens": 1500, "architect_model": "claude-sonnet-5-5", "sales_model": "claude-sonnet-5-5",
                 "max_retry_attempts": 3, "retry_delays": "1,5,30", "analyst_price_in_mtok": 1, "analyst_price_out_mtok": 5,
-                "fx_date": "", "lh03_url": URL03, "lh10_url": URL10, "warned_80": "", "updated_at": "{{now}}",
+                "fx_date": "", "lh03_url": URL03, "lh10_url": URL10, "lh11_url": URL11,
+                "architect_max_tokens": 8000, "sales_max_tokens": 4000, "sonnet_price_in_mtok": 2, "sonnet_price_out_mtok": 10,
+                "architect_prompt_version": ARCH_VERSION, "sales_prompt_version": SALES_VERSION, "cleanup_days": 30, "warned_80": "", "updated_at": "{{now}}",
                 "webhook_secret": "{{1.ws}}", "internal_token": "{{1.it}}"}
     defaults.update({"w_" + k: v for k, v in WEIGHTS.items()})
     flow = [
@@ -531,7 +544,7 @@ def check(bp):
 
 if __name__ == "__main__":
     os.makedirs(os.path.join(ROOT, "blueprints"), exist_ok=True)
-    for name, fn in [("LH-99", lh99), ("LH-20", lh20), ("LH-03", lh03), ("LH-10", lh10)]:
+    for name, fn in [("LH-99", lh99), ("LH-20", lh20), ("LH-03", lh03), ("LH-10", lh10), ("LH-11", lh11)]:
         bp = fn()
         n = check(bp)
         json.dump(bp, open(os.path.join(ROOT, "blueprints", name + ".json"), "w"), ensure_ascii=False, indent=1)
