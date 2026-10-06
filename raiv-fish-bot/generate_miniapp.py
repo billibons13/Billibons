@@ -1,4 +1,4 @@
-"""Mini App витрина RAIV FISH (Netlify: raiv-fish-shop.netlify.app).
+"""Mini App витрина RAIV FISH (GitHub Pages: billibons13.github.io/Billibons, ветка gh-pages).
 Каталог и цены берутся из generate_blueprint.py — один источник правды.
 Витрина отправляет в бота только коды и количества ("b5:1,a2:300"); сумму бот считает сам.
 """
