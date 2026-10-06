@@ -18,6 +18,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 
 PROMPT = open(os.path.join(ROOT, "agents", "analyst.md"), encoding="utf-8").read()
+PROMPT_VERSION = re.search(r"Версия промта: \*\*(ANALYST_v\d+)\*\*", PROMPT).group(1)  # пишется в run-запись
 PROMPT = PROMPT.split("## SYSTEM PROMPT", 1)[1].split("## END SYSTEM PROMPT", 1)[0].strip()
 
 KEYS = ["telegram_relevance", "budget", "project_clarity", "client_credibility", "commercial_potential",
@@ -337,9 +338,11 @@ def lh03():
     s6 = ds_search(6, S_LEADS, [[c("url_hash", "text:equal", "{{5.url_hash}}")],
                                 [c("text_hash", "text:equal", "{{5.text_hash}}")],
                                 [c("client_hint", "text:equal", "{{5.client_key}}"), c("title_key", "text:equal", "{{5.title_key}}")]], limit=1)
-    dup = [ds_upd(10, S_LEADS, "{{6.key}}", {"duplicates": '{{if(6.data.duplicates; 6.data.duplicates + " | "; "")}}{{ifempty(4.url; "text:" + 5.lead_id)}}',
+    AT = '{{formatDate(now; "YYYY-MM-DD HH:mm"; ifempty(2.timezone; "Europe/Berlin"))}}'
+    # в duplicates и в событии — сырой входящий URL (до очистки) + время
+    dup = [ds_upd(10, S_LEADS, "{{6.key}}", {"duplicates": '{{if(6.data.duplicates; 6.data.duplicates + " | "; "")}}{{ifempty(3.u; "text:" + 5.lead_id)}} @ ' + AT,
                                              "updated_at": "{{now}}"}, upsert=False, name="Дубликат", conds=[[c("{{6.key}}", "exist")]]),
-           ev(11, "{{6.key}}", "DUPLICATE_DETECTED", "new={{5.lead_id}} url={{4.url}}"),
+           ev(11, "{{6.key}}", "DUPLICATE_DETECTED", 'existing={{6.key}} incoming_url={{ifempty(3.u; "none")}} at=' + AT),
            tg(12, "sendMessage", [("chat_id", OWNER), ("text", "♻️ Дубликат: эта заявка уже есть — {{6.key}} ({{ifempty(6.data.grade; 6.data.status)}} {{6.data.score}}).\nНовый лид не создан, ссылка добавлена в duplicates.")])]
     new = [ds_add(20, S_LEADS, "{{5.lead_id}}", {
                "lead_id": "{{5.lead_id}}", "kind": "lead", "title": "{{4.title}}", "title_key": "{{5.title_key}}",
@@ -355,7 +358,11 @@ def lh03():
                [tg(24, "sendMessage", [("chat_id", OWNER), ("text", "📥 {{5.lead_id}} создан{{if(4.url; \"\"; \" (без ссылки — не выше COLD)\")}}. Analyst оценивает…")],
                    name="Работаем", conds=[[c("{{2.paused}}", "text:notequal", "true")]]),
                 http_form(25, URL10, [("token", "{{2.internal_token}}"), ("lead_id", "{{5.lead_id}}")])]])]
-    flow = [hook(1, HOOK03), ds_get(2, S_SET, "main"), v3, v4, v5, s6, router(7, [dup, new], 1500, 0)]
+    # неверный internal token → событие SECURITY_DENIED (сам токен не пишется)
+    denied = [ev(31, "", "SECURITY_DENIED", 'LH-03: неверный internal token (token_present={{if(1.token; "yes"; "no")}})',
+                 name="Неверный токен", conds=[[c("{{1.token}}", "text:notequal", "{{2.internal_token}}")]])]
+    flow = [hook(1, HOOK03), ds_get(2, S_SET, "main"),
+            router(30, [denied, [v3, v4, v5, s6, router(7, [dup, new], 1500, 0)]], 300, 0)]
     return {"name": "LH-03 Lead Hunter — Manual Intake", "metadata": {"version": 1, "instant": True}, "flow": flow}
 
 
@@ -364,8 +371,8 @@ def lh10():
     L = "1.lead_id"
     lead_block = ('LEAD (JSON fields, description separately):\n'
                   '{"lead_id":"{{3.lead_id}}","title":"{{3.title}}","source":"{{3.source}}",'
-                  '"source_url":"{{ifempty(3.source_url; "null")}}","published_at":"{{ifempty(3.published_at; "null")}}",'
-                  '"client_hint":"{{if(contains(3.client_hint; "noclient-"); "null"; 3.client_hint)}}","found_at":"{{3.found_at}}"}\n'
+                  '"source_url":"{{ifempty(3.source_url; "null")}}",'
+                  '"client_hint":"{{if(contains(3.client_hint; "noclient-"); "null"; 3.client_hint)}}"}\n'
                   '<description_original>\n{{3.description_original}}\n</description_original>\n'
                   'Return ONLY the JSON object for lead_id {{3.lead_id}}.')
     claude = m(9, "anthropic-claude:simpleTextPrompt", 1,
@@ -381,6 +388,9 @@ def lh10():
     invalid_groups = [[c("{{10.lead_id}}", "text:notequal", "{{" + L + "}}")], [c("{{10.kind}}", "text:notpattern", "^(lead|prospect)$")]] + \
                      [[c("{{10.scores." + k + "}}", "text:notpattern", PAT)] for k in KEYS]
     num = lambda k: "parseNumber(10.scores." + k + '; ".")'
+    # текст для JSON-строки без экранирования: \ и " → ', переводы строк/пробелы → один пробел
+    esc = lambda x: 'replace(replace(ifempty(' + x + '; ""); "/[\\\\\\x22]/g"; "\'"); "/\\s+/g"; " ")'
+    ATT = "ifempty(3.attempts; 0) + 1"   # номер текущей попытки (3 = запись лида до инкремента в модуле 7)
     raw = "round(10 * (" + " + ".join(f"2.w_{k} * {num(k)}" for k in KEYS) + "))"
     cur = 'upper(ifempty(10.budget.currency; ""))'
     rate = ('switch(' + cur + '; "EUR"; 1; "USD"; 2.fx_usd; "GBP"; 2.fx_gbp; "CHF"; 2.fx_chf; "PLN"; 2.fx_pln; '
@@ -411,24 +421,34 @@ def lh10():
             "🧠 Суть: {{10.description_ru}}\n\n"
             "📊 Оценка:\n" +
             "".join(f"{LABEL[k]}: {{{{10.scores.{k}}}}}/10 — {{{{10.reasons.{k}}}}}\n" for k in KEYS) +
-            "\n⚠️ Risk: {{ifempty(12.flags; \"None\")}}\n"
+            "\n{{if(12.flags; \"⚠️ Risk: \" + 12.flags + newline; \"\")}}"
             "{{if(13.cap_reason; \"🧮 Ограничение: \" + 13.cap_reason + newline; \"\")}}"
             "🔗 Original: {{ifempty(3.source_url; \"нет ссылки\")}}\n"
             "🆔 {{1.lead_id}}")
-    v15 = setvars(15, [("card", card), ("next", '{{if(14.grade = "HOT"; "SENT_TO_TELEGRAM"; if(14.grade = "WARM"; "SENT_TO_TELEGRAM"; "ARCHIVED"))}}')])
+    # COLD/REJECT — одна строка; причина = ограничение (cap) или критерий с наименьшим баллом
+    part = lambda k: ('if(' + num(k) + ' < 10; "0"; "") + toString(10.scores.' + k + ') + "|' + LABEL[k] + ' " + '
+                      'toString(10.scores.' + k + ') + "/10: " + 20.r_' + k)
+    lowest = ('replace(first(sort(split(' + ' + "§" + '.join(part(k) for k in KEYS) + '; "§"))); "/^[0-9.]+\\|/"; "")')
+    short = ("{{" + EMO + "}} {{1.lead_id}} · {{14.grade}} {{13.score}} — в архиве, причина: "
+             "{{if(13.cap_reason; replace(13.cap_reason; \"/;\\s*$/\"; \"\"); " + lowest + ")}}")
+    v20 = setvars(20, [("r_" + k, "{{" + esc("10.reasons." + k) + "}}") for k in KEYS])  # причины без " и \\, в одну строку
+    v25 = setvars(25, [("full", card), ("short", short)])
+    v15 = setvars(15, [("card", '{{if(14.grade = "HOT"; 25.full; if(14.grade = "WARM"; 25.full; 25.short))}}'), ("next",'{{if(14.grade = "HOT"; "SENT_TO_TELEGRAM"; if(14.grade = "WARM"; "SENT_TO_TELEGRAM"; "ARCHIVED"))}}')])
     scores_json = "{" + ",".join(f'"{k}":{{{{{num(k)}}}}}' for k in KEYS) + "}"
+    # reasons — только объект reasons из разобранного JSON, минифицированный (кавычки/\ → ', пробелы схлопнуты)
+    reasons_json = "{" + ",".join(f'"{k}":"{{{{20.r_{k}}}}}"' for k in KEYS) + "}"
     save = ds_upd(16, S_LEADS, "{{1.lead_id}}", {
         "kind": "{{10.kind}}", "language": "{{10.language}}", "bot_type": "{{10.bot_type}}", "description_ru": "{{10.description_ru}}",
         "client_name": "{{10.client_name}}", "country": "{{10.country}}", "budget_amount": "{{10.budget.amount}}",
         "budget_currency": "{{10.budget.currency}}", "budget_type": "{{10.budget.type}}", "budget_eur": "{{12.beur}}",
-        "scores": scores_json, "reasons": "{{9.result}}", "score_raw": "{{12.raw}}", "score": "{{13.score}}",
+        "scores": scores_json, "reasons": reasons_json, "score_raw": "{{12.raw}}", "score": "{{13.score}}",
         "score_cap_reason": "{{13.cap_reason}}", "grade": "{{14.grade}}", "risk_flags": "{{12.flags}}",
         "duplicate_of": "{{10.duplicate_of}}", "card_text": "{{15.card}}", "status": "ANALYZED", "status_at": "{{now}}",
         "error_code": "", "error_message": "", "updated_at": "{{now}}"}, upsert=False)
     run_ok = ds_add(17, S_LOG, "{{uuid}}", {"table": "runs", "run_id": "{{uuid}}", "lead_id": "{{1.lead_id}}", "agent": "analyst",
                     "model": "{{ifempty(9.model; \"claude-haiku-4-5\")}}", "started_at": "{{7.updated_at}}", "finished_at": "{{now}}",
                     "input_tokens": "{{9.usage.input_tokens}}", "output_tokens": "{{9.usage.output_tokens}}",
-                    "estimated_cost_usd": "{{12.cost}}", "status": "OK", "attempt": "{{7.attempts}}", "created_at": "{{now}}", "day": DAY_S})
+                    "estimated_cost_usd": "{{12.cost}}", "status": "OK", "attempt": "{{" + ATT + "}}", "prompt_version": PROMPT_VERSION, "created_at": "{{now}}", "day": DAY_S})
     day_cost = ds_upd(18, S_SET, "day_" + DAY_S, {"day": DAY_S, "cost_usd": "{{ifempty(5.cost_usd; 0) + 12.cost}}"})
     e1 = ev(19, "{{1.lead_id}}", "ANALYST_COMPLETED", "tokens in/out {{9.usage.input_tokens}}/{{9.usage.output_tokens}}, ${{12.cost}}", old="NEW", new="ANALYZED")
     e2 = ev(26, "{{1.lead_id}}", "SCORE_CALCULATED", "raw {{12.raw}} → {{13.score}} {{14.grade}}; {{13.cap_reason}}")
@@ -451,15 +471,16 @@ def lh10():
                 name="100 % бюджета", conds=[[c("{{" + spent + "}}", "number:greaterorequal", "{{2.daily_budget_usd}}")]]),
          ev(34, "", "BUDGET_PAUSED", "spent ${{" + spent + "}}"),
          tg(35, "sendMessage", [("chat_id", OWNER), ("text", "⛔ Дневной бюджет Claude исчерпан (${{2.daily_budget_usd}}). AI-обработка на паузе, новые заявки копятся в очереди. /resume — продолжить.")])]])
-    valid_flow = [v12, v13, v14, v15, save, run_ok, day_cost, e1, e2, send, sent, e3, budget_r]
+    valid_flow = [v12, v13, v14, v20, v25, v15, save, run_ok, day_cost, e1, e2, send, sent, e3, budget_r]
     # --- невалидный ответ: повтор или ERROR
-    attempts = "ifempty(7.attempts; 1)"
+    attempts = ATT
     run_bad = ds_add(40, S_LOG, "{{uuid}}", {"table": "runs", "run_id": "{{uuid}}", "lead_id": "{{1.lead_id}}", "agent": "analyst",
                      "model": "claude-haiku-4-5", "started_at": "{{7.updated_at}}", "finished_at": "{{now}}",
                      "input_tokens": "{{ifempty(9.usage.input_tokens; 0)}}", "output_tokens": "{{ifempty(9.usage.output_tokens; 0)}}",
                      "estimated_cost_usd": "{{" + cost + "}}", "status": "FAILED",
                      "error_code": '{{if(9.stop_reason = "error"; "MODEL_ERROR"; if(9.stop_reason = "refusal"; "REFUSAL"; "JSON_INVALID"))}}',
                      "error_message": "{{substring(ifempty(9.result; \"(empty)\"); 0; 300)}}", "attempt": "{{" + attempts + "}}",
+                     "prompt_version": PROMPT_VERSION,
                      "created_at": "{{now}}", "day": DAY_S},
                      name="JSON невалиден", conds=invalid_groups)
     day_cost2 = ds_upd(41, S_SET, "day_" + DAY_S, {"day": DAY_S, "cost_usd": "{{ifempty(5.cost_usd; 0) + " + cost + "}}"})
@@ -480,7 +501,7 @@ def lh10():
                       name="Обработка: NEW, без паузы, бюджет есть",
                       conds=[[c("{{3.status}}", "text:equal", "NEW"), c("{{2.paused}}", "text:notequal", "true"),
                               c("{{ifempty(5.cost_usd; 0)}}", "number:less", "{{2.daily_budget_usd}}")]]),
-               ev(8, "{{1.lead_id}}", "ANALYST_STARTED", "attempt {{7.attempts}}"),
+               ev(8, "{{1.lead_id}}", "ANALYST_STARTED", "attempt {{" + ATT + "}} · prompt " + PROMPT_VERSION),
                claude, parse, router(11, [valid_flow, invalid_flow], 2400, 0)]
     over = [ds_upd(50, S_SET, "main", {"paused": True, "paused_reason": "дневной бюджет исчерпан", "updated_at": "{{now}}"},
                    name="Бюджет исчерпан до вызова",
