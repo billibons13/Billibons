@@ -99,3 +99,20 @@ Blueprint v3: `v3_business_blueprint.json` (генератор: `generate_bluepr
 - Убрана строка «Доставка бесплатно от 20 €: Эдделак, Марне, Брунсбюттель, Хайде» из /start, прайса, /help и контактов.
 - Рабочая версия: `backup/v9_pro_blueprint.json`; откат на v9.4 — `backup/v9_4_blueprint.json` через scenarios_update 7707233.
 - Проверено: /start, /contacts, /help — 3/3 успешно.
+
+## v9.6 (подготовлено, не выкачено) — языки ru / de / es / uk (T-20261006-0013)
+- Файл: `backup/v9_6_lang_blueprint.json` (генератор `generate_blueprint.py` v9.6; сборка:
+  `python3 generate_blueprint.py backup/v9_6_lang_blueprint.json`, затем в файле поле `name` = «RAIV_Fish Bot — Заказы v9.6 Lang (ru/de/es/uk)»).
+- Что даёт: язык клиента в записи клиента (поле `lang`), автоопределение по `language_code` Telegram (de/es/uk, иначе ru),
+  кнопка «🌐 Язык» в главном меню и /language. Все тексты клиента и названия товаров — на его языке.
+  Карточка заказа в канал, команды и отчёты владельца — по-русски. Цены, промокоды, корзина, оплата, бонусы — без изменений.
+  Таблица переводов: `agents/tasks/T-0013_translations.md`.
+- Перед выкатом (изменения в Make, только после «да» владельца):
+  1. Добавить поля в структуры data store (только добавление, данные не трогаются):
+     клиенты 609976 — `lang` (text), `last_ltext` (text); корзина 609962 — `ltext` (text).
+  2. `scenarios_update` 7707233 с блюпринтом `backup/v9_6_lang_blueprint.json`.
+  3. (по желанию) инструмент 7707653: добавить /language в setMyCommands.
+  4. Тестировщик: /start с de/es/uk/ru, смена языка, заказ на de до карточки в канале (карточка по-русски),
+     «🚚 В пути / ✅ Доставлен» клиенту на его языке, витрина, промокод, свой вес «0,7 kg».
+- Откат: `scenarios_update` 7707233 с `backup/v9_pro_blueprint.json` (v9.5). Новые поля в data store v9.5 не мешают;
+  для отката генератора — `git checkout <коммит v9.5> -- generate_blueprint.py`.
