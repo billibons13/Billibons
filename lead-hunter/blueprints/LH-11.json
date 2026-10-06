@@ -1,0 +1,2319 @@
+{
+ "name": "LH-11 Lead Hunter — Architect + Sales",
+ "metadata": {
+  "version": 1,
+  "instant": true
+ },
+ "flow": [
+  {
+   "id": 1,
+   "module": "gateway:CustomWebHook",
+   "version": 1,
+   "mapper": {},
+   "parameters": {
+    "hook": 3853986,
+    "maxResults": 1
+   },
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   }
+  },
+  {
+   "id": 2,
+   "module": "datastore:GetRecord",
+   "version": 1,
+   "mapper": {
+    "key": "main",
+    "returnWrapped": false
+   },
+   "parameters": {
+    "datastore": 207951
+   },
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   }
+  },
+  {
+   "id": 3,
+   "module": "builtin:BasicRouter",
+   "version": 1,
+   "mapper": null,
+   "metadata": {
+    "designer": {
+     "x": 300,
+     "y": 0
+    }
+   },
+   "routes": [
+    {
+     "flow": [
+      {
+       "id": 4,
+       "module": "datastore:SearchRecord",
+       "version": 1,
+       "mapper": {
+        "filter": [
+         [
+          {
+           "a": "status",
+           "o": "text:equal",
+           "b": "LOST"
+          },
+          {
+           "a": "status_at",
+           "o": "date:less",
+           "b": "{{addDays(now; 0 - ifempty(2.cleanup_days; 30))}}"
+          },
+          {
+           "a": "architect_json",
+           "o": "exist"
+          }
+         ],
+         [
+          {
+           "a": "status",
+           "o": "text:equal",
+           "b": "ARCHIVED"
+          },
+          {
+           "a": "status_at",
+           "o": "date:less",
+           "b": "{{addDays(now; 0 - ifempty(2.cleanup_days; 30))}}"
+          },
+          {
+           "a": "architect_json",
+           "o": "exist"
+          }
+         ]
+        ],
+        "sort": []
+       },
+       "parameters": {
+        "datastore": 207950,
+        "continueWhenNoRes": false,
+        "limit": 5
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "filter": {
+        "name": "Очистка (вариант A)",
+        "conditions": [
+         [
+          {
+           "a": "{{1.token}}",
+           "o": "text:equal",
+           "b": "{{2.internal_token}}"
+          }
+         ]
+        ]
+       }
+      },
+      {
+       "id": 5,
+       "module": "datastore:UpdateRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{4.key}}",
+        "upsert": false,
+        "overwriteArrays": false,
+        "data": {
+         "architect_json": "",
+         "sales_json": "",
+         "client_message": "",
+         "client_message_ru": "",
+         "card_text": "",
+         "updated_at": "{{now}}"
+        }
+       },
+       "parameters": {
+        "datastore": 207950
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      },
+      {
+       "id": 6,
+       "module": "datastore:AddRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{uuid}}",
+        "overwrite": true,
+        "data": {
+         "table": "events",
+         "event_id": "{{uuid}}",
+         "lead_id": "{{4.key}}",
+         "event": "STORAGE_CLEANED",
+         "details": "variant A: architect_json, sales_json, client_message(_ru), card_text cleared ({{4.data.status}} > {{ifempty(2.cleanup_days; 30)}} d)",
+         "old_status": "",
+         "new_status": "",
+         "created_at": "{{now}}",
+         "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+        }
+       },
+       "parameters": {
+        "datastore": 207952
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 7,
+       "module": "datastore:AddRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{uuid}}",
+        "overwrite": true,
+        "data": {
+         "table": "events",
+         "event_id": "{{uuid}}",
+         "lead_id": "",
+         "event": "SECURITY_DENIED",
+         "details": "LH-11: неверный internal token (token_present={{if(1.token; \"yes\"; \"no\")}})",
+         "old_status": "",
+         "new_status": "",
+         "created_at": "{{now}}",
+         "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+        }
+       },
+       "parameters": {
+        "datastore": 207952
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "filter": {
+        "name": "Неверный токен",
+        "conditions": [
+         [
+          {
+           "a": "{{1.token}}",
+           "o": "text:notequal",
+           "b": "{{2.internal_token}}"
+          }
+         ]
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 8,
+       "module": "datastore:GetRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{1.lead_id}}",
+        "returnWrapped": false
+       },
+       "parameters": {
+        "datastore": 207950
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "filter": {
+        "name": "Внутренний токен",
+        "conditions": [
+         [
+          {
+           "a": "{{1.token}}",
+           "o": "text:equal",
+           "b": "{{2.internal_token}}"
+          }
+         ]
+        ]
+       }
+      },
+      {
+       "id": 9,
+       "module": "datastore:UpdateRecord",
+       "version": 1,
+       "mapper": {
+        "key": "day_{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}",
+        "upsert": true,
+        "overwriteArrays": false,
+        "data": {
+         "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+        }
+       },
+       "parameters": {
+        "datastore": 207951
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      },
+      {
+       "id": 10,
+       "module": "datastore:GetRecord",
+       "version": 1,
+       "mapper": {
+        "key": "day_{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}",
+        "returnWrapped": false
+       },
+       "parameters": {
+        "datastore": 207951
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      },
+      {
+       "id": 11,
+       "module": "builtin:BasicRouter",
+       "version": 1,
+       "mapper": null,
+       "metadata": {
+        "designer": {
+         "x": 900,
+         "y": 0
+        }
+       },
+       "routes": [
+        {
+         "flow": [
+          {
+           "id": 12,
+           "module": "datastore:AddRecord",
+           "version": 1,
+           "mapper": {
+            "key": "{{uuid}}",
+            "overwrite": true,
+            "data": {
+             "table": "events",
+             "event_id": "{{uuid}}",
+             "lead_id": "{{1.lead_id}}",
+             "event": "ARCHITECT_STARTED",
+             "details": "run {{1.run_id}} · mode {{ifempty(1.mode; \"normal\")}} · prompt ARCHITECT_v1",
+             "old_status": "{{8.status}}",
+             "new_status": "{{8.status}}",
+             "created_at": "{{now}}",
+             "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+            }
+           },
+           "parameters": {
+            "datastore": 207952
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "filter": {
+            "name": "Запуск: run_id совпадает, бюджет есть",
+            "conditions": [
+             [
+              {
+               "a": "{{1.run_id}}",
+               "o": "exist"
+              },
+              {
+               "a": "{{8.architect_run_id}}",
+               "o": "text:equal",
+               "b": "{{1.run_id}}"
+              },
+              {
+               "a": "{{ifempty(8.sales_run_id; \"none\")}}",
+               "o": "text:notequal",
+               "b": "{{1.run_id}}"
+              },
+              {
+               "a": "{{1.mode}}",
+               "o": "text:notequal",
+               "b": "more"
+              },
+              {
+               "a": "{{8.status}}",
+               "o": "text:equal",
+               "b": "APPROVED"
+              },
+              {
+               "a": "{{2.paused}}",
+               "o": "text:notequal",
+               "b": "true"
+              },
+              {
+               "a": "{{ifempty(10.cost_usd; 0)}}",
+               "o": "number:less",
+               "b": "{{2.daily_budget_usd}}"
+              }
+             ],
+             [
+              {
+               "a": "{{1.run_id}}",
+               "o": "exist"
+              },
+              {
+               "a": "{{8.architect_run_id}}",
+               "o": "text:equal",
+               "b": "{{1.run_id}}"
+              },
+              {
+               "a": "{{ifempty(8.sales_run_id; \"none\")}}",
+               "o": "text:notequal",
+               "b": "{{1.run_id}}"
+              },
+              {
+               "a": "{{1.mode}}",
+               "o": "text:equal",
+               "b": "more"
+              },
+              {
+               "a": "{{2.paused}}",
+               "o": "text:notequal",
+               "b": "true"
+              },
+              {
+               "a": "{{ifempty(10.cost_usd; 0)}}",
+               "o": "number:less",
+               "b": "{{2.daily_budget_usd}}"
+              }
+             ]
+            ]
+           }
+          },
+          {
+           "id": 13,
+           "module": "util:SetVariables",
+           "version": 1,
+           "mapper": {
+            "variables": [
+             {
+              "name": "t0",
+              "value": "{{now}}"
+             }
+            ],
+            "scope": "roundtrip"
+           },
+           "parameters": {},
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           }
+          },
+          {
+           "id": 14,
+           "module": "anthropic-claude:simpleTextPrompt",
+           "version": 1,
+           "mapper": {
+            "model": "claude-sonnet-5-5",
+            "textPrompt": "You are Architect, the Telegram solution architect of a small studio that builds Telegram bots and Mini Apps\n(stack: Telegram Bot API, Make.com scenarios, Claude AI, Stripe, Google Sheets / Airtable / Make data stores, simple web admin;\nready-made base: an e-commerce Telegram bot with catalog, cart, delivery, bonuses, Mini App and Stripe).\n\nPrompt version: ARCHITECT_v1.\n\nYou receive ONE lead approved by the owner (lead data + analyst summary + original text) and return ONLY a JSON object\nwith a technical specification draft. No markdown, no code fences, no text before or after the JSON. Minified JSON (one line).\n\nHard rules:\n- Never invent facts about the client: company, size, users, existing systems, deadlines, budget, country.\n  If it is not in the lead, it is UNKNOWN. The prefix \"[TEST]\" is an internal service label — ignore it.\n- Every requirement-like string (arrays and text fields marked TAGGED below) MUST start with exactly one tag:\n  \"CLIENT_REQUIREMENT: \" — explicitly written by the client in the lead;\n  \"INFERRED: \" — logically follows from what the client wrote (say from what);\n  \"RECOMMENDATION: \" — our suggestion, not requested by the client;\n  \"UNKNOWN: \" — needed but not known; must be clarified with the client.\n- Write all content in Russian (keys, tags, enum values and technology names stay in English).\n- Be concrete and short: one item = one sentence. No marketing language.\n- questions_for_client: at most 10, sorted by priority (most important first), each a direct question in Russian.\n- complexity: S (< 40 h), M (40-120 h), L (120-300 h), XL (> 300 h) for our studio, using the ready base where it fits.\n- estimated_hours_min / estimated_hours_max: integers, a realistic range (no false precision: round to 5 or 10),\n  min <= max; widen the range when requirements are unknown. Hours include analysis, development, testing, deployment.\n- telegram_solution fields: TAGGED strings like \"CLIENT_REQUIREMENT: да — каталог и корзина\" or \"RECOMMENDATION: нет — не нужно для MVP\"\n  or \"UNKNOWN: нужен ли Mini App\".\n- database.required and admin_panel.required: \"yes\" | \"no\" | \"UNKNOWN\".\n- mvp = the smallest version that solves the client goal; phase_2 = everything else that is useful later.\n- technical_risks: real risks for delivery (API limits, unclear scope, payments compliance, data protection, third-party access).\n- missing_information: facts we need before a fixed price.\n- required_specialists: roles, e.g. \"Telegram bot developer (Make)\", \"Frontend (Mini App)\", \"Designer\".\n- architecture_notes: 2-5 sentences on the proposed architecture and what is reused from the ready base.\n\nOutput exactly this structure (TAGGED = every string starts with a tag):\n{\"lead_id\":\"\",\"project_summary\":\"\",\"client_goal\":\"TAGGED\",\n\"telegram_solution\":{\"bot\":\"TAGGED\",\"mini_app\":\"TAGGED\",\"ai\":\"TAGGED\",\"crm\":\"TAGGED\",\"payments\":\"TAGGED\",\"notifications\":\"TAGGED\",\"admin_panel\":\"TAGGED\"},\n\"functional_requirements\":[\"TAGGED\"],\"user_roles\":[\"TAGGED\"],\"user_flow\":[\"step\"],\"mvp\":[\"TAGGED\"],\"phase_2\":[\"TAGGED\"],\n\"integrations\":[\"TAGGED\"],\"api_requirements\":[\"TAGGED\"],\n\"database\":{\"required\":\"yes\",\"suggested\":\"\",\"entities\":[\"TAGGED\"]},\n\"admin_panel\":{\"required\":\"yes\",\"functions\":[\"TAGGED\"]},\n\"ai_features\":[\"TAGGED\"],\"authentication\":\"TAGGED\",\"notifications\":[\"TAGGED\"],\"analytics\":[\"TAGGED\"],\"hosting\":\"TAGGED\",\n\"security\":[\"TAGGED\"],\"technology_stack\":[\"item\"],\"technical_risks\":[\"risk\"],\"missing_information\":[\"TAGGED\"],\n\"questions_for_client\":[\"question\"],\"complexity\":\"M\",\"estimated_hours_min\":40,\"estimated_hours_max\":80,\n\"required_specialists\":[\"role\"],\"architecture_notes\":\"\"}\nEmpty lists are allowed only where nothing applies (e.g. ai_features when AI is not needed); functional_requirements, mvp,\ntechnology_stack and questions_for_client must not be empty.\n\nLEAD (approved by the owner; analyst summary + original text):\n{\"lead_id\":\"{{1.lead_id}}\",\"title\":\"{{8.title}}\",\"source\":\"{{8.source}}\",\"source_url\":\"{{ifempty(8.source_url; \"null\")}}\",\"language\":\"{{ifempty(8.language; \"unknown\")}}\",\"country\":\"{{ifempty(8.country; \"unknown\")}}\",\"bot_type\":\"{{ifempty(8.bot_type; \"unknown\")}}\",\"kind\":\"{{8.kind}}\",\"client_budget_from_lead\":\"{{if(8.budget_amount; 8.budget_amount + \" \" + 8.budget_currency + \" (\" + ifempty(8.budget_type; \"unknown\") + \")\"; \"not stated\")}}\",\"analyst_grade\":\"{{8.grade}}\",\"analyst_score\":\"{{8.score}}\"}\n<description_ru>\n{{8.description_ru}}\n</description_ru>\n<description_original>\n{{8.description_original}}\n</description_original>\n{{if(1.mode = \"more\"; \"DEEP ANALYSIS MODE (owner pressed More Analysis; the only allowed re-run for this lead): re-check every item of PREVIOUS_ANALYSIS against the lead text, expand technical_risks and missing_information, make questions_for_client sharper and strictly prioritized, refine the hour range. Same output format. PREVIOUS_ANALYSIS: \"; \"\")}}{{if(1.mode = \"more\"; 8.architect_json; \"\")}}\nReturn ONLY the minified JSON object for lead_id {{1.lead_id}}.",
+            "max_tokens": "{{ifempty(2.architect_max_tokens; 8000)}}"
+           },
+           "parameters": {},
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "onerror": [
+            {
+             "id": 514,
+             "module": "builtin:Resume",
+             "version": 1,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             },
+             "mapper": {
+              "result": "",
+              "stop_reason": "error",
+              "usage": {
+               "input_tokens": 0,
+               "output_tokens": 0
+              }
+             }
+            }
+           ]
+          },
+          {
+           "id": 15,
+           "module": "util:SetVariables",
+           "version": 1,
+           "mapper": {
+            "variables": [
+             {
+              "name": "aj",
+              "value": "{{replace(trim(replace(replace(14.result; \"/^\\s*```(json)?/\"; \"\"); \"/```\\s*$/\"; \"\")); \"/\\n\\s*/g\"; \"\")}}"
+             }
+            ],
+            "scope": "roundtrip"
+           },
+           "parameters": {},
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           }
+          },
+          {
+           "id": 16,
+           "module": "json:ParseJSON",
+           "version": 1,
+           "mapper": {
+            "json": "{{15.aj}}"
+           },
+           "parameters": {
+            "type": 620802
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "onerror": [
+            {
+             "id": 516,
+             "module": "builtin:Resume",
+             "version": 1,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             },
+             "mapper": {
+              "lead_id": ""
+             }
+            }
+           ]
+          },
+          {
+           "id": 17,
+           "module": "builtin:BasicRouter",
+           "version": 1,
+           "mapper": null,
+           "metadata": {
+            "designer": {
+             "x": 2400,
+             "y": 0
+            }
+           },
+           "routes": [
+            {
+             "flow": [
+              {
+               "id": 18,
+               "module": "util:SetVariables",
+               "version": 1,
+               "mapper": {
+                "variables": [
+                 {
+                  "name": "acost",
+                  "value": "{{if(14.usage.input_tokens; 14.usage.input_tokens * ifempty(2.sonnet_price_in_mtok; 2) / 1000000 + ifempty(14.usage.output_tokens; 0) * ifempty(2.sonnet_price_out_mtok; 10) / 1000000; 0)}}"
+                 },
+                 {
+                  "name": "q",
+                  "value": "{{\"• \" + join(slice(16.questions_for_client; 0; 10); newline + \"• \")}}"
+                 },
+                 {
+                  "name": "miss",
+                  "value": "{{if(length(16.missing_information) > 0; \"• \" + join(16.missing_information; newline + \"• \"); \"\")}}"
+                 }
+                ],
+                "scope": "roundtrip"
+               },
+               "parameters": {},
+               "metadata": {
+                "designer": {
+                 "x": 0,
+                 "y": 0
+                }
+               },
+               "filter": {
+                "name": "ТЗ валидно",
+                "conditions": [
+                 [
+                  {
+                   "a": "{{16.lead_id}}",
+                   "o": "text:equal",
+                   "b": "{{1.lead_id}}"
+                  },
+                  {
+                   "a": "{{16.complexity}}",
+                   "o": "text:pattern",
+                   "b": "^(S|M|L|XL)$"
+                  },
+                  {
+                   "a": "{{16.estimated_hours_min}}",
+                   "o": "text:pattern",
+                   "b": "^[0-9]+(\\.[0-9]+)?$"
+                  },
+                  {
+                   "a": "{{16.estimated_hours_max}}",
+                   "o": "text:pattern",
+                   "b": "^[0-9]+(\\.[0-9]+)?$"
+                  },
+                  {
+                   "a": "{{16.estimated_hours_min}}",
+                   "o": "number:lessorequal",
+                   "b": "{{16.estimated_hours_max}}"
+                  },
+                  {
+                   "a": "{{14.stop_reason}}",
+                   "o": "text:notequal",
+                   "b": "max_tokens"
+                  },
+                  {
+                   "a": "{{16.project_summary}}",
+                   "o": "exist"
+                  },
+                  {
+                   "a": "{{16.telegram_solution.bot}}",
+                   "o": "exist"
+                  },
+                  {
+                   "a": "{{16.database.required}}",
+                   "o": "exist"
+                  },
+                  {
+                   "a": "{{16.admin_panel.required}}",
+                   "o": "exist"
+                  },
+                  {
+                   "a": "{{length(16.functional_requirements)}}",
+                   "o": "number:greater",
+                   "b": "0"
+                  },
+                  {
+                   "a": "{{length(16.mvp)}}",
+                   "o": "number:greater",
+                   "b": "0"
+                  },
+                  {
+                   "a": "{{length(16.technology_stack)}}",
+                   "o": "number:greater",
+                   "b": "0"
+                  },
+                  {
+                   "a": "{{length(16.questions_for_client)}}",
+                   "o": "number:greater",
+                   "b": "0"
+                  }
+                 ]
+                ]
+               }
+              },
+              {
+               "id": 19,
+               "module": "datastore:UpdateRecord",
+               "version": 1,
+               "mapper": {
+                "key": "{{1.lead_id}}",
+                "upsert": false,
+                "overwriteArrays": false,
+                "data": {
+                 "architect_json": "{{15.aj}}",
+                 "complexity": "{{16.complexity}}",
+                 "estimated_hours_min": "{{16.estimated_hours_min}}",
+                 "estimated_hours_max": "{{16.estimated_hours_max}}",
+                 "missing_information": "{{18.miss}}",
+                 "client_questions": "{{18.q}}",
+                 "status": "TECHNICAL_SPEC_READY",
+                 "status_at": "{{now}}",
+                 "error_code": "",
+                 "error_message": "",
+                 "updated_at": "{{now}}"
+                }
+               },
+               "parameters": {
+                "datastore": 207950
+               },
+               "metadata": {
+                "designer": {
+                 "x": 0,
+                 "y": 0
+                }
+               }
+              },
+              {
+               "id": 20,
+               "module": "datastore:AddRecord",
+               "version": 1,
+               "mapper": {
+                "key": "{{uuid}}",
+                "overwrite": true,
+                "data": {
+                 "table": "runs",
+                 "run_id": "{{1.run_id}}",
+                 "lead_id": "{{1.lead_id}}",
+                 "agent": "architect",
+                 "model": "{{ifempty(14.model; \"claude-sonnet-5-5\")}}",
+                 "started_at": "{{13.t0}}",
+                 "finished_at": "{{now}}",
+                 "input_tokens": "{{14.usage.input_tokens}}",
+                 "output_tokens": "{{14.usage.output_tokens}}",
+                 "estimated_cost_usd": "{{18.acost}}",
+                 "status": "OK",
+                 "attempt": "{{if(1.mode = \"more\"; 2; 1)}}",
+                 "prompt_version": "ARCHITECT_v1",
+                 "created_at": "{{now}}",
+                 "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+                }
+               },
+               "parameters": {
+                "datastore": 207952
+               },
+               "metadata": {
+                "designer": {
+                 "x": 0,
+                 "y": 0
+                }
+               }
+              },
+              {
+               "id": 21,
+               "module": "datastore:AddRecord",
+               "version": 1,
+               "mapper": {
+                "key": "{{uuid}}",
+                "overwrite": true,
+                "data": {
+                 "table": "events",
+                 "event_id": "{{uuid}}",
+                 "lead_id": "{{1.lead_id}}",
+                 "event": "ARCHITECT_COMPLETED",
+                 "details": "complexity {{16.complexity}}, {{16.estimated_hours_min}}-{{16.estimated_hours_max}} h, tokens {{14.usage.input_tokens}}/{{14.usage.output_tokens}}, ${{18.acost}}",
+                 "old_status": "{{8.status}}",
+                 "new_status": "TECHNICAL_SPEC_READY",
+                 "created_at": "{{now}}",
+                 "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+                }
+               },
+               "parameters": {
+                "datastore": 207952
+               },
+               "metadata": {
+                "designer": {
+                 "x": 0,
+                 "y": 0
+                }
+               }
+              },
+              {
+               "id": 22,
+               "module": "datastore:AddRecord",
+               "version": 1,
+               "mapper": {
+                "key": "{{uuid}}",
+                "overwrite": true,
+                "data": {
+                 "table": "events",
+                 "event_id": "{{uuid}}",
+                 "lead_id": "{{1.lead_id}}",
+                 "event": "SALES_STARTED",
+                 "details": "run {{1.run_id}} · prompt SALES_v1",
+                 "old_status": "TECHNICAL_SPEC_READY",
+                 "new_status": "TECHNICAL_SPEC_READY",
+                 "created_at": "{{now}}",
+                 "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+                }
+               },
+               "parameters": {
+                "datastore": 207952
+               },
+               "metadata": {
+                "designer": {
+                 "x": 0,
+                 "y": 0
+                }
+               }
+              },
+              {
+               "id": 23,
+               "module": "anthropic-claude:simpleTextPrompt",
+               "version": 1,
+               "mapper": {
+                "model": "claude-sonnet-5-5",
+                "textPrompt": "You are Sales, the commercial strategist of a small studio that builds Telegram bots and Mini Apps\n(Make.com + Claude + Telegram Bot API; ready-made e-commerce bot base sold from 500 EUR).\n\nPrompt version: SALES_v1.\n\nYou receive ONE lead, the technical specification JSON produced by Architect, and studio settings.\nReturn ONLY a JSON object. No markdown, no code fences, no text before or after the JSON. Minified JSON (one line).\n\nHard rules:\n- All prices are in EUR, integers, rounded to 10 (or 50 above 2000). No false precision.\n- estimated_cost = our internal delivery cost: hours (use the middle of Architect's range) x internal hourly rate.\n  If the internal hourly rate is UNKNOWN, use a conservative typical freelance rate for Telegram bot development\n  in Eastern/Central Europe and state it in \"assumptions\".\n- minimum_acceptable_price >= the minimum order from settings (never below 500 EUR) and >= estimated_cost.\n- minimum_acceptable_price <= recommended_price <= target_price. recommended_price = price of the Professional package.\n- packages: basic.price < professional.price < premium.price. Each package lists what is included and what is excluded\n  (in Russian), based only on the Architect spec (mvp / phase_2). Basic ~ MVP; Premium adds phase_2 items and support.\n- The client's budget is ONLY what the lead says. Never present our estimate as the client's budget. If the client's budget\n  is known and lower than minimum_acceptable_price, say so in price_reasoning and lower win_probability.\n- win_probability: integer 0-100 with a short reason in Russian (fit, budget, clarity, competition — only from the input).\n- commercial_potential: LOW | MEDIUM | HIGH with a short reason in Russian.\n- potential_revenue, phase_2_revenue, maintenance_revenue, upsell_revenue: a string like \"800-1500 EUR\" or \"UNKNOWN\"\n  when there is no basis. Do not invent recurring revenue the client did not imply.\n- upsells: only those that really fit this project (Russian, short), max 5; empty list if none fit.\n- client_message: the first message the OWNER may send manually, in the client's language (client_language = lead language),\n  80-160 words, polite and specific to the request, 1-3 clarifying questions from Architect, a price range or \"from\" price\n  of our packages marked as our estimate, no fake portfolio facts, no claims about the client we do not know, no promises\n  of deadlines beyond the spec, no mention of AI or of this analysis, sign-off placeholder \"[Ваше имя]\" translated.\n- client_message_ru: an exact Russian translation of client_message (if the client language is Russian, the same text).\n- Never claim anything we do not know. Unknown -> \"UNKNOWN\". The prefix \"[TEST]\" is an internal label — ignore it.\n\nOutput exactly this structure:\n{\"lead_id\":\"\",\"currency\":\"EUR\",\"estimated_cost\":0,\"recommended_price\":0,\"target_price\":0,\"minimum_acceptable_price\":0,\n\"price_reasoning\":\"\",\n\"packages\":{\"basic\":{\"price\":0,\"timeline\":\"\",\"included\":[\"\"],\"excluded\":[\"\"]},\"professional\":{\"price\":0,\"timeline\":\"\",\"included\":[\"\"],\"excluded\":[\"\"]},\"premium\":{\"price\":0,\"timeline\":\"\",\"included\":[\"\"],\"excluded\":[\"\"]}},\n\"win_probability\":0,\"win_probability_reason\":\"\",\"commercial_potential\":\"MEDIUM\",\"commercial_potential_reason\":\"\",\n\"potential_revenue\":\"UNKNOWN\",\"phase_2_revenue\":\"UNKNOWN\",\"maintenance_revenue\":\"UNKNOWN\",\"upsell_revenue\":\"UNKNOWN\",\n\"upsells\":[],\"client_language\":\"en\",\"client_message\":\"\",\"client_message_ru\":\"\",\"assumptions\":[]}\n\nSETTINGS: {\"currency\":\"EUR\",\"minimum_order_eur\":{{ifempty(2.minimum_order_eur; 500)}},\"internal_hourly_rate_eur\":\"{{ifempty(2.sales_hourly_rate_eur; \"UNKNOWN\")}}\"}\nLEAD (approved by the owner; analyst summary + original text):\n{\"lead_id\":\"{{1.lead_id}}\",\"title\":\"{{8.title}}\",\"source\":\"{{8.source}}\",\"source_url\":\"{{ifempty(8.source_url; \"null\")}}\",\"language\":\"{{ifempty(8.language; \"unknown\")}}\",\"country\":\"{{ifempty(8.country; \"unknown\")}}\",\"bot_type\":\"{{ifempty(8.bot_type; \"unknown\")}}\",\"kind\":\"{{8.kind}}\",\"client_budget_from_lead\":\"{{if(8.budget_amount; 8.budget_amount + \" \" + 8.budget_currency + \" (\" + ifempty(8.budget_type; \"unknown\") + \")\"; \"not stated\")}}\",\"analyst_grade\":\"{{8.grade}}\",\"analyst_score\":\"{{8.score}}\"}\n<description_ru>\n{{8.description_ru}}\n</description_ru>\n<description_original>\n{{8.description_original}}\n</description_original>\nARCHITECT_SPEC (JSON):\n{{15.aj}}\n{{if(1.mode = \"more\"; \"DEEP ANALYSIS MODE: the spec was refined; re-check prices, packages and win probability. PREVIOUS_OFFER: \"; \"\")}}{{if(1.mode = \"more\"; 8.sales_json; \"\")}}\nReturn ONLY the minified JSON object for lead_id {{1.lead_id}}.",
+                "max_tokens": "{{ifempty(2.sales_max_tokens; 4000)}}"
+               },
+               "parameters": {},
+               "metadata": {
+                "designer": {
+                 "x": 0,
+                 "y": 0
+                }
+               },
+               "onerror": [
+                {
+                 "id": 523,
+                 "module": "builtin:Resume",
+                 "version": 1,
+                 "metadata": {
+                  "designer": {
+                   "x": 0,
+                   "y": 0
+                  }
+                 },
+                 "mapper": {
+                  "result": "",
+                  "stop_reason": "error",
+                  "usage": {
+                   "input_tokens": 0,
+                   "output_tokens": 0
+                  }
+                 }
+                }
+               ]
+              },
+              {
+               "id": 24,
+               "module": "util:SetVariables",
+               "version": 1,
+               "mapper": {
+                "variables": [
+                 {
+                  "name": "sj",
+                  "value": "{{replace(trim(replace(replace(23.result; \"/^\\s*```(json)?/\"; \"\"); \"/```\\s*$/\"; \"\")); \"/\\n\\s*/g\"; \"\")}}"
+                 },
+                 {
+                  "name": "t1",
+                  "value": "{{now}}"
+                 }
+                ],
+                "scope": "roundtrip"
+               },
+               "parameters": {},
+               "metadata": {
+                "designer": {
+                 "x": 0,
+                 "y": 0
+                }
+               }
+              },
+              {
+               "id": 25,
+               "module": "json:ParseJSON",
+               "version": 1,
+               "mapper": {
+                "json": "{{24.sj}}"
+               },
+               "parameters": {
+                "type": 620803
+               },
+               "metadata": {
+                "designer": {
+                 "x": 0,
+                 "y": 0
+                }
+               },
+               "onerror": [
+                {
+                 "id": 525,
+                 "module": "builtin:Resume",
+                 "version": 1,
+                 "metadata": {
+                  "designer": {
+                   "x": 0,
+                   "y": 0
+                  }
+                 },
+                 "mapper": {
+                  "lead_id": ""
+                 }
+                }
+               ]
+              },
+              {
+               "id": 26,
+               "module": "builtin:BasicRouter",
+               "version": 1,
+               "mapper": null,
+               "metadata": {
+                "designer": {
+                 "x": 3600,
+                 "y": 0
+                }
+               },
+               "routes": [
+                {
+                 "flow": [
+                  {
+                   "id": 27,
+                   "module": "util:SetVariables",
+                   "version": 1,
+                   "mapper": {
+                    "variables": [
+                     {
+                      "name": "scost",
+                      "value": "{{if(23.usage.input_tokens; 23.usage.input_tokens * ifempty(2.sonnet_price_in_mtok; 2) / 1000000 + ifempty(23.usage.output_tokens; 0) * ifempty(2.sonnet_price_out_mtok; 10) / 1000000; 0)}}"
+                     },
+                     {
+                      "name": "total",
+                      "value": "{{18.acost + if(23.usage.input_tokens; 23.usage.input_tokens * ifempty(2.sonnet_price_in_mtok; 2) / 1000000 + ifempty(23.usage.output_tokens; 0) * ifempty(2.sonnet_price_out_mtok; 10) / 1000000; 0)}}"
+                     },
+                     {
+                      "name": "ups",
+                      "value": "{{join(slice(25.upsells; 0; 5); \"; \")}}"
+                     }
+                    ],
+                    "scope": "roundtrip"
+                   },
+                   "parameters": {},
+                   "metadata": {
+                    "designer": {
+                     "x": 0,
+                     "y": 0
+                    }
+                   },
+                   "filter": {
+                    "name": "КП валидно",
+                    "conditions": [
+                     [
+                      {
+                       "a": "{{25.lead_id}}",
+                       "o": "text:equal",
+                       "b": "{{1.lead_id}}"
+                      },
+                      {
+                       "a": "{{25.estimated_cost}}",
+                       "o": "text:pattern",
+                       "b": "^[0-9]+(\\.[0-9]+)?$"
+                      },
+                      {
+                       "a": "{{25.recommended_price}}",
+                       "o": "text:pattern",
+                       "b": "^[0-9]+(\\.[0-9]+)?$"
+                      },
+                      {
+                       "a": "{{25.target_price}}",
+                       "o": "text:pattern",
+                       "b": "^[0-9]+(\\.[0-9]+)?$"
+                      },
+                      {
+                       "a": "{{25.minimum_acceptable_price}}",
+                       "o": "text:pattern",
+                       "b": "^[0-9]+(\\.[0-9]+)?$"
+                      },
+                      {
+                       "a": "{{25.packages.basic.price}}",
+                       "o": "text:pattern",
+                       "b": "^[0-9]+(\\.[0-9]+)?$"
+                      },
+                      {
+                       "a": "{{25.packages.professional.price}}",
+                       "o": "text:pattern",
+                       "b": "^[0-9]+(\\.[0-9]+)?$"
+                      },
+                      {
+                       "a": "{{25.packages.premium.price}}",
+                       "o": "text:pattern",
+                       "b": "^[0-9]+(\\.[0-9]+)?$"
+                      },
+                      {
+                       "a": "{{25.minimum_acceptable_price}}",
+                       "o": "number:greaterorequal",
+                       "b": "{{ifempty(2.minimum_order_eur; 500)}}"
+                      },
+                      {
+                       "a": "{{25.minimum_acceptable_price}}",
+                       "o": "number:lessorequal",
+                       "b": "{{25.recommended_price}}"
+                      },
+                      {
+                       "a": "{{25.recommended_price}}",
+                       "o": "number:lessorequal",
+                       "b": "{{25.target_price}}"
+                      },
+                      {
+                       "a": "{{25.packages.basic.price}}",
+                       "o": "number:less",
+                       "b": "{{25.packages.professional.price}}"
+                      },
+                      {
+                       "a": "{{25.packages.professional.price}}",
+                       "o": "number:less",
+                       "b": "{{25.packages.premium.price}}"
+                      },
+                      {
+                       "a": "{{25.win_probability}}",
+                       "o": "text:pattern",
+                       "b": "^(100|[0-9]{1,2})(\\.0+)?$"
+                      },
+                      {
+                       "a": "{{25.commercial_potential}}",
+                       "o": "text:pattern",
+                       "b": "^(LOW|MEDIUM|HIGH)$"
+                      },
+                      {
+                       "a": "{{25.client_message}}",
+                       "o": "exist"
+                      },
+                      {
+                       "a": "{{25.client_message_ru}}",
+                       "o": "exist"
+                      },
+                      {
+                       "a": "{{23.stop_reason}}",
+                       "o": "text:notequal",
+                       "b": "max_tokens"
+                      }
+                     ]
+                    ]
+                   }
+                  },
+                  {
+                   "id": 28,
+                   "module": "util:SetVariables",
+                   "version": 1,
+                   "mapper": {
+                    "variables": [
+                     {
+                      "name": "card",
+                      "value": "💼 КП готово · {{1.lead_id}}{{if(1.mode = \"more\"; \" · 🔍 углублённый анализ\"; \"\")}}\n📌 {{8.title}}\n🎯 Тип: {{ifempty(8.bot_type; \"unknown\")}} · 🌍 {{ifempty(8.country; \"страна неизвестна\")}} · 🌐 {{ifempty(8.language; \"?\")}}\n💰 Бюджет клиента: {{if(8.budget_amount; 8.budget_amount + \" \" + 8.budget_currency + \" (\" + ifempty(8.budget_type; \"тип ?\") + if(8.budget_eur; \", ≈ \" + 8.budget_eur + \" EUR\"; \"\") + \"; источник: текст заявки)\"; \"не указан в заявке\")}}\n📊 Score {{8.score}}/100 · {{8.grade}} · сложность {{16.complexity}} · ⏱ {{16.estimated_hours_min}}–{{16.estimated_hours_max}} ч\n\n💵 Наша оценка (не бюджет клиента):\nсебестоимость ≈ {{25.estimated_cost}} € · рекомендуем {{25.recommended_price}} € · цель {{25.target_price}} € · минимум {{25.minimum_acceptable_price}} €\n📦 Basic {{25.packages.basic.price}} € · Professional {{25.packages.professional.price}} € · Premium {{25.packages.premium.price}} €\n📈 Win {{25.win_probability}}% — {{25.win_probability_reason}}\n🏦 Потенциал {{25.commercial_potential}} · фаза 2: {{ifempty(25.phase_2_revenue; \"UNKNOWN\")}} · поддержка: {{ifempty(25.maintenance_revenue; \"UNKNOWN\")}}\n➕ Upsells: {{ifempty(27.ups; \"—\")}}\n\n📝 ТЗ кратко: {{substring(16.project_summary; 0; 450)}}\n⚠️ Риски:\n• {{join(slice(16.technical_risks; 0; 3); newline + \"• \")}}\n❓ Главные вопросы:\n• {{join(slice(16.questions_for_client; 0; 3); newline + \"• \")}}\n\n✉️ Первое сообщение ({{ifempty(25.client_language; 8.language)}}):\n{{substring(25.client_message; 0; 700)}}\n\nКлиенту ничего не отправлено. 🆔 {{1.lead_id}}"
+                     }
+                    ],
+                    "scope": "roundtrip"
+                   },
+                   "parameters": {},
+                   "metadata": {
+                    "designer": {
+                     "x": 0,
+                     "y": 0
+                    }
+                   }
+                  },
+                  {
+                   "id": 29,
+                   "module": "datastore:UpdateRecord",
+                   "version": 1,
+                   "mapper": {
+                    "key": "{{1.lead_id}}",
+                    "upsert": false,
+                    "overwriteArrays": false,
+                    "data": {
+                     "sales_json": "{{24.sj}}",
+                     "recommended_price": "{{25.recommended_price}}",
+                     "target_price": "{{25.target_price}}",
+                     "minimum_acceptable_price": "{{25.minimum_acceptable_price}}",
+                     "commercial_potential": "{{25.commercial_potential}}",
+                     "win_probability": "{{25.win_probability}}",
+                     "basic_price": "{{25.packages.basic.price}}",
+                     "professional_price": "{{25.packages.professional.price}}",
+                     "premium_price": "{{25.packages.premium.price}}",
+                     "client_message": "{{25.client_message}}",
+                     "client_message_ru": "{{25.client_message_ru}}",
+                     "upsells": "{{27.ups}}",
+                     "phase_2_revenue": "{{ifempty(25.phase_2_revenue; \"UNKNOWN\")}}",
+                     "maintenance_revenue": "{{ifempty(25.maintenance_revenue; \"UNKNOWN\")}}",
+                     "sales_run_id": "{{1.run_id}}",
+                     "status": "COMMERCIAL_READY",
+                     "status_at": "{{now}}",
+                     "updated_at": "{{now}}"
+                    }
+                   },
+                   "parameters": {
+                    "datastore": 207950
+                   },
+                   "metadata": {
+                    "designer": {
+                     "x": 0,
+                     "y": 0
+                    }
+                   }
+                  },
+                  {
+                   "id": 30,
+                   "module": "datastore:AddRecord",
+                   "version": 1,
+                   "mapper": {
+                    "key": "{{uuid}}",
+                    "overwrite": true,
+                    "data": {
+                     "table": "runs",
+                     "run_id": "{{1.run_id}}",
+                     "lead_id": "{{1.lead_id}}",
+                     "agent": "sales",
+                     "model": "{{ifempty(23.model; \"claude-sonnet-5-5\")}}",
+                     "started_at": "{{24.t1}}",
+                     "finished_at": "{{now}}",
+                     "input_tokens": "{{23.usage.input_tokens}}",
+                     "output_tokens": "{{23.usage.output_tokens}}",
+                     "estimated_cost_usd": "{{27.scost}}",
+                     "status": "OK",
+                     "attempt": "{{if(1.mode = \"more\"; 2; 1)}}",
+                     "prompt_version": "SALES_v1",
+                     "created_at": "{{now}}",
+                     "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+                    }
+                   },
+                   "parameters": {
+                    "datastore": 207952
+                   },
+                   "metadata": {
+                    "designer": {
+                     "x": 0,
+                     "y": 0
+                    }
+                   }
+                  },
+                  {
+                   "id": 31,
+                   "module": "datastore:UpdateRecord",
+                   "version": 1,
+                   "mapper": {
+                    "key": "day_{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}",
+                    "upsert": true,
+                    "overwriteArrays": false,
+                    "data": {
+                     "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}",
+                     "cost_usd": "{{ifempty(10.cost_usd; 0) + 27.total}}"
+                    }
+                   },
+                   "parameters": {
+                    "datastore": 207951
+                   },
+                   "metadata": {
+                    "designer": {
+                     "x": 0,
+                     "y": 0
+                    }
+                   }
+                  },
+                  {
+                   "id": 32,
+                   "module": "datastore:AddRecord",
+                   "version": 1,
+                   "mapper": {
+                    "key": "{{uuid}}",
+                    "overwrite": true,
+                    "data": {
+                     "table": "events",
+                     "event_id": "{{uuid}}",
+                     "lead_id": "{{1.lead_id}}",
+                     "event": "SALES_COMPLETED",
+                     "details": "rec {{25.recommended_price}} €, win {{25.win_probability}}%, tokens {{23.usage.input_tokens}}/{{23.usage.output_tokens}}, ${{27.scost}}",
+                     "old_status": "TECHNICAL_SPEC_READY",
+                     "new_status": "COMMERCIAL_READY",
+                     "created_at": "{{now}}",
+                     "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+                    }
+                   },
+                   "parameters": {
+                    "datastore": 207952
+                   },
+                   "metadata": {
+                    "designer": {
+                     "x": 0,
+                     "y": 0
+                    }
+                   }
+                  },
+                  {
+                   "id": 33,
+                   "module": "telegram:UniversalAPICall",
+                   "version": 1,
+                   "mapper": {
+                    "method": "POST",
+                    "bodyType": "assembled_body",
+                    "body_spec": [
+                     {
+                      "key": "chat_id",
+                      "value": "{{2.owner_chat_id}}"
+                     },
+                     {
+                      "key": "text",
+                      "value": "{{substring(28.card; 0; 3500)}}"
+                     },
+                     {
+                      "key": "reply_markup",
+                      "value": "{\"inline_keyboard\": [[{\"text\": \"📋 Full ТЗ\", \"callback_data\": \"ft|{{1.lead_id}}\"}, {\"text\": \"💰 Offer\", \"callback_data\": \"of|{{1.lead_id}}\"}], [{\"text\": \"💬 Client Message\", \"callback_data\": \"cm|{{1.lead_id}}\"}, {\"text\": \"❓ Questions\", \"callback_data\": \"qs|{{1.lead_id}}\"}], [{\"text\": \"🔍 More Analysis\", \"callback_data\": \"mx|{{1.lead_id}}\"}, {\"text\": \"📞 Contacted\", \"callback_data\": \"ct|{{1.lead_id}}\"}], [{\"text\": \"🏆 Won\", \"callback_data\": \"wn|{{1.lead_id}}\"}, {\"text\": \"❌ Lost\", \"callback_data\": \"ls|{{1.lead_id}}\"}, {\"text\": \"📦 Archive\", \"callback_data\": \"ar|{{1.lead_id}}\"}]]}"
+                     }
+                    ],
+                    "urlMethod": "sendMessage"
+                   },
+                   "parameters": {
+                    "__IMTCONN__": 9480305
+                   },
+                   "metadata": {
+                    "designer": {
+                     "x": 0,
+                     "y": 0
+                    }
+                   },
+                   "onerror": [
+                    {
+                     "id": 533,
+                     "module": "datastore:UpdateRecord",
+                     "version": 1,
+                     "mapper": {
+                      "key": "{{1.lead_id}}",
+                      "upsert": false,
+                      "overwriteArrays": false,
+                      "data": {
+                       "status": "ERROR",
+                       "error_code": "TELEGRAM_SEND",
+                       "error_message": "commercial card sendMessage failed",
+                       "status_at": "{{now}}"
+                      }
+                     },
+                     "parameters": {
+                      "datastore": 207950
+                     },
+                     "metadata": {
+                      "designer": {
+                       "x": 0,
+                       "y": 0
+                      }
+                     }
+                    },
+                    {
+                     "id": 633,
+                     "module": "datastore:AddRecord",
+                     "version": 1,
+                     "mapper": {
+                      "key": "{{uuid}}",
+                      "overwrite": true,
+                      "data": {
+                       "table": "events",
+                       "event_id": "{{uuid}}",
+                       "lead_id": "{{1.lead_id}}",
+                       "event": "ERROR",
+                       "details": "TELEGRAM_SEND: commercial card not delivered",
+                       "old_status": "COMMERCIAL_READY",
+                       "new_status": "ERROR",
+                       "created_at": "{{now}}",
+                       "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+                      }
+                     },
+                     "parameters": {
+                      "datastore": 207952
+                     },
+                     "metadata": {
+                      "designer": {
+                       "x": 0,
+                       "y": 0
+                      }
+                     }
+                    },
+                    {
+                     "id": 733,
+                     "module": "builtin:Ignore",
+                     "version": 1,
+                     "mapper": null,
+                     "metadata": {
+                      "designer": {
+                       "x": 0,
+                       "y": 0
+                      }
+                     }
+                    }
+                   ]
+                  },
+                  {
+                   "id": 34,
+                   "module": "datastore:UpdateRecord",
+                   "version": 1,
+                   "mapper": {
+                    "key": "{{1.lead_id}}",
+                    "upsert": false,
+                    "overwriteArrays": false,
+                    "data": {
+                     "status": "SENT_TO_TELEGRAM",
+                     "commercial_message_id": "{{33.body.result.message_id}}",
+                     "status_at": "{{now}}"
+                    }
+                   },
+                   "parameters": {
+                    "datastore": 207950
+                   },
+                   "metadata": {
+                    "designer": {
+                     "x": 0,
+                     "y": 0
+                    }
+                   }
+                  },
+                  {
+                   "id": 35,
+                   "module": "datastore:AddRecord",
+                   "version": 1,
+                   "mapper": {
+                    "key": "{{uuid}}",
+                    "overwrite": true,
+                    "data": {
+                     "table": "events",
+                     "event_id": "{{uuid}}",
+                     "lead_id": "{{1.lead_id}}",
+                     "event": "COMMERCIAL_SENT_TO_OWNER",
+                     "details": "message {{33.body.result.message_id}}",
+                     "old_status": "COMMERCIAL_READY",
+                     "new_status": "SENT_TO_TELEGRAM",
+                     "created_at": "{{now}}",
+                     "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+                    }
+                   },
+                   "parameters": {
+                    "datastore": 207952
+                   },
+                   "metadata": {
+                    "designer": {
+                     "x": 0,
+                     "y": 0
+                    }
+                   }
+                  },
+                  {
+                   "id": 36,
+                   "module": "builtin:BasicRouter",
+                   "version": 1,
+                   "mapper": null,
+                   "metadata": {
+                    "designer": {
+                     "x": 0,
+                     "y": 0
+                    }
+                   },
+                   "routes": [
+                    {
+                     "flow": [
+                      {
+                       "id": 37,
+                       "module": "datastore:UpdateRecord",
+                       "version": 1,
+                       "mapper": {
+                        "key": "main",
+                        "upsert": true,
+                        "overwriteArrays": false,
+                        "data": {
+                         "warned_80": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+                        }
+                       },
+                       "parameters": {
+                        "datastore": 207951
+                       },
+                       "metadata": {
+                        "designer": {
+                         "x": 0,
+                         "y": 0
+                        }
+                       },
+                       "filter": {
+                        "name": "80 % бюджета",
+                        "conditions": [
+                         [
+                          {
+                           "a": "{{(ifempty(10.cost_usd; 0) + 27.total)}}",
+                           "o": "number:greaterorequal",
+                           "b": "{{2.daily_budget_usd * 0.8}}"
+                          },
+                          {
+                           "a": "{{(ifempty(10.cost_usd; 0) + 27.total)}}",
+                           "o": "number:less",
+                           "b": "{{2.daily_budget_usd}}"
+                          },
+                          {
+                           "a": "{{2.warned_80}}",
+                           "o": "text:notequal",
+                           "b": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+                          }
+                         ]
+                        ]
+                       }
+                      },
+                      {
+                       "id": 38,
+                       "module": "telegram:UniversalAPICall",
+                       "version": 1,
+                       "mapper": {
+                        "method": "POST",
+                        "bodyType": "assembled_body",
+                        "body_spec": [
+                         {
+                          "key": "chat_id",
+                          "value": "{{2.owner_chat_id}}"
+                         },
+                         {
+                          "key": "text",
+                          "value": "⚠️ Израсходовано 80 % дневного бюджета Claude: ${{formatNumber((ifempty(10.cost_usd; 0) + 27.total); 4; \".\"; \"\")}} из ${{2.daily_budget_usd}}."
+                         }
+                        ],
+                        "urlMethod": "sendMessage"
+                       },
+                       "parameters": {
+                        "__IMTCONN__": 9480305
+                       },
+                       "metadata": {
+                        "designer": {
+                         "x": 0,
+                         "y": 0
+                        }
+                       },
+                       "onerror": [
+                        {
+                         "id": 538,
+                         "module": "builtin:Ignore",
+                         "version": 1,
+                         "mapper": null,
+                         "metadata": {
+                          "designer": {
+                           "x": 0,
+                           "y": 0
+                          }
+                         }
+                        }
+                       ]
+                      }
+                     ]
+                    },
+                    {
+                     "flow": [
+                      {
+                       "id": 39,
+                       "module": "datastore:UpdateRecord",
+                       "version": 1,
+                       "mapper": {
+                        "key": "main",
+                        "upsert": true,
+                        "overwriteArrays": false,
+                        "data": {
+                         "paused": true,
+                         "paused_reason": "дневной бюджет исчерпан",
+                         "updated_at": "{{now}}"
+                        }
+                       },
+                       "parameters": {
+                        "datastore": 207951
+                       },
+                       "metadata": {
+                        "designer": {
+                         "x": 0,
+                         "y": 0
+                        }
+                       },
+                       "filter": {
+                        "name": "100 % бюджета",
+                        "conditions": [
+                         [
+                          {
+                           "a": "{{(ifempty(10.cost_usd; 0) + 27.total)}}",
+                           "o": "number:greaterorequal",
+                           "b": "{{2.daily_budget_usd}}"
+                          }
+                         ]
+                        ]
+                       }
+                      },
+                      {
+                       "id": 40,
+                       "module": "datastore:AddRecord",
+                       "version": 1,
+                       "mapper": {
+                        "key": "{{uuid}}",
+                        "overwrite": true,
+                        "data": {
+                         "table": "events",
+                         "event_id": "{{uuid}}",
+                         "lead_id": "",
+                         "event": "BUDGET_PAUSED",
+                         "details": "spent ${{(ifempty(10.cost_usd; 0) + 27.total)}}",
+                         "old_status": "",
+                         "new_status": "",
+                         "created_at": "{{now}}",
+                         "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+                        }
+                       },
+                       "parameters": {
+                        "datastore": 207952
+                       },
+                       "metadata": {
+                        "designer": {
+                         "x": 0,
+                         "y": 0
+                        }
+                       }
+                      },
+                      {
+                       "id": 41,
+                       "module": "telegram:UniversalAPICall",
+                       "version": 1,
+                       "mapper": {
+                        "method": "POST",
+                        "bodyType": "assembled_body",
+                        "body_spec": [
+                         {
+                          "key": "chat_id",
+                          "value": "{{2.owner_chat_id}}"
+                         },
+                         {
+                          "key": "text",
+                          "value": "⛔ Дневной бюджет Claude исчерпан (${{2.daily_budget_usd}}). AI-обработка на паузе. /resume — продолжить."
+                         }
+                        ],
+                        "urlMethod": "sendMessage"
+                       },
+                       "parameters": {
+                        "__IMTCONN__": 9480305
+                       },
+                       "metadata": {
+                        "designer": {
+                         "x": 0,
+                         "y": 0
+                        }
+                       },
+                       "onerror": [
+                        {
+                         "id": 541,
+                         "module": "builtin:Ignore",
+                         "version": 1,
+                         "mapper": null,
+                         "metadata": {
+                          "designer": {
+                           "x": 0,
+                           "y": 0
+                          }
+                         }
+                        }
+                       ]
+                      }
+                     ]
+                    }
+                   ]
+                  }
+                 ]
+                },
+                {
+                 "flow": [
+                  {
+                   "id": 42,
+                   "module": "datastore:AddRecord",
+                   "version": 1,
+                   "mapper": {
+                    "key": "{{uuid}}",
+                    "overwrite": true,
+                    "data": {
+                     "table": "runs",
+                     "run_id": "{{1.run_id}}",
+                     "lead_id": "{{1.lead_id}}",
+                     "agent": "sales",
+                     "model": "{{ifempty(23.model; \"claude-sonnet-5-5\")}}",
+                     "started_at": "{{24.t1}}",
+                     "finished_at": "{{now}}",
+                     "input_tokens": "{{23.usage.input_tokens}}",
+                     "output_tokens": "{{23.usage.output_tokens}}",
+                     "estimated_cost_usd": "{{if(23.usage.input_tokens; 23.usage.input_tokens * ifempty(2.sonnet_price_in_mtok; 2) / 1000000 + ifempty(23.usage.output_tokens; 0) * ifempty(2.sonnet_price_out_mtok; 10) / 1000000; 0)}}",
+                     "status": "FAILED",
+                     "attempt": "{{if(1.mode = \"more\"; 2; 1)}}",
+                     "prompt_version": "SALES_v1",
+                     "created_at": "{{now}}",
+                     "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}",
+                     "error_code": "{{if(23.stop_reason = \"error\"; \"MODEL_ERROR\"; if(23.stop_reason = \"max_tokens\"; \"TRUNCATED\"; if(23.stop_reason = \"refusal\"; \"REFUSAL\"; if(25.lead_id; \"VALIDATION_FAILED\"; \"JSON_INVALID\"))))}}",
+                     "error_message": "{{substring(ifempty(23.result; \"(empty)\"); 0; 300)}}"
+                    }
+                   },
+                   "parameters": {
+                    "datastore": 207952
+                   },
+                   "metadata": {
+                    "designer": {
+                     "x": 0,
+                     "y": 0
+                    }
+                   },
+                   "filter": {
+                    "name": "КП невалидно",
+                    "conditions": [
+                     [
+                      {
+                       "a": "{{25.lead_id}}",
+                       "o": "text:notequal",
+                       "b": "{{1.lead_id}}"
+                      }
+                     ],
+                     [
+                      {
+                       "a": "{{25.estimated_cost}}",
+                       "o": "text:notpattern",
+                       "b": "^[0-9]+(\\.[0-9]+)?$"
+                      }
+                     ],
+                     [
+                      {
+                       "a": "{{25.recommended_price}}",
+                       "o": "text:notpattern",
+                       "b": "^[0-9]+(\\.[0-9]+)?$"
+                      }
+                     ],
+                     [
+                      {
+                       "a": "{{25.target_price}}",
+                       "o": "text:notpattern",
+                       "b": "^[0-9]+(\\.[0-9]+)?$"
+                      }
+                     ],
+                     [
+                      {
+                       "a": "{{25.minimum_acceptable_price}}",
+                       "o": "text:notpattern",
+                       "b": "^[0-9]+(\\.[0-9]+)?$"
+                      }
+                     ],
+                     [
+                      {
+                       "a": "{{25.packages.basic.price}}",
+                       "o": "text:notpattern",
+                       "b": "^[0-9]+(\\.[0-9]+)?$"
+                      }
+                     ],
+                     [
+                      {
+                       "a": "{{25.packages.professional.price}}",
+                       "o": "text:notpattern",
+                       "b": "^[0-9]+(\\.[0-9]+)?$"
+                      }
+                     ],
+                     [
+                      {
+                       "a": "{{25.packages.premium.price}}",
+                       "o": "text:notpattern",
+                       "b": "^[0-9]+(\\.[0-9]+)?$"
+                      }
+                     ],
+                     [
+                      {
+                       "a": "{{25.minimum_acceptable_price}}",
+                       "o": "number:less",
+                       "b": "{{ifempty(2.minimum_order_eur; 500)}}"
+                      }
+                     ],
+                     [
+                      {
+                       "a": "{{25.minimum_acceptable_price}}",
+                       "o": "number:greater",
+                       "b": "{{25.recommended_price}}"
+                      }
+                     ],
+                     [
+                      {
+                       "a": "{{25.recommended_price}}",
+                       "o": "number:greater",
+                       "b": "{{25.target_price}}"
+                      }
+                     ],
+                     [
+                      {
+                       "a": "{{25.packages.basic.price}}",
+                       "o": "number:greaterorequal",
+                       "b": "{{25.packages.professional.price}}"
+                      }
+                     ],
+                     [
+                      {
+                       "a": "{{25.packages.professional.price}}",
+                       "o": "number:greaterorequal",
+                       "b": "{{25.packages.premium.price}}"
+                      }
+                     ],
+                     [
+                      {
+                       "a": "{{25.win_probability}}",
+                       "o": "text:notpattern",
+                       "b": "^(100|[0-9]{1,2})(\\.0+)?$"
+                      }
+                     ],
+                     [
+                      {
+                       "a": "{{25.commercial_potential}}",
+                       "o": "text:notpattern",
+                       "b": "^(LOW|MEDIUM|HIGH)$"
+                      }
+                     ],
+                     [
+                      {
+                       "a": "{{25.client_message}}",
+                       "o": "notexist"
+                      }
+                     ],
+                     [
+                      {
+                       "a": "{{25.client_message_ru}}",
+                       "o": "notexist"
+                      }
+                     ],
+                     [
+                      {
+                       "a": "{{23.stop_reason}}",
+                       "o": "text:equal",
+                       "b": "max_tokens"
+                      }
+                     ]
+                    ]
+                   }
+                  },
+                  {
+                   "id": 43,
+                   "module": "datastore:UpdateRecord",
+                   "version": 1,
+                   "mapper": {
+                    "key": "day_{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}",
+                    "upsert": true,
+                    "overwriteArrays": false,
+                    "data": {
+                     "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}",
+                     "cost_usd": "{{ifempty(10.cost_usd; 0) + 18.acost + if(23.usage.input_tokens; 23.usage.input_tokens * ifempty(2.sonnet_price_in_mtok; 2) / 1000000 + ifempty(23.usage.output_tokens; 0) * ifempty(2.sonnet_price_out_mtok; 10) / 1000000; 0)}}"
+                    }
+                   },
+                   "parameters": {
+                    "datastore": 207951
+                   },
+                   "metadata": {
+                    "designer": {
+                     "x": 0,
+                     "y": 0
+                    }
+                   }
+                  },
+                  {
+                   "id": 44,
+                   "module": "datastore:UpdateRecord",
+                   "version": 1,
+                   "mapper": {
+                    "key": "{{1.lead_id}}",
+                    "upsert": false,
+                    "overwriteArrays": false,
+                    "data": {
+                     "status": "ERROR",
+                     "error_code": "SALES_FAILED",
+                     "error_message": "{{if(23.stop_reason = \"error\"; \"MODEL_ERROR\"; if(23.stop_reason = \"max_tokens\"; \"TRUNCATED\"; if(23.stop_reason = \"refusal\"; \"REFUSAL\"; if(25.lead_id; \"VALIDATION_FAILED\"; \"JSON_INVALID\"))))}}",
+                     "status_at": "{{now}}",
+                     "updated_at": "{{now}}"
+                    }
+                   },
+                   "parameters": {
+                    "datastore": 207950
+                   },
+                   "metadata": {
+                    "designer": {
+                     "x": 0,
+                     "y": 0
+                    }
+                   }
+                  },
+                  {
+                   "id": 45,
+                   "module": "datastore:AddRecord",
+                   "version": 1,
+                   "mapper": {
+                    "key": "{{uuid}}",
+                    "overwrite": true,
+                    "data": {
+                     "table": "events",
+                     "event_id": "{{uuid}}",
+                     "lead_id": "{{1.lead_id}}",
+                     "event": "SALES_ERROR",
+                     "details": "{{if(23.stop_reason = \"error\"; \"MODEL_ERROR\"; if(23.stop_reason = \"max_tokens\"; \"TRUNCATED\"; if(23.stop_reason = \"refusal\"; \"REFUSAL\"; if(25.lead_id; \"VALIDATION_FAILED\"; \"JSON_INVALID\"))))}} (run {{1.run_id}})",
+                     "old_status": "TECHNICAL_SPEC_READY",
+                     "new_status": "ERROR",
+                     "created_at": "{{now}}",
+                     "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+                    }
+                   },
+                   "parameters": {
+                    "datastore": 207952
+                   },
+                   "metadata": {
+                    "designer": {
+                     "x": 0,
+                     "y": 0
+                    }
+                   }
+                  },
+                  {
+                   "id": 46,
+                   "module": "telegram:UniversalAPICall",
+                   "version": 1,
+                   "mapper": {
+                    "method": "POST",
+                    "bodyType": "assembled_body",
+                    "body_spec": [
+                     {
+                      "key": "chat_id",
+                      "value": "{{2.owner_chat_id}}"
+                     },
+                     {
+                      "key": "text",
+                      "value": "⚠️ {{1.lead_id}}: Sales не дал корректное КП ({{if(23.stop_reason = \"error\"; \"MODEL_ERROR\"; if(23.stop_reason = \"max_tokens\"; \"TRUNCATED\"; if(23.stop_reason = \"refusal\"; \"REFUSAL\"; if(25.lead_id; \"VALIDATION_FAILED\"; \"JSON_INVALID\"))))}}). ТЗ сохранено, статус ERROR. Повторить — кнопка ниже (новый прогон Architect + Sales, ≈ $0,1)."
+                     },
+                     {
+                      "key": "reply_markup",
+                      "value": "{\"inline_keyboard\": [[{\"text\": \"🔁 Повторить Architect + Sales\", \"callback_data\": \"ap|{{1.lead_id}}\"}]]}"
+                     }
+                    ],
+                    "urlMethod": "sendMessage"
+                   },
+                   "parameters": {
+                    "__IMTCONN__": 9480305
+                   },
+                   "metadata": {
+                    "designer": {
+                     "x": 0,
+                     "y": 0
+                    }
+                   },
+                   "onerror": [
+                    {
+                     "id": 546,
+                     "module": "builtin:Ignore",
+                     "version": 1,
+                     "mapper": null,
+                     "metadata": {
+                      "designer": {
+                       "x": 0,
+                       "y": 0
+                      }
+                     }
+                    }
+                   ]
+                  }
+                 ]
+                }
+               ]
+              }
+             ]
+            },
+            {
+             "flow": [
+              {
+               "id": 47,
+               "module": "datastore:AddRecord",
+               "version": 1,
+               "mapper": {
+                "key": "{{uuid}}",
+                "overwrite": true,
+                "data": {
+                 "table": "runs",
+                 "run_id": "{{1.run_id}}",
+                 "lead_id": "{{1.lead_id}}",
+                 "agent": "architect",
+                 "model": "{{ifempty(14.model; \"claude-sonnet-5-5\")}}",
+                 "started_at": "{{13.t0}}",
+                 "finished_at": "{{now}}",
+                 "input_tokens": "{{14.usage.input_tokens}}",
+                 "output_tokens": "{{14.usage.output_tokens}}",
+                 "estimated_cost_usd": "{{if(14.usage.input_tokens; 14.usage.input_tokens * ifempty(2.sonnet_price_in_mtok; 2) / 1000000 + ifempty(14.usage.output_tokens; 0) * ifempty(2.sonnet_price_out_mtok; 10) / 1000000; 0)}}",
+                 "status": "FAILED",
+                 "attempt": "{{if(1.mode = \"more\"; 2; 1)}}",
+                 "prompt_version": "ARCHITECT_v1",
+                 "created_at": "{{now}}",
+                 "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}",
+                 "error_code": "{{if(14.stop_reason = \"error\"; \"MODEL_ERROR\"; if(14.stop_reason = \"max_tokens\"; \"TRUNCATED\"; if(14.stop_reason = \"refusal\"; \"REFUSAL\"; if(16.lead_id; \"VALIDATION_FAILED\"; \"JSON_INVALID\"))))}}",
+                 "error_message": "{{substring(ifempty(14.result; \"(empty)\"); 0; 300)}}"
+                }
+               },
+               "parameters": {
+                "datastore": 207952
+               },
+               "metadata": {
+                "designer": {
+                 "x": 0,
+                 "y": 0
+                }
+               },
+               "filter": {
+                "name": "ТЗ невалидно",
+                "conditions": [
+                 [
+                  {
+                   "a": "{{16.lead_id}}",
+                   "o": "text:notequal",
+                   "b": "{{1.lead_id}}"
+                  }
+                 ],
+                 [
+                  {
+                   "a": "{{16.complexity}}",
+                   "o": "text:notpattern",
+                   "b": "^(S|M|L|XL)$"
+                  }
+                 ],
+                 [
+                  {
+                   "a": "{{16.estimated_hours_min}}",
+                   "o": "text:notpattern",
+                   "b": "^[0-9]+(\\.[0-9]+)?$"
+                  }
+                 ],
+                 [
+                  {
+                   "a": "{{16.estimated_hours_max}}",
+                   "o": "text:notpattern",
+                   "b": "^[0-9]+(\\.[0-9]+)?$"
+                  }
+                 ],
+                 [
+                  {
+                   "a": "{{16.estimated_hours_min}}",
+                   "o": "number:greater",
+                   "b": "{{16.estimated_hours_max}}"
+                  }
+                 ],
+                 [
+                  {
+                   "a": "{{14.stop_reason}}",
+                   "o": "text:equal",
+                   "b": "max_tokens"
+                  }
+                 ],
+                 [
+                  {
+                   "a": "{{16.project_summary}}",
+                   "o": "notexist"
+                  }
+                 ],
+                 [
+                  {
+                   "a": "{{16.telegram_solution.bot}}",
+                   "o": "notexist"
+                  }
+                 ],
+                 [
+                  {
+                   "a": "{{16.database.required}}",
+                   "o": "notexist"
+                  }
+                 ],
+                 [
+                  {
+                   "a": "{{16.admin_panel.required}}",
+                   "o": "notexist"
+                  }
+                 ],
+                 [
+                  {
+                   "a": "{{length(16.functional_requirements)}}",
+                   "o": "number:lessorequal",
+                   "b": "0"
+                  }
+                 ],
+                 [
+                  {
+                   "a": "{{length(16.mvp)}}",
+                   "o": "number:lessorequal",
+                   "b": "0"
+                  }
+                 ],
+                 [
+                  {
+                   "a": "{{length(16.technology_stack)}}",
+                   "o": "number:lessorequal",
+                   "b": "0"
+                  }
+                 ],
+                 [
+                  {
+                   "a": "{{length(16.questions_for_client)}}",
+                   "o": "number:lessorequal",
+                   "b": "0"
+                  }
+                 ]
+                ]
+               }
+              },
+              {
+               "id": 48,
+               "module": "datastore:UpdateRecord",
+               "version": 1,
+               "mapper": {
+                "key": "day_{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}",
+                "upsert": true,
+                "overwriteArrays": false,
+                "data": {
+                 "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}",
+                 "cost_usd": "{{ifempty(10.cost_usd; 0) + if(14.usage.input_tokens; 14.usage.input_tokens * ifempty(2.sonnet_price_in_mtok; 2) / 1000000 + ifempty(14.usage.output_tokens; 0) * ifempty(2.sonnet_price_out_mtok; 10) / 1000000; 0)}}"
+                }
+               },
+               "parameters": {
+                "datastore": 207951
+               },
+               "metadata": {
+                "designer": {
+                 "x": 0,
+                 "y": 0
+                }
+               }
+              },
+              {
+               "id": 49,
+               "module": "datastore:UpdateRecord",
+               "version": 1,
+               "mapper": {
+                "key": "{{1.lead_id}}",
+                "upsert": false,
+                "overwriteArrays": false,
+                "data": {
+                 "status": "ERROR",
+                 "error_code": "ARCHITECT_FAILED",
+                 "error_message": "{{if(14.stop_reason = \"error\"; \"MODEL_ERROR\"; if(14.stop_reason = \"max_tokens\"; \"TRUNCATED\"; if(14.stop_reason = \"refusal\"; \"REFUSAL\"; if(16.lead_id; \"VALIDATION_FAILED\"; \"JSON_INVALID\"))))}}",
+                 "status_at": "{{now}}",
+                 "updated_at": "{{now}}"
+                }
+               },
+               "parameters": {
+                "datastore": 207950
+               },
+               "metadata": {
+                "designer": {
+                 "x": 0,
+                 "y": 0
+                }
+               }
+              },
+              {
+               "id": 50,
+               "module": "datastore:AddRecord",
+               "version": 1,
+               "mapper": {
+                "key": "{{uuid}}",
+                "overwrite": true,
+                "data": {
+                 "table": "events",
+                 "event_id": "{{uuid}}",
+                 "lead_id": "{{1.lead_id}}",
+                 "event": "ARCHITECT_ERROR",
+                 "details": "{{if(14.stop_reason = \"error\"; \"MODEL_ERROR\"; if(14.stop_reason = \"max_tokens\"; \"TRUNCATED\"; if(14.stop_reason = \"refusal\"; \"REFUSAL\"; if(16.lead_id; \"VALIDATION_FAILED\"; \"JSON_INVALID\"))))}} (run {{1.run_id}})",
+                 "old_status": "{{8.status}}",
+                 "new_status": "ERROR",
+                 "created_at": "{{now}}",
+                 "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+                }
+               },
+               "parameters": {
+                "datastore": 207952
+               },
+               "metadata": {
+                "designer": {
+                 "x": 0,
+                 "y": 0
+                }
+               }
+              },
+              {
+               "id": 51,
+               "module": "telegram:UniversalAPICall",
+               "version": 1,
+               "mapper": {
+                "method": "POST",
+                "bodyType": "assembled_body",
+                "body_spec": [
+                 {
+                  "key": "chat_id",
+                  "value": "{{2.owner_chat_id}}"
+                 },
+                 {
+                  "key": "text",
+                  "value": "⚠️ {{1.lead_id}}: Architect не дал корректное ТЗ ({{if(14.stop_reason = \"error\"; \"MODEL_ERROR\"; if(14.stop_reason = \"max_tokens\"; \"TRUNCATED\"; if(14.stop_reason = \"refusal\"; \"REFUSAL\"; if(16.lead_id; \"VALIDATION_FAILED\"; \"JSON_INVALID\"))))}}). Статус ERROR, лид сохранён. Повторить — кнопка ниже (≈ $0,1)."
+                 },
+                 {
+                  "key": "reply_markup",
+                  "value": "{\"inline_keyboard\": [[{\"text\": \"🔁 Повторить Architect + Sales\", \"callback_data\": \"ap|{{1.lead_id}}\"}]]}"
+                 }
+                ],
+                "urlMethod": "sendMessage"
+               },
+               "parameters": {
+                "__IMTCONN__": 9480305
+               },
+               "metadata": {
+                "designer": {
+                 "x": 0,
+                 "y": 0
+                }
+               },
+               "onerror": [
+                {
+                 "id": 551,
+                 "module": "builtin:Ignore",
+                 "version": 1,
+                 "mapper": null,
+                 "metadata": {
+                  "designer": {
+                   "x": 0,
+                   "y": 0
+                  }
+                 }
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "flow": [
+          {
+           "id": 52,
+           "module": "datastore:UpdateRecord",
+           "version": 1,
+           "mapper": {
+            "key": "{{1.lead_id}}",
+            "upsert": false,
+            "overwriteArrays": false,
+            "data": {
+             "status": "ERROR",
+             "error_code": "BUDGET_OR_PAUSED",
+             "error_message": "дневной бюджет исчерпан или пауза",
+             "status_at": "{{now}}",
+             "updated_at": "{{now}}"
+            }
+           },
+           "parameters": {
+            "datastore": 207950
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "filter": {
+            "name": "Пауза / бюджет исчерпан",
+            "conditions": [
+             [
+              {
+               "a": "{{1.run_id}}",
+               "o": "exist"
+              },
+              {
+               "a": "{{8.architect_run_id}}",
+               "o": "text:equal",
+               "b": "{{1.run_id}}"
+              },
+              {
+               "a": "{{ifempty(8.sales_run_id; \"none\")}}",
+               "o": "text:notequal",
+               "b": "{{1.run_id}}"
+              },
+              {
+               "a": "{{1.mode}}",
+               "o": "text:notequal",
+               "b": "more"
+              },
+              {
+               "a": "{{8.status}}",
+               "o": "text:equal",
+               "b": "APPROVED"
+              },
+              {
+               "a": "{{2.paused}}",
+               "o": "text:equal",
+               "b": "true"
+              }
+             ],
+             [
+              {
+               "a": "{{1.run_id}}",
+               "o": "exist"
+              },
+              {
+               "a": "{{8.architect_run_id}}",
+               "o": "text:equal",
+               "b": "{{1.run_id}}"
+              },
+              {
+               "a": "{{ifempty(8.sales_run_id; \"none\")}}",
+               "o": "text:notequal",
+               "b": "{{1.run_id}}"
+              },
+              {
+               "a": "{{1.mode}}",
+               "o": "text:notequal",
+               "b": "more"
+              },
+              {
+               "a": "{{8.status}}",
+               "o": "text:equal",
+               "b": "APPROVED"
+              },
+              {
+               "a": "{{ifempty(10.cost_usd; 0)}}",
+               "o": "number:greaterorequal",
+               "b": "{{2.daily_budget_usd}}"
+              }
+             ],
+             [
+              {
+               "a": "{{1.run_id}}",
+               "o": "exist"
+              },
+              {
+               "a": "{{8.architect_run_id}}",
+               "o": "text:equal",
+               "b": "{{1.run_id}}"
+              },
+              {
+               "a": "{{ifempty(8.sales_run_id; \"none\")}}",
+               "o": "text:notequal",
+               "b": "{{1.run_id}}"
+              },
+              {
+               "a": "{{1.mode}}",
+               "o": "text:equal",
+               "b": "more"
+              },
+              {
+               "a": "{{2.paused}}",
+               "o": "text:equal",
+               "b": "true"
+              }
+             ],
+             [
+              {
+               "a": "{{1.run_id}}",
+               "o": "exist"
+              },
+              {
+               "a": "{{8.architect_run_id}}",
+               "o": "text:equal",
+               "b": "{{1.run_id}}"
+              },
+              {
+               "a": "{{ifempty(8.sales_run_id; \"none\")}}",
+               "o": "text:notequal",
+               "b": "{{1.run_id}}"
+              },
+              {
+               "a": "{{1.mode}}",
+               "o": "text:equal",
+               "b": "more"
+              },
+              {
+               "a": "{{ifempty(10.cost_usd; 0)}}",
+               "o": "number:greaterorequal",
+               "b": "{{2.daily_budget_usd}}"
+              }
+             ]
+            ]
+           }
+          },
+          {
+           "id": 53,
+           "module": "datastore:AddRecord",
+           "version": 1,
+           "mapper": {
+            "key": "{{uuid}}",
+            "overwrite": true,
+            "data": {
+             "table": "events",
+             "event_id": "{{uuid}}",
+             "lead_id": "{{1.lead_id}}",
+             "event": "ARCHITECT_ERROR",
+             "details": "BUDGET_OR_PAUSED: spent ${{ifempty(10.cost_usd; 0)}} of ${{2.daily_budget_usd}}, paused={{2.paused}}",
+             "old_status": "{{8.status}}",
+             "new_status": "ERROR",
+             "created_at": "{{now}}",
+             "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+            }
+           },
+           "parameters": {
+            "datastore": 207952
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           }
+          },
+          {
+           "id": 54,
+           "module": "telegram:UniversalAPICall",
+           "version": 1,
+           "mapper": {
+            "method": "POST",
+            "bodyType": "assembled_body",
+            "body_spec": [
+             {
+              "key": "chat_id",
+              "value": "{{2.owner_chat_id}}"
+             },
+             {
+              "key": "text",
+              "value": "⏸ {{1.lead_id}}: Architect не запущен — AI на паузе или дневной бюджет Claude исчерпан (${{formatNumber(ifempty(10.cost_usd; 0); 4; \".\"; \"\")}} из ${{2.daily_budget_usd}}). После /resume нажмите кнопку ниже."
+             },
+             {
+              "key": "reply_markup",
+              "value": "{\"inline_keyboard\": [[{\"text\": \"🔁 Повторить Architect + Sales\", \"callback_data\": \"ap|{{1.lead_id}}\"}]]}"
+             }
+            ],
+            "urlMethod": "sendMessage"
+           },
+           "parameters": {
+            "__IMTCONN__": 9480305
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "onerror": [
+            {
+             "id": 554,
+             "module": "builtin:Ignore",
+             "version": 1,
+             "mapper": null,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             }
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

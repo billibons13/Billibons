@@ -411,7 +411,7 @@
          },
          {
           "key": "text",
-          "value": "ℹ️ Lead Hunter — пульт владельца\n\n1. Перешлите сюда заявку: текст, текст + ссылка или пост из канала.\n2. Через ~1 мин придёт карточка: оценка 0–100, HOT/WARM/COLD/REJECT, причины.\n3. Кнопки: ✅ Approve — отметить (клиенту ничего не отправляется), ❌ Reject — с причиной, 🔍 More analysis.\n\n/new — новые HOT/WARM без решения (до 5)\n/today — итоги дня\n/stats — 7 и 30 дней\n/pause — пауза AI (заявки копятся в очереди)\n/resume — продолжить и разобрать очередь\n/settings — настройки\n\nСкриншоты и файлы пока не разбираются — пришлите текст и ссылку."
+          "value": "ℹ️ Lead Hunter — пульт владельца\n\n1. Перешлите сюда заявку: текст, текст + ссылка или пост из канала.\n2. Через ~1 мин придёт карточка: оценка 0–100, HOT/WARM/COLD/REJECT, причины.\n3. ✅ Approve — Architect + Sales готовят ТЗ и КП (~1–3 мин), придёт коммерческая карточка; ❌ Reject — с причиной.\n4. На карточке: 📋 Full ТЗ (+ файл .md), 💰 Offer, 💬 Client Message, ❓ Questions, 🔍 More Analysis (1 раз), 📞 Contacted, 🏆 Won, ❌ Lost, 📦 Archive.\nКлиенту бот ничего не отправляет — только вы вручную.\n\n/new — новые HOT/WARM без решения (до 5)\n/today — итоги дня\n/stats — 7 и 30 дней\n/won LEAD сумма — исправить сумму сделки\n/pause — пауза AI (заявки копятся в очереди)\n/resume — продолжить и разобрать очередь\n/settings — настройки\n\nСкриншоты и файлы пока не разбираются — пришлите текст и ссылку."
          }
         ],
         "urlMethod": "sendMessage"
@@ -1859,217 +1859,420 @@
        }
       },
       {
-       "id": 91,
-       "module": "datastore:UpdateRecord",
+       "id": 132,
+       "module": "builtin:BasicRouter",
        "version": 1,
-       "mapper": {
-        "key": "{{3.lead}}",
-        "upsert": false,
-        "overwriteArrays": false,
-        "data": {
-         "status": "APPROVED",
-         "status_at": "{{now}}",
-         "updated_at": "{{now}}"
-        }
-       },
-       "parameters": {
-        "datastore": 207950
-       },
-       "metadata": {
-        "designer": {
-         "x": 0,
-         "y": 0
-        }
-       }
-      },
-      {
-       "id": 92,
-       "module": "datastore:AddRecord",
-       "version": 1,
-       "mapper": {
-        "key": "{{uuid}}",
-        "overwrite": true,
-        "data": {
-         "table": "decisions",
-         "decision_id": "{{uuid}}",
-         "lead_id": "{{3.lead}}",
-         "owner_chat_id": "{{3.from}}",
-         "action": "APPROVE",
-         "reason": "",
-         "telegram_message_id": "{{3.mid}}",
-         "created_at": "{{now}}",
-         "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
-        }
-       },
-       "parameters": {
-        "datastore": 207952
-       },
-       "metadata": {
-        "designer": {
-         "x": 0,
-         "y": 0
-        }
-       }
-      },
-      {
-       "id": 93,
-       "module": "datastore:AddRecord",
-       "version": 1,
-       "mapper": {
-        "key": "{{uuid}}",
-        "overwrite": true,
-        "data": {
-         "table": "events",
-         "event_id": "{{uuid}}",
-         "lead_id": "{{3.lead}}",
-         "event": "OWNER_APPROVED",
-         "details": "button",
-         "old_status": "{{90.status}}",
-         "new_status": "APPROVED",
-         "created_at": "{{now}}",
-         "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
-        }
-       },
-       "parameters": {
-        "datastore": 207952
-       },
-       "metadata": {
-        "designer": {
-         "x": 0,
-         "y": 0
-        }
-       }
-      },
-      {
-       "id": 94,
-       "module": "telegram:UniversalAPICall",
-       "version": 1,
-       "mapper": {
-        "method": "POST",
-        "bodyType": "assembled_body",
-        "body_spec": [
-         {
-          "key": "callback_query_id",
-          "value": "{{3.cbid}}"
-         },
-         {
-          "key": "text",
-          "value": "Approved"
-         }
-        ],
-        "urlMethod": "answerCallbackQuery"
-       },
-       "parameters": {
-        "__IMTCONN__": 9480305
-       },
+       "mapper": null,
        "metadata": {
         "designer": {
          "x": 0,
          "y": 0
         }
        },
-       "onerror": [
+       "routes": [
         {
-         "id": 594,
-         "module": "builtin:Ignore",
-         "version": 1,
-         "mapper": null,
-         "metadata": {
-          "designer": {
-           "x": 0,
-           "y": 0
+         "flow": [
+          {
+           "id": 133,
+           "module": "util:SetVariables",
+           "version": 1,
+           "mapper": {
+            "variables": [
+             {
+              "name": "run",
+              "value": "{{uuid}}"
+             }
+            ],
+            "scope": "roundtrip"
+           },
+           "parameters": {},
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "filter": {
+            "name": "Первый Approve (или повтор после ERROR)",
+            "conditions": [
+             [
+              {
+               "a": "{{90.status}}",
+               "o": "exist"
+              },
+              {
+               "a": "{{ifempty(90.architect_run_id; \"none\")}}",
+               "o": "text:equal",
+               "b": "none"
+              }
+             ],
+             [
+              {
+               "a": "{{90.status}}",
+               "o": "exist"
+              },
+              {
+               "a": "{{90.status}}",
+               "o": "text:equal",
+               "b": "ERROR"
+              }
+             ]
+            ]
+           }
+          },
+          {
+           "id": 91,
+           "module": "datastore:UpdateRecord",
+           "version": 1,
+           "mapper": {
+            "key": "{{3.lead}}",
+            "upsert": false,
+            "overwriteArrays": false,
+            "data": {
+             "status": "APPROVED",
+             "status_at": "{{now}}",
+             "approved_at": "{{now}}",
+             "architect_run_id": "{{133.run}}",
+             "error_code": "",
+             "error_message": "",
+             "updated_at": "{{now}}"
+            }
+           },
+           "parameters": {
+            "datastore": 207950
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           }
+          },
+          {
+           "id": 92,
+           "module": "datastore:AddRecord",
+           "version": 1,
+           "mapper": {
+            "key": "{{uuid}}",
+            "overwrite": true,
+            "data": {
+             "table": "decisions",
+             "decision_id": "{{uuid}}",
+             "lead_id": "{{3.lead}}",
+             "owner_chat_id": "{{3.from}}",
+             "action": "APPROVE",
+             "reason": "",
+             "telegram_message_id": "{{3.mid}}",
+             "created_at": "{{now}}",
+             "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+            }
+           },
+           "parameters": {
+            "datastore": 207952
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           }
+          },
+          {
+           "id": 93,
+           "module": "datastore:AddRecord",
+           "version": 1,
+           "mapper": {
+            "key": "{{uuid}}",
+            "overwrite": true,
+            "data": {
+             "table": "events",
+             "event_id": "{{uuid}}",
+             "lead_id": "{{3.lead}}",
+             "event": "OWNER_APPROVED",
+             "details": "button · run {{133.run}}",
+             "old_status": "{{90.status}}",
+             "new_status": "APPROVED",
+             "created_at": "{{now}}",
+             "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+            }
+           },
+           "parameters": {
+            "datastore": 207952
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           }
+          },
+          {
+           "id": 94,
+           "module": "telegram:UniversalAPICall",
+           "version": 1,
+           "mapper": {
+            "method": "POST",
+            "bodyType": "assembled_body",
+            "body_spec": [
+             {
+              "key": "callback_query_id",
+              "value": "{{3.cbid}}"
+             },
+             {
+              "key": "text",
+              "value": "Approved → Architect + Sales"
+             }
+            ],
+            "urlMethod": "answerCallbackQuery"
+           },
+           "parameters": {
+            "__IMTCONN__": 9480305
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "onerror": [
+            {
+             "id": 594,
+             "module": "builtin:Ignore",
+             "version": 1,
+             "mapper": null,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             }
+            }
+           ]
+          },
+          {
+           "id": 95,
+           "module": "telegram:UniversalAPICall",
+           "version": 1,
+           "mapper": {
+            "method": "POST",
+            "bodyType": "assembled_body",
+            "body_spec": [
+             {
+              "key": "chat_id",
+              "value": "{{2.owner_chat_id}}"
+             },
+             {
+              "key": "message_id",
+              "value": "{{3.mid}}"
+             },
+             {
+              "key": "reply_markup",
+              "value": "{\"inline_keyboard\": [[{\"text\": \"✅ Approved · Architect работает\", \"callback_data\": \"z\"}]]}"
+             }
+            ],
+            "urlMethod": "editMessageReplyMarkup"
+           },
+           "parameters": {
+            "__IMTCONN__": 9480305
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "onerror": [
+            {
+             "id": 595,
+             "module": "builtin:Ignore",
+             "version": 1,
+             "mapper": null,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             }
+            }
+           ]
+          },
+          {
+           "id": 96,
+           "module": "telegram:UniversalAPICall",
+           "version": 1,
+           "mapper": {
+            "method": "POST",
+            "bodyType": "assembled_body",
+            "body_spec": [
+             {
+              "key": "chat_id",
+              "value": "{{2.owner_chat_id}}"
+             },
+             {
+              "key": "text",
+              "value": "✅ {{3.lead}} одобрен. Architect + Sales готовят ТЗ и КП (~1–3 мин), пришлю коммерческую карточку.\nКлиенту ничего не отправляется.{{if(90.grade = \"COLD\"; newline + \"⚠️ Grade COLD: Architect запущен по вашему решению.\"; if(90.grade = \"REJECT\"; newline + \"⚠️ Grade REJECT: Architect запущен по вашему решению, проверьте риски.\"; \"\"))}}"
+             }
+            ],
+            "urlMethod": "sendMessage"
+           },
+           "parameters": {
+            "__IMTCONN__": 9480305
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "onerror": [
+            {
+             "id": 596,
+             "module": "builtin:Ignore",
+             "version": 1,
+             "mapper": null,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             }
+            }
+           ]
+          },
+          {
+           "id": 134,
+           "module": "http:ActionSendData",
+           "version": 3,
+           "mapper": {
+            "url": "{{ifempty(2.lh11_url; \"https://hook.eu1.make.com/x6cnrfo2bt495fg5od84c49lui47todk\")}}",
+            "method": "post",
+            "headers": [],
+            "qs": [],
+            "bodyType": "x_www_form_urlencoded",
+            "formFields": [
+             {
+              "key": "token",
+              "value": "{{2.internal_token}}"
+             },
+             {
+              "key": "lead_id",
+              "value": "{{3.lead}}"
+             },
+             {
+              "key": "run_id",
+              "value": "{{133.run}}"
+             },
+             {
+              "key": "mode",
+              "value": "normal"
+             }
+            ],
+            "parseResponse": false,
+            "serializeUrl": false,
+            "shareCookies": false,
+            "rejectUnauthorized": true,
+            "followRedirect": true,
+            "followAllRedirects": false,
+            "useQuerystring": false,
+            "gzip": true,
+            "useMtls": false
+           },
+           "parameters": {
+            "handleErrors": true,
+            "useNewZLibDeCompress": true
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "onerror": [
+            {
+             "id": 634,
+             "module": "builtin:Ignore",
+             "version": 1,
+             "mapper": null,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             }
+            }
+           ]
           }
-         }
-        }
-       ]
-      },
-      {
-       "id": 95,
-       "module": "telegram:UniversalAPICall",
-       "version": 1,
-       "mapper": {
-        "method": "POST",
-        "bodyType": "assembled_body",
-        "body_spec": [
-         {
-          "key": "chat_id",
-          "value": "{{2.owner_chat_id}}"
-         },
-         {
-          "key": "message_id",
-          "value": "{{3.mid}}"
-         },
-         {
-          "key": "reply_markup",
-          "value": "{\"inline_keyboard\": [[{\"text\": \"✅ Approved\", \"callback_data\": \"z\"}]]}"
-         }
-        ],
-        "urlMethod": "editMessageReplyMarkup"
-       },
-       "parameters": {
-        "__IMTCONN__": 9480305
-       },
-       "metadata": {
-        "designer": {
-         "x": 0,
-         "y": 0
-        }
-       },
-       "onerror": [
+         ]
+        },
         {
-         "id": 595,
-         "module": "builtin:Ignore",
-         "version": 1,
-         "mapper": null,
-         "metadata": {
-          "designer": {
-           "x": 0,
-           "y": 0
+         "flow": [
+          {
+           "id": 135,
+           "module": "telegram:UniversalAPICall",
+           "version": 1,
+           "mapper": {
+            "method": "POST",
+            "bodyType": "assembled_body",
+            "body_spec": [
+             {
+              "key": "callback_query_id",
+              "value": "{{3.cbid}}"
+             },
+             {
+              "key": "text",
+              "value": "Уже одобрен: Architect уже запускался ({{ifempty(90.status; \"лид не найден\")}}). Повтор — только после ERROR."
+             }
+            ],
+            "urlMethod": "answerCallbackQuery"
+           },
+           "parameters": {
+            "__IMTCONN__": 9480305
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "filter": {
+            "name": "Повторный Approve — без запуска",
+            "conditions": [
+             [
+              {
+               "a": "{{ifempty(90.architect_run_id; \"none\")}}",
+               "o": "text:notequal",
+               "b": "none"
+              },
+              {
+               "a": "{{90.status}}",
+               "o": "text:notequal",
+               "b": "ERROR"
+              }
+             ],
+             [
+              {
+               "a": "{{90.status}}",
+               "o": "notexist"
+              }
+             ]
+            ]
+           },
+           "onerror": [
+            {
+             "id": 635,
+             "module": "builtin:Ignore",
+             "version": 1,
+             "mapper": null,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             }
+            }
+           ]
           }
-         }
-        }
-       ]
-      },
-      {
-       "id": 96,
-       "module": "telegram:UniversalAPICall",
-       "version": 1,
-       "mapper": {
-        "method": "POST",
-        "bodyType": "assembled_body",
-        "body_spec": [
-         {
-          "key": "chat_id",
-          "value": "{{2.owner_chat_id}}"
-         },
-         {
-          "key": "text",
-          "value": "Lead approved. Client contact is still manual.\n{{3.lead}}"
-         }
-        ],
-        "urlMethod": "sendMessage"
-       },
-       "parameters": {
-        "__IMTCONN__": 9480305
-       },
-       "metadata": {
-        "designer": {
-         "x": 0,
-         "y": 0
-        }
-       },
-       "onerror": [
-        {
-         "id": 596,
-         "module": "builtin:Ignore",
-         "version": 1,
-         "mapper": null,
-         "metadata": {
-          "designer": {
-           "x": 0,
-           "y": 0
-          }
-         }
+         ]
         }
        ]
       }
@@ -2558,7 +2761,7 @@
          },
          {
           "key": "text",
-          "value": "Detailed Architect analysis will be available in the next phase.\n{{3.lead}}"
+          "value": "🔍 Углублённый анализ делает Architect после ✅ Approve. На коммерческой карточке будет кнопка 🔍 More Analysis (1 повторный прогон на лид).\n{{3.lead}}"
          }
         ],
         "urlMethod": "sendMessage"
@@ -2584,6 +2787,2605 @@
            "y": 0
           }
          }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 140,
+       "module": "datastore:GetRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{3.lead}}",
+        "returnWrapped": false
+       },
+       "parameters": {
+        "datastore": 207950
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "filter": {
+        "name": "📋 Full ТЗ",
+        "conditions": [
+         [
+          {
+           "a": "{{3.secret}}",
+           "o": "text:equal",
+           "b": "{{2.webhook_secret}}"
+          },
+          {
+           "a": "{{3.from}}",
+           "o": "text:equal",
+           "b": "{{2.owner_chat_id}}"
+          },
+          {
+           "a": "{{1.callback_query.id}}",
+           "o": "exist"
+          },
+          {
+           "a": "{{3.a}}",
+           "o": "text:equal",
+           "b": "ft"
+          }
+         ]
+        ]
+       }
+      },
+      {
+       "id": 141,
+       "module": "builtin:BasicRouter",
+       "version": 1,
+       "mapper": null,
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "routes": [
+        {
+         "flow": [
+          {
+           "id": 142,
+           "module": "json:ParseJSON",
+           "version": 1,
+           "mapper": {
+            "json": "{{140.architect_json}}"
+           },
+           "parameters": {
+            "type": 620802
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "filter": {
+            "name": "ТЗ есть",
+            "conditions": [
+             [
+              {
+               "a": "{{140.architect_json}}",
+               "o": "exist"
+              }
+             ]
+            ]
+           },
+           "onerror": [
+            {
+             "id": 642,
+             "module": "builtin:Ignore",
+             "version": 1,
+             "mapper": null,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             }
+            }
+           ]
+          },
+          {
+           "id": 143,
+           "module": "telegram:UniversalAPICall",
+           "version": 1,
+           "mapper": {
+            "method": "POST",
+            "bodyType": "assembled_body",
+            "body_spec": [
+             {
+              "key": "callback_query_id",
+              "value": "{{3.cbid}}"
+             },
+             {
+              "key": "text",
+              "value": "ТЗ"
+             }
+            ],
+            "urlMethod": "answerCallbackQuery"
+           },
+           "parameters": {
+            "__IMTCONN__": 9480305
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "onerror": [
+            {
+             "id": 643,
+             "module": "builtin:Ignore",
+             "version": 1,
+             "mapper": null,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             }
+            }
+           ]
+          },
+          {
+           "id": 144,
+           "module": "util:SetVariables",
+           "version": 1,
+           "mapper": {
+            "variables": [
+             {
+              "name": "md",
+              "value": "# Техническое задание (черновик) — {{3.lead}}\n\n{{140.title}}\nИсточник: {{140.source}} · {{ifempty(140.source_url; \"нет ссылки\")}}\nЧерновик Architect ({{ifempty(2.architect_prompt_version; \"ARCHITECT_v1\")}}), требует проверки. Метки: CLIENT_REQUIREMENT — написал клиент; INFERRED — вывод из текста; RECOMMENDATION — наше предложение; UNKNOWN — уточнить у клиента.\n\n## 1. Суть проекта\n{{142.project_summary}}\n\n## 2. Цель клиента\n{{142.client_goal}}\n\n## 3. Решение в Telegram\n- Бот: {{142.telegram_solution.bot}}\n- Mini App: {{142.telegram_solution.mini_app}}\n- AI: {{142.telegram_solution.ai}}\n- CRM: {{142.telegram_solution.crm}}\n- Платежи: {{142.telegram_solution.payments}}\n- Уведомления: {{142.telegram_solution.notifications}}\n- Админ-панель: {{142.telegram_solution.admin_panel}}\n\n## 4. Функциональные требования\n{{if(length(142.functional_requirements) > 0; \"- \" + join(142.functional_requirements; newline + \"- \"); \"- —\")}}\n\n## 5. Роли пользователей\n{{if(length(142.user_roles) > 0; \"- \" + join(142.user_roles; newline + \"- \"); \"- —\")}}\n\n## 6. Пользовательский сценарий\n{{if(length(142.user_flow) > 0; \"- \" + join(142.user_flow; newline + \"- \"); \"- —\")}}\n\n## 7. MVP\n{{if(length(142.mvp) > 0; \"- \" + join(142.mvp; newline + \"- \"); \"- —\")}}\n\n## 8. Фаза 2\n{{if(length(142.phase_2) > 0; \"- \" + join(142.phase_2; newline + \"- \"); \"- —\")}}\n\n## 9. Интеграции\n{{if(length(142.integrations) > 0; \"- \" + join(142.integrations; newline + \"- \"); \"- —\")}}\n\n## 10. Требования к API\n{{if(length(142.api_requirements) > 0; \"- \" + join(142.api_requirements; newline + \"- \"); \"- —\")}}\n\n## 11. База данных\nНужна: {{142.database.required}} · предлагаем: {{ifempty(142.database.suggested; \"—\")}}\n{{if(length(142.database.entities) > 0; \"- \" + join(142.database.entities; newline + \"- \"); \"- —\")}}\n\n## 12. Админ-панель\nНужна: {{142.admin_panel.required}}\n{{if(length(142.admin_panel.functions) > 0; \"- \" + join(142.admin_panel.functions; newline + \"- \"); \"- —\")}}\n\n## 13. AI-функции\n{{if(length(142.ai_features) > 0; \"- \" + join(142.ai_features; newline + \"- \"); \"- —\")}}\n\n## 14. Уведомления\n{{if(length(142.notifications) > 0; \"- \" + join(142.notifications; newline + \"- \"); \"- —\")}}\n\n## 15. Аналитика\n{{if(length(142.analytics) > 0; \"- \" + join(142.analytics; newline + \"- \"); \"- —\")}}\n\n## 16. Безопасность\n{{if(length(142.security) > 0; \"- \" + join(142.security; newline + \"- \"); \"- —\")}}\n\n## 17. Технологии\n{{if(length(142.technology_stack) > 0; \"- \" + join(142.technology_stack; newline + \"- \"); \"- —\")}}\n\n## 18. Технические риски\n{{if(length(142.technical_risks) > 0; \"- \" + join(142.technical_risks; newline + \"- \"); \"- —\")}}\n\n## 19. Чего не хватает\n{{if(length(142.missing_information) > 0; \"- \" + join(142.missing_information; newline + \"- \"); \"- —\")}}\n\n## 20. Вопросы клиенту (по приоритету)\n{{if(length(142.questions_for_client) > 0; \"- \" + join(142.questions_for_client; newline + \"- \"); \"- —\")}}\n\n## 21. Нужные специалисты\n{{if(length(142.required_specialists) > 0; \"- \" + join(142.required_specialists; newline + \"- \"); \"- —\")}}\n\n## 22. Аутентификация и хостинг\n- Аутентификация: {{142.authentication}}\n- Хостинг: {{142.hosting}}\n\n## 23. Оценка\nСложность: {{142.complexity}} · {{142.estimated_hours_min}}–{{142.estimated_hours_max}} ч (диапазон, оценка Architect)\n\n## 24. Заметки архитектора\n{{142.architecture_notes}}\n"
+             }
+            ],
+            "scope": "roundtrip"
+           },
+           "parameters": {},
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           }
+          },
+          {
+           "id": 145,
+           "module": "telegram:UniversalAPICall",
+           "version": 1,
+           "mapper": {
+            "method": "POST",
+            "bodyType": "assembled_body",
+            "body_spec": [
+             {
+              "key": "chat_id",
+              "value": "{{2.owner_chat_id}}"
+             },
+             {
+              "key": "text",
+              "value": "📋 ТЗ {{3.lead}} · {{142.complexity}} · ⏱ {{142.estimated_hours_min}}–{{142.estimated_hours_max}} ч\n{{substring(142.project_summary; 0; 700)}}\n\nMVP:\n• {{join(slice(142.mvp; 0; 6); newline + \"• \")}}\n\nПолное ТЗ — в файле .md ниже."
+             }
+            ],
+            "urlMethod": "sendMessage"
+           },
+           "parameters": {
+            "__IMTCONN__": 9480305
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "onerror": [
+            {
+             "id": 645,
+             "module": "builtin:Ignore",
+             "version": 1,
+             "mapper": null,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             }
+            }
+           ]
+          },
+          {
+           "id": 146,
+           "module": "telegram:SendDocument",
+           "version": 1,
+           "mapper": {
+            "chatId": "{{2.owner_chat_id}}",
+            "sendType": "send_bydata",
+            "filename": "TZ_{{3.lead}}.md",
+            "data": "{{toBinary(144.md)}}",
+            "caption": "ТЗ {{3.lead}} — черновик Architect (не отправлено клиенту)",
+            "contentType": "text/plain"
+           },
+           "parameters": {
+            "__IMTCONN__": 9480305
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "onerror": [
+            {
+             "id": 646,
+             "module": "builtin:Ignore",
+             "version": 1,
+             "mapper": null,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             }
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "flow": [
+          {
+           "id": 147,
+           "module": "telegram:UniversalAPICall",
+           "version": 1,
+           "mapper": {
+            "method": "POST",
+            "bodyType": "assembled_body",
+            "body_spec": [
+             {
+              "key": "callback_query_id",
+              "value": "{{3.cbid}}"
+             },
+             {
+              "key": "text",
+              "value": "ТЗ ещё не готово (нужен ✅ Approve и завершённый Architect + Sales)."
+             }
+            ],
+            "urlMethod": "answerCallbackQuery"
+           },
+           "parameters": {
+            "__IMTCONN__": 9480305
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "onerror": [
+            {
+             "id": 647,
+             "module": "builtin:Ignore",
+             "version": 1,
+             "mapper": null,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             }
+            }
+           ],
+           "filter": {
+            "name": "ТЗ нет",
+            "conditions": [
+             [
+              {
+               "a": "{{140.architect_json}}",
+               "o": "notexist"
+              }
+             ]
+            ]
+           }
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 150,
+       "module": "datastore:GetRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{3.lead}}",
+        "returnWrapped": false
+       },
+       "parameters": {
+        "datastore": 207950
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "filter": {
+        "name": "💰 Offer",
+        "conditions": [
+         [
+          {
+           "a": "{{3.secret}}",
+           "o": "text:equal",
+           "b": "{{2.webhook_secret}}"
+          },
+          {
+           "a": "{{3.from}}",
+           "o": "text:equal",
+           "b": "{{2.owner_chat_id}}"
+          },
+          {
+           "a": "{{1.callback_query.id}}",
+           "o": "exist"
+          },
+          {
+           "a": "{{3.a}}",
+           "o": "text:equal",
+           "b": "of"
+          }
+         ]
+        ]
+       }
+      },
+      {
+       "id": 151,
+       "module": "builtin:BasicRouter",
+       "version": 1,
+       "mapper": null,
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "routes": [
+        {
+         "flow": [
+          {
+           "id": 152,
+           "module": "json:ParseJSON",
+           "version": 1,
+           "mapper": {
+            "json": "{{150.sales_json}}"
+           },
+           "parameters": {
+            "type": 620803
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "filter": {
+            "name": "КП есть",
+            "conditions": [
+             [
+              {
+               "a": "{{150.sales_json}}",
+               "o": "exist"
+              }
+             ]
+            ]
+           },
+           "onerror": [
+            {
+             "id": 652,
+             "module": "builtin:Ignore",
+             "version": 1,
+             "mapper": null,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             }
+            }
+           ]
+          },
+          {
+           "id": 156,
+           "module": "util:SetVariables",
+           "version": 1,
+           "mapper": {
+            "variables": [
+             {
+              "name": "t",
+              "value": "💰 КП {{3.lead}} (наша оценка, не бюджет клиента)\nСебестоимость ≈ {{152.estimated_cost}} € · рекомендуем {{152.recommended_price}} € · цель {{152.target_price}} € · минимум {{152.minimum_acceptable_price}} €\n{{substring(152.price_reasoning; 0; 500)}}\n\n📦 Basic — {{152.packages.basic.price}} € · {{ifempty(152.packages.basic.timeline; \"срок ?\")}}\n✅ {{join(slice(152.packages.basic.included; 0; 8); \"; \")}}\n🚫 {{join(slice(152.packages.basic.excluded; 0; 5); \"; \")}}\n\n📦 Professional — {{152.packages.professional.price}} € · {{ifempty(152.packages.professional.timeline; \"срок ?\")}}\n✅ {{join(slice(152.packages.professional.included; 0; 8); \"; \")}}\n🚫 {{join(slice(152.packages.professional.excluded; 0; 5); \"; \")}}\n\n📦 Premium — {{152.packages.premium.price}} € · {{ifempty(152.packages.premium.timeline; \"срок ?\")}}\n✅ {{join(slice(152.packages.premium.included; 0; 8); \"; \")}}\n🚫 {{join(slice(152.packages.premium.excluded; 0; 5); \"; \")}}\n\n📈 Win {{152.win_probability}}% — {{152.win_probability_reason}}\n🏦 Потенциал {{152.commercial_potential}} — {{152.commercial_potential_reason}}\nВыручка: проект {{ifempty(152.potential_revenue; \"UNKNOWN\")}} · фаза 2 {{ifempty(152.phase_2_revenue; \"UNKNOWN\")}} · поддержка {{ifempty(152.maintenance_revenue; \"UNKNOWN\")}} · upsell {{ifempty(152.upsell_revenue; \"UNKNOWN\")}}\n➕ Upsells: {{ifempty(join(152.upsells; \"; \"); \"—\")}}\n📎 Допущения: {{ifempty(join(slice(152.assumptions; 0; 5); \"; \"); \"—\")}}"
+             }
+            ],
+            "scope": "roundtrip"
+           },
+           "parameters": {},
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           }
+          },
+          {
+           "id": 153,
+           "module": "telegram:UniversalAPICall",
+           "version": 1,
+           "mapper": {
+            "method": "POST",
+            "bodyType": "assembled_body",
+            "body_spec": [
+             {
+              "key": "callback_query_id",
+              "value": "{{3.cbid}}"
+             },
+             {
+              "key": "text",
+              "value": "Offer"
+             }
+            ],
+            "urlMethod": "answerCallbackQuery"
+           },
+           "parameters": {
+            "__IMTCONN__": 9480305
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "onerror": [
+            {
+             "id": 653,
+             "module": "builtin:Ignore",
+             "version": 1,
+             "mapper": null,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             }
+            }
+           ]
+          },
+          {
+           "id": 154,
+           "module": "telegram:UniversalAPICall",
+           "version": 1,
+           "mapper": {
+            "method": "POST",
+            "bodyType": "assembled_body",
+            "body_spec": [
+             {
+              "key": "chat_id",
+              "value": "{{2.owner_chat_id}}"
+             },
+             {
+              "key": "text",
+              "value": "{{substring(156.t; 0; 4000)}}"
+             }
+            ],
+            "urlMethod": "sendMessage"
+           },
+           "parameters": {
+            "__IMTCONN__": 9480305
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "onerror": [
+            {
+             "id": 654,
+             "module": "builtin:Ignore",
+             "version": 1,
+             "mapper": null,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             }
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "flow": [
+          {
+           "id": 155,
+           "module": "telegram:UniversalAPICall",
+           "version": 1,
+           "mapper": {
+            "method": "POST",
+            "bodyType": "assembled_body",
+            "body_spec": [
+             {
+              "key": "callback_query_id",
+              "value": "{{3.cbid}}"
+             },
+             {
+              "key": "text",
+              "value": "КП ещё не готово (нужен ✅ Approve и завершённый Architect + Sales)."
+             }
+            ],
+            "urlMethod": "answerCallbackQuery"
+           },
+           "parameters": {
+            "__IMTCONN__": 9480305
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "onerror": [
+            {
+             "id": 655,
+             "module": "builtin:Ignore",
+             "version": 1,
+             "mapper": null,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             }
+            }
+           ],
+           "filter": {
+            "name": "КП нет",
+            "conditions": [
+             [
+              {
+               "a": "{{150.sales_json}}",
+               "o": "notexist"
+              }
+             ]
+            ]
+           }
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 160,
+       "module": "datastore:GetRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{3.lead}}",
+        "returnWrapped": false
+       },
+       "parameters": {
+        "datastore": 207950
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "filter": {
+        "name": "💬 Client Message",
+        "conditions": [
+         [
+          {
+           "a": "{{3.secret}}",
+           "o": "text:equal",
+           "b": "{{2.webhook_secret}}"
+          },
+          {
+           "a": "{{3.from}}",
+           "o": "text:equal",
+           "b": "{{2.owner_chat_id}}"
+          },
+          {
+           "a": "{{1.callback_query.id}}",
+           "o": "exist"
+          },
+          {
+           "a": "{{3.a}}",
+           "o": "text:equal",
+           "b": "cm"
+          }
+         ]
+        ]
+       }
+      },
+      {
+       "id": 161,
+       "module": "builtin:BasicRouter",
+       "version": 1,
+       "mapper": null,
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "routes": [
+        {
+         "flow": [
+          {
+           "id": 162,
+           "module": "telegram:UniversalAPICall",
+           "version": 1,
+           "mapper": {
+            "method": "POST",
+            "bodyType": "assembled_body",
+            "body_spec": [
+             {
+              "key": "callback_query_id",
+              "value": "{{3.cbid}}"
+             },
+             {
+              "key": "text",
+              "value": "Client message"
+             }
+            ],
+            "urlMethod": "answerCallbackQuery"
+           },
+           "parameters": {
+            "__IMTCONN__": 9480305
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "filter": {
+            "name": "Есть",
+            "conditions": [
+             [
+              {
+               "a": "{{160.client_message}}",
+               "o": "exist"
+              }
+             ]
+            ]
+           },
+           "onerror": [
+            {
+             "id": 662,
+             "module": "builtin:Ignore",
+             "version": 1,
+             "mapper": null,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             }
+            }
+           ]
+          },
+          {
+           "id": 163,
+           "module": "telegram:UniversalAPICall",
+           "version": 1,
+           "mapper": {
+            "method": "POST",
+            "bodyType": "assembled_body",
+            "body_spec": [
+             {
+              "key": "chat_id",
+              "value": "{{2.owner_chat_id}}"
+             },
+             {
+              "key": "text",
+              "value": "💬 Сообщение клиенту ({{ifempty(160.language; \"?\")}}) — отправляете только вы, вручную:\n\n{{substring(160.client_message; 0; 1800)}}\n\n🇷🇺 Перевод:\n{{substring(160.client_message_ru; 0; 1800)}}"
+             }
+            ],
+            "urlMethod": "sendMessage"
+           },
+           "parameters": {
+            "__IMTCONN__": 9480305
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "onerror": [
+            {
+             "id": 663,
+             "module": "builtin:Ignore",
+             "version": 1,
+             "mapper": null,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             }
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "flow": [
+          {
+           "id": 164,
+           "module": "telegram:UniversalAPICall",
+           "version": 1,
+           "mapper": {
+            "method": "POST",
+            "bodyType": "assembled_body",
+            "body_spec": [
+             {
+              "key": "callback_query_id",
+              "value": "{{3.cbid}}"
+             },
+             {
+              "key": "text",
+              "value": "Сообщение ещё не готово (нужен ✅ Approve и завершённый Architect + Sales)."
+             }
+            ],
+            "urlMethod": "answerCallbackQuery"
+           },
+           "parameters": {
+            "__IMTCONN__": 9480305
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "onerror": [
+            {
+             "id": 664,
+             "module": "builtin:Ignore",
+             "version": 1,
+             "mapper": null,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             }
+            }
+           ],
+           "filter": {
+            "name": "Нет",
+            "conditions": [
+             [
+              {
+               "a": "{{160.client_message}}",
+               "o": "notexist"
+              }
+             ]
+            ]
+           }
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 170,
+       "module": "datastore:GetRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{3.lead}}",
+        "returnWrapped": false
+       },
+       "parameters": {
+        "datastore": 207950
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "filter": {
+        "name": "❓ Questions",
+        "conditions": [
+         [
+          {
+           "a": "{{3.secret}}",
+           "o": "text:equal",
+           "b": "{{2.webhook_secret}}"
+          },
+          {
+           "a": "{{3.from}}",
+           "o": "text:equal",
+           "b": "{{2.owner_chat_id}}"
+          },
+          {
+           "a": "{{1.callback_query.id}}",
+           "o": "exist"
+          },
+          {
+           "a": "{{3.a}}",
+           "o": "text:equal",
+           "b": "qs"
+          }
+         ]
+        ]
+       }
+      },
+      {
+       "id": 171,
+       "module": "builtin:BasicRouter",
+       "version": 1,
+       "mapper": null,
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "routes": [
+        {
+         "flow": [
+          {
+           "id": 172,
+           "module": "telegram:UniversalAPICall",
+           "version": 1,
+           "mapper": {
+            "method": "POST",
+            "bodyType": "assembled_body",
+            "body_spec": [
+             {
+              "key": "callback_query_id",
+              "value": "{{3.cbid}}"
+             },
+             {
+              "key": "text",
+              "value": "Questions"
+             }
+            ],
+            "urlMethod": "answerCallbackQuery"
+           },
+           "parameters": {
+            "__IMTCONN__": 9480305
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "filter": {
+            "name": "Есть",
+            "conditions": [
+             [
+              {
+               "a": "{{170.client_questions}}",
+               "o": "exist"
+              }
+             ]
+            ]
+           },
+           "onerror": [
+            {
+             "id": 672,
+             "module": "builtin:Ignore",
+             "version": 1,
+             "mapper": null,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             }
+            }
+           ]
+          },
+          {
+           "id": 173,
+           "module": "telegram:UniversalAPICall",
+           "version": 1,
+           "mapper": {
+            "method": "POST",
+            "bodyType": "assembled_body",
+            "body_spec": [
+             {
+              "key": "chat_id",
+              "value": "{{2.owner_chat_id}}"
+             },
+             {
+              "key": "text",
+              "value": "❓ Вопросы клиенту {{3.lead}} (по приоритету):\n{{substring(170.client_questions; 0; 2500)}}\n\n🧩 Чего не хватает:\n{{ifempty(substring(170.missing_information; 0; 1200); \"—\")}}"
+             }
+            ],
+            "urlMethod": "sendMessage"
+           },
+           "parameters": {
+            "__IMTCONN__": 9480305
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "onerror": [
+            {
+             "id": 673,
+             "module": "builtin:Ignore",
+             "version": 1,
+             "mapper": null,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             }
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "flow": [
+          {
+           "id": 174,
+           "module": "telegram:UniversalAPICall",
+           "version": 1,
+           "mapper": {
+            "method": "POST",
+            "bodyType": "assembled_body",
+            "body_spec": [
+             {
+              "key": "callback_query_id",
+              "value": "{{3.cbid}}"
+             },
+             {
+              "key": "text",
+              "value": "Вопросы ещё не готово (нужен ✅ Approve и завершённый Architect + Sales)."
+             }
+            ],
+            "urlMethod": "answerCallbackQuery"
+           },
+           "parameters": {
+            "__IMTCONN__": 9480305
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "onerror": [
+            {
+             "id": 674,
+             "module": "builtin:Ignore",
+             "version": 1,
+             "mapper": null,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             }
+            }
+           ],
+           "filter": {
+            "name": "Нет",
+            "conditions": [
+             [
+              {
+               "a": "{{170.client_questions}}",
+               "o": "notexist"
+              }
+             ]
+            ]
+           }
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 180,
+       "module": "datastore:GetRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{3.lead}}",
+        "returnWrapped": false
+       },
+       "parameters": {
+        "datastore": 207950
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "filter": {
+        "name": "🔍 More Analysis",
+        "conditions": [
+         [
+          {
+           "a": "{{3.secret}}",
+           "o": "text:equal",
+           "b": "{{2.webhook_secret}}"
+          },
+          {
+           "a": "{{3.from}}",
+           "o": "text:equal",
+           "b": "{{2.owner_chat_id}}"
+          },
+          {
+           "a": "{{1.callback_query.id}}",
+           "o": "exist"
+          },
+          {
+           "a": "{{3.a}}",
+           "o": "text:equal",
+           "b": "mx"
+          }
+         ]
+        ]
+       }
+      },
+      {
+       "id": 181,
+       "module": "builtin:BasicRouter",
+       "version": 1,
+       "mapper": null,
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "routes": [
+        {
+         "flow": [
+          {
+           "id": 182,
+           "module": "util:SetVariables",
+           "version": 1,
+           "mapper": {
+            "variables": [
+             {
+              "name": "run",
+              "value": "{{uuid}}"
+             }
+            ],
+            "scope": "roundtrip"
+           },
+           "parameters": {},
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "filter": {
+            "name": "Ещё не было",
+            "conditions": [
+             [
+              {
+               "a": "{{180.sales_json}}",
+               "o": "exist"
+              },
+              {
+               "a": "{{ifempty(180.more_analysis_at; \"none\")}}",
+               "o": "text:equal",
+               "b": "none"
+              }
+             ]
+            ]
+           }
+          },
+          {
+           "id": 183,
+           "module": "datastore:UpdateRecord",
+           "version": 1,
+           "mapper": {
+            "key": "{{3.lead}}",
+            "upsert": false,
+            "overwriteArrays": false,
+            "data": {
+             "more_analysis_at": "{{now}}",
+             "architect_run_id": "{{182.run}}",
+             "updated_at": "{{now}}"
+            }
+           },
+           "parameters": {
+            "datastore": 207950
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           }
+          },
+          {
+           "id": 184,
+           "module": "datastore:AddRecord",
+           "version": 1,
+           "mapper": {
+            "key": "{{uuid}}",
+            "overwrite": true,
+            "data": {
+             "table": "decisions",
+             "decision_id": "{{uuid}}",
+             "lead_id": "{{3.lead}}",
+             "owner_chat_id": "{{3.from}}",
+             "action": "MORE_ANALYSIS_REQUESTED",
+             "reason": "",
+             "telegram_message_id": "{{3.mid}}",
+             "created_at": "{{now}}",
+             "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+            }
+           },
+           "parameters": {
+            "datastore": 207952
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           }
+          },
+          {
+           "id": 185,
+           "module": "datastore:AddRecord",
+           "version": 1,
+           "mapper": {
+            "key": "{{uuid}}",
+            "overwrite": true,
+            "data": {
+             "table": "events",
+             "event_id": "{{uuid}}",
+             "lead_id": "{{3.lead}}",
+             "event": "MORE_ANALYSIS_REQUESTED",
+             "details": "deep re-run {{182.run}}",
+             "old_status": "",
+             "new_status": "",
+             "created_at": "{{now}}",
+             "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+            }
+           },
+           "parameters": {
+            "datastore": 207952
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           }
+          },
+          {
+           "id": 186,
+           "module": "telegram:UniversalAPICall",
+           "version": 1,
+           "mapper": {
+            "method": "POST",
+            "bodyType": "assembled_body",
+            "body_spec": [
+             {
+              "key": "callback_query_id",
+              "value": "{{3.cbid}}"
+             },
+             {
+              "key": "text",
+              "value": "Углублённый анализ запущен"
+             }
+            ],
+            "urlMethod": "answerCallbackQuery"
+           },
+           "parameters": {
+            "__IMTCONN__": 9480305
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "onerror": [
+            {
+             "id": 686,
+             "module": "builtin:Ignore",
+             "version": 1,
+             "mapper": null,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             }
+            }
+           ]
+          },
+          {
+           "id": 187,
+           "module": "telegram:UniversalAPICall",
+           "version": 1,
+           "mapper": {
+            "method": "POST",
+            "bodyType": "assembled_body",
+            "body_spec": [
+             {
+              "key": "chat_id",
+              "value": "{{2.owner_chat_id}}"
+             },
+             {
+              "key": "text",
+              "value": "🔍 {{3.lead}}: углублённый прогон Architect + Sales запущен (единственный для этого лида). Пришлю новую карточку через ~1–3 мин."
+             }
+            ],
+            "urlMethod": "sendMessage"
+           },
+           "parameters": {
+            "__IMTCONN__": 9480305
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "onerror": [
+            {
+             "id": 687,
+             "module": "builtin:Ignore",
+             "version": 1,
+             "mapper": null,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             }
+            }
+           ]
+          },
+          {
+           "id": 188,
+           "module": "http:ActionSendData",
+           "version": 3,
+           "mapper": {
+            "url": "{{ifempty(2.lh11_url; \"https://hook.eu1.make.com/x6cnrfo2bt495fg5od84c49lui47todk\")}}",
+            "method": "post",
+            "headers": [],
+            "qs": [],
+            "bodyType": "x_www_form_urlencoded",
+            "formFields": [
+             {
+              "key": "token",
+              "value": "{{2.internal_token}}"
+             },
+             {
+              "key": "lead_id",
+              "value": "{{3.lead}}"
+             },
+             {
+              "key": "run_id",
+              "value": "{{182.run}}"
+             },
+             {
+              "key": "mode",
+              "value": "more"
+             }
+            ],
+            "parseResponse": false,
+            "serializeUrl": false,
+            "shareCookies": false,
+            "rejectUnauthorized": true,
+            "followRedirect": true,
+            "followAllRedirects": false,
+            "useQuerystring": false,
+            "gzip": true,
+            "useMtls": false
+           },
+           "parameters": {
+            "handleErrors": true,
+            "useNewZLibDeCompress": true
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "onerror": [
+            {
+             "id": 688,
+             "module": "builtin:Ignore",
+             "version": 1,
+             "mapper": null,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             }
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "flow": [
+          {
+           "id": 189,
+           "module": "telegram:UniversalAPICall",
+           "version": 1,
+           "mapper": {
+            "method": "POST",
+            "bodyType": "assembled_body",
+            "body_spec": [
+             {
+              "key": "callback_query_id",
+              "value": "{{3.cbid}}"
+             },
+             {
+              "key": "text",
+              "value": "Углублённый анализ уже был (1 раз на лид) или КП ещё не готово."
+             }
+            ],
+            "urlMethod": "answerCallbackQuery"
+           },
+           "parameters": {
+            "__IMTCONN__": 9480305
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "filter": {
+            "name": "Нельзя",
+            "conditions": [
+             [
+              {
+               "a": "{{180.sales_json}}",
+               "o": "notexist"
+              }
+             ],
+             [
+              {
+               "a": "{{ifempty(180.more_analysis_at; \"none\")}}",
+               "o": "text:notequal",
+               "b": "none"
+              }
+             ]
+            ]
+           },
+           "onerror": [
+            {
+             "id": 689,
+             "module": "builtin:Ignore",
+             "version": 1,
+             "mapper": null,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             }
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 200,
+       "module": "datastore:GetRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{3.lead}}",
+        "returnWrapped": false
+       },
+       "parameters": {
+        "datastore": 207950
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "filter": {
+        "name": "📞 Contacted",
+        "conditions": [
+         [
+          {
+           "a": "{{3.secret}}",
+           "o": "text:equal",
+           "b": "{{2.webhook_secret}}"
+          },
+          {
+           "a": "{{3.from}}",
+           "o": "text:equal",
+           "b": "{{2.owner_chat_id}}"
+          },
+          {
+           "a": "{{1.callback_query.id}}",
+           "o": "exist"
+          },
+          {
+           "a": "{{3.a}}",
+           "o": "text:equal",
+           "b": "ct"
+          }
+         ]
+        ]
+       }
+      },
+      {
+       "id": 201,
+       "module": "datastore:UpdateRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{3.lead}}",
+        "upsert": false,
+        "overwriteArrays": false,
+        "data": {
+         "status": "CONTACTED",
+         "status_at": "{{now}}",
+         "updated_at": "{{now}}",
+         "contacted_at": "{{now}}"
+        }
+       },
+       "parameters": {
+        "datastore": 207950
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      },
+      {
+       "id": 202,
+       "module": "datastore:AddRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{uuid}}",
+        "overwrite": true,
+        "data": {
+         "table": "decisions",
+         "decision_id": "{{uuid}}",
+         "lead_id": "{{3.lead}}",
+         "owner_chat_id": "{{3.from}}",
+         "action": "CONTACTED",
+         "reason": "",
+         "telegram_message_id": "{{3.mid}}",
+         "created_at": "{{now}}",
+         "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+        }
+       },
+       "parameters": {
+        "datastore": 207952
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      },
+      {
+       "id": 203,
+       "module": "datastore:AddRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{uuid}}",
+        "overwrite": true,
+        "data": {
+         "table": "events",
+         "event_id": "{{uuid}}",
+         "lead_id": "{{3.lead}}",
+         "event": "OWNER_CONTACTED",
+         "details": "button",
+         "old_status": "{{200.status}}",
+         "new_status": "CONTACTED",
+         "created_at": "{{now}}",
+         "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+        }
+       },
+       "parameters": {
+        "datastore": 207952
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      },
+      {
+       "id": 204,
+       "module": "telegram:UniversalAPICall",
+       "version": 1,
+       "mapper": {
+        "method": "POST",
+        "bodyType": "assembled_body",
+        "body_spec": [
+         {
+          "key": "callback_query_id",
+          "value": "{{3.cbid}}"
+         },
+         {
+          "key": "text",
+          "value": "📞 Contacted (бот клиенту ничего не отправлял)"
+         }
+        ],
+        "urlMethod": "answerCallbackQuery"
+       },
+       "parameters": {
+        "__IMTCONN__": 9480305
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "onerror": [
+        {
+         "id": 704,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "mapper": null,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 210,
+       "module": "datastore:GetRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{3.lead}}",
+        "returnWrapped": false
+       },
+       "parameters": {
+        "datastore": 207950
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "filter": {
+        "name": "🏆 Won",
+        "conditions": [
+         [
+          {
+           "a": "{{3.secret}}",
+           "o": "text:equal",
+           "b": "{{2.webhook_secret}}"
+          },
+          {
+           "a": "{{3.from}}",
+           "o": "text:equal",
+           "b": "{{2.owner_chat_id}}"
+          },
+          {
+           "a": "{{1.callback_query.id}}",
+           "o": "exist"
+          },
+          {
+           "a": "{{3.a}}",
+           "o": "text:equal",
+           "b": "wn"
+          }
+         ]
+        ]
+       }
+      },
+      {
+       "id": 211,
+       "module": "datastore:UpdateRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{3.lead}}",
+        "upsert": false,
+        "overwriteArrays": false,
+        "data": {
+         "status": "WON",
+         "status_at": "{{now}}",
+         "updated_at": "{{now}}",
+         "won_at": "{{now}}",
+         "deal_amount_eur": "{{210.recommended_price}}"
+        }
+       },
+       "parameters": {
+        "datastore": 207950
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      },
+      {
+       "id": 212,
+       "module": "datastore:AddRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{uuid}}",
+        "overwrite": true,
+        "data": {
+         "table": "decisions",
+         "decision_id": "{{uuid}}",
+         "lead_id": "{{3.lead}}",
+         "owner_chat_id": "{{3.from}}",
+         "action": "WON",
+         "reason": "",
+         "telegram_message_id": "{{3.mid}}",
+         "created_at": "{{now}}",
+         "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+        }
+       },
+       "parameters": {
+        "datastore": 207952
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      },
+      {
+       "id": 213,
+       "module": "datastore:AddRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{uuid}}",
+        "overwrite": true,
+        "data": {
+         "table": "events",
+         "event_id": "{{uuid}}",
+         "lead_id": "{{3.lead}}",
+         "event": "OWNER_WON",
+         "details": "button",
+         "old_status": "{{210.status}}",
+         "new_status": "WON",
+         "created_at": "{{now}}",
+         "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+        }
+       },
+       "parameters": {
+        "datastore": 207952
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      },
+      {
+       "id": 214,
+       "module": "telegram:UniversalAPICall",
+       "version": 1,
+       "mapper": {
+        "method": "POST",
+        "bodyType": "assembled_body",
+        "body_spec": [
+         {
+          "key": "callback_query_id",
+          "value": "{{3.cbid}}"
+         },
+         {
+          "key": "text",
+          "value": "🏆 Won"
+         }
+        ],
+        "urlMethod": "answerCallbackQuery"
+       },
+       "parameters": {
+        "__IMTCONN__": 9480305
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "onerror": [
+        {
+         "id": 714,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "mapper": null,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         }
+        }
+       ]
+      },
+      {
+       "id": 215,
+       "module": "telegram:UniversalAPICall",
+       "version": 1,
+       "mapper": {
+        "method": "POST",
+        "bodyType": "assembled_body",
+        "body_spec": [
+         {
+          "key": "chat_id",
+          "value": "{{2.owner_chat_id}}"
+         },
+         {
+          "key": "text",
+          "value": "🏆 {{3.lead}} — WON. Сумма сделки = рекомендованная цена: {{ifempty(210.recommended_price; \"не задана\")}} €.\nИсправить: /won {{3.lead}} <сумма в EUR>"
+         }
+        ],
+        "urlMethod": "sendMessage"
+       },
+       "parameters": {
+        "__IMTCONN__": 9480305
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "onerror": [
+        {
+         "id": 715,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "mapper": null,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 240,
+       "module": "datastore:GetRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{3.lead}}",
+        "returnWrapped": false
+       },
+       "parameters": {
+        "datastore": 207950
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "filter": {
+        "name": "📦 Archive",
+        "conditions": [
+         [
+          {
+           "a": "{{3.secret}}",
+           "o": "text:equal",
+           "b": "{{2.webhook_secret}}"
+          },
+          {
+           "a": "{{3.from}}",
+           "o": "text:equal",
+           "b": "{{2.owner_chat_id}}"
+          },
+          {
+           "a": "{{1.callback_query.id}}",
+           "o": "exist"
+          },
+          {
+           "a": "{{3.a}}",
+           "o": "text:equal",
+           "b": "ar"
+          }
+         ]
+        ]
+       }
+      },
+      {
+       "id": 241,
+       "module": "datastore:UpdateRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{3.lead}}",
+        "upsert": false,
+        "overwriteArrays": false,
+        "data": {
+         "status": "ARCHIVED",
+         "status_at": "{{now}}",
+         "updated_at": "{{now}}"
+        }
+       },
+       "parameters": {
+        "datastore": 207950
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      },
+      {
+       "id": 242,
+       "module": "datastore:AddRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{uuid}}",
+        "overwrite": true,
+        "data": {
+         "table": "decisions",
+         "decision_id": "{{uuid}}",
+         "lead_id": "{{3.lead}}",
+         "owner_chat_id": "{{3.from}}",
+         "action": "ARCHIVED",
+         "reason": "",
+         "telegram_message_id": "{{3.mid}}",
+         "created_at": "{{now}}",
+         "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+        }
+       },
+       "parameters": {
+        "datastore": 207952
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      },
+      {
+       "id": 243,
+       "module": "datastore:AddRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{uuid}}",
+        "overwrite": true,
+        "data": {
+         "table": "events",
+         "event_id": "{{uuid}}",
+         "lead_id": "{{3.lead}}",
+         "event": "OWNER_ARCHIVED",
+         "details": "button",
+         "old_status": "{{240.status}}",
+         "new_status": "ARCHIVED",
+         "created_at": "{{now}}",
+         "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+        }
+       },
+       "parameters": {
+        "datastore": 207952
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      },
+      {
+       "id": 244,
+       "module": "telegram:UniversalAPICall",
+       "version": 1,
+       "mapper": {
+        "method": "POST",
+        "bodyType": "assembled_body",
+        "body_spec": [
+         {
+          "key": "callback_query_id",
+          "value": "{{3.cbid}}"
+         },
+         {
+          "key": "text",
+          "value": "📦 В архиве"
+         }
+        ],
+        "urlMethod": "answerCallbackQuery"
+       },
+       "parameters": {
+        "__IMTCONN__": 9480305
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "onerror": [
+        {
+         "id": 744,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "mapper": null,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 220,
+       "module": "telegram:UniversalAPICall",
+       "version": 1,
+       "mapper": {
+        "method": "POST",
+        "bodyType": "assembled_body",
+        "body_spec": [
+         {
+          "key": "callback_query_id",
+          "value": "{{3.cbid}}"
+         },
+         {
+          "key": "text",
+          "value": "Причина?"
+         }
+        ],
+        "urlMethod": "answerCallbackQuery"
+       },
+       "parameters": {
+        "__IMTCONN__": 9480305
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "filter": {
+        "name": "❌ Lost → причины",
+        "conditions": [
+         [
+          {
+           "a": "{{3.secret}}",
+           "o": "text:equal",
+           "b": "{{2.webhook_secret}}"
+          },
+          {
+           "a": "{{3.from}}",
+           "o": "text:equal",
+           "b": "{{2.owner_chat_id}}"
+          },
+          {
+           "a": "{{1.callback_query.id}}",
+           "o": "exist"
+          },
+          {
+           "a": "{{3.a}}",
+           "o": "text:equal",
+           "b": "ls"
+          }
+         ]
+        ]
+       },
+       "onerror": [
+        {
+         "id": 720,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "mapper": null,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         }
+        }
+       ]
+      },
+      {
+       "id": 221,
+       "module": "telegram:UniversalAPICall",
+       "version": 1,
+       "mapper": {
+        "method": "POST",
+        "bodyType": "assembled_body",
+        "body_spec": [
+         {
+          "key": "chat_id",
+          "value": "{{2.owner_chat_id}}"
+         },
+         {
+          "key": "text",
+          "value": "❌ {{3.lead}}: почему проиграли?"
+         },
+         {
+          "key": "reply_markup",
+          "value": "{\"inline_keyboard\": [[{\"text\": \"💸 Дорого для клиента\", \"callback_data\": \"lr|{{3.lead}}|1\"}], [{\"text\": \"🤝 Выбрали другого\", \"callback_data\": \"lr|{{3.lead}}|2\"}], [{\"text\": \"🔇 Клиент пропал\", \"callback_data\": \"lr|{{3.lead}}|3\"}], [{\"text\": \"🚫 Проект отменён\", \"callback_data\": \"lr|{{3.lead}}|4\"}], [{\"text\": \"❓ Другое\", \"callback_data\": \"lr|{{3.lead}}|5\"}]]}"
+         }
+        ],
+        "urlMethod": "sendMessage"
+       },
+       "parameters": {
+        "__IMTCONN__": 9480305
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "onerror": [
+        {
+         "id": 721,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "mapper": null,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 230,
+       "module": "datastore:GetRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{3.lead}}",
+        "returnWrapped": false
+       },
+       "parameters": {
+        "datastore": 207950
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "filter": {
+        "name": "❌ Lost с причиной",
+        "conditions": [
+         [
+          {
+           "a": "{{3.secret}}",
+           "o": "text:equal",
+           "b": "{{2.webhook_secret}}"
+          },
+          {
+           "a": "{{3.from}}",
+           "o": "text:equal",
+           "b": "{{2.owner_chat_id}}"
+          },
+          {
+           "a": "{{1.callback_query.id}}",
+           "o": "exist"
+          },
+          {
+           "a": "{{3.a}}",
+           "o": "text:equal",
+           "b": "lr"
+          }
+         ]
+        ]
+       }
+      },
+      {
+       "id": 231,
+       "module": "datastore:UpdateRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{3.lead}}",
+        "upsert": false,
+        "overwriteArrays": false,
+        "data": {
+         "status": "LOST",
+         "lost_reason": "{{switch(3.r; \"1\"; \"💸 Дорого для клиента\"; \"2\"; \"🤝 Выбрали другого\"; \"3\"; \"🔇 Клиент пропал\"; \"4\"; \"🚫 Проект отменён\"; \"5\"; \"❓ Другое\"; \"Другое\")}}",
+         "status_at": "{{now}}",
+         "updated_at": "{{now}}"
+        }
+       },
+       "parameters": {
+        "datastore": 207950
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      },
+      {
+       "id": 232,
+       "module": "datastore:AddRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{uuid}}",
+        "overwrite": true,
+        "data": {
+         "table": "decisions",
+         "decision_id": "{{uuid}}",
+         "lead_id": "{{3.lead}}",
+         "owner_chat_id": "{{3.from}}",
+         "action": "LOST",
+         "reason": "{{switch(3.r; \"1\"; \"💸 Дорого для клиента\"; \"2\"; \"🤝 Выбрали другого\"; \"3\"; \"🔇 Клиент пропал\"; \"4\"; \"🚫 Проект отменён\"; \"5\"; \"❓ Другое\"; \"Другое\")}}",
+         "telegram_message_id": "{{3.mid}}",
+         "created_at": "{{now}}",
+         "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+        }
+       },
+       "parameters": {
+        "datastore": 207952
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      },
+      {
+       "id": 233,
+       "module": "datastore:AddRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{uuid}}",
+        "overwrite": true,
+        "data": {
+         "table": "events",
+         "event_id": "{{uuid}}",
+         "lead_id": "{{3.lead}}",
+         "event": "OWNER_LOST",
+         "details": "{{switch(3.r; \"1\"; \"💸 Дорого для клиента\"; \"2\"; \"🤝 Выбрали другого\"; \"3\"; \"🔇 Клиент пропал\"; \"4\"; \"🚫 Проект отменён\"; \"5\"; \"❓ Другое\"; \"Другое\")}}",
+         "old_status": "{{230.status}}",
+         "new_status": "LOST",
+         "created_at": "{{now}}",
+         "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+        }
+       },
+       "parameters": {
+        "datastore": 207952
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      },
+      {
+       "id": 234,
+       "module": "telegram:UniversalAPICall",
+       "version": 1,
+       "mapper": {
+        "method": "POST",
+        "bodyType": "assembled_body",
+        "body_spec": [
+         {
+          "key": "callback_query_id",
+          "value": "{{3.cbid}}"
+         },
+         {
+          "key": "text",
+          "value": "Lost"
+         }
+        ],
+        "urlMethod": "answerCallbackQuery"
+       },
+       "parameters": {
+        "__IMTCONN__": 9480305
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "onerror": [
+        {
+         "id": 734,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "mapper": null,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         }
+        }
+       ]
+      },
+      {
+       "id": 235,
+       "module": "telegram:UniversalAPICall",
+       "version": 1,
+       "mapper": {
+        "method": "POST",
+        "bodyType": "assembled_body",
+        "body_spec": [
+         {
+          "key": "chat_id",
+          "value": "{{2.owner_chat_id}}"
+         },
+         {
+          "key": "message_id",
+          "value": "{{3.mid}}"
+         },
+         {
+          "key": "reply_markup",
+          "value": "{\"inline_keyboard\": [[{\"text\": \"❌ Lost: {{switch(3.r; \\\"1\\\"; \\\"💸 Дорого для клиента\\\"; \\\"2\\\"; \\\"🤝 Выбрали другого\\\"; \\\"3\\\"; \\\"🔇 Клиент пропал\\\"; \\\"4\\\"; \\\"🚫 Проект отменён\\\"; \\\"5\\\"; \\\"❓ Другое\\\"; \\\"Другое\\\")}}\", \"callback_data\": \"z\"}]]}"
+         }
+        ],
+        "urlMethod": "editMessageReplyMarkup"
+       },
+       "parameters": {
+        "__IMTCONN__": 9480305
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "onerror": [
+        {
+         "id": 735,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "mapper": null,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 250,
+       "module": "util:SetVariables",
+       "version": 1,
+       "mapper": {
+        "variables": [
+         {
+          "name": "wl",
+          "value": "{{get(split(3.txt; \" \"); 2)}}"
+         },
+         {
+          "name": "wa",
+          "value": "{{replace(get(split(3.txt; \" \"); 3); \",\"; \".\")}}"
+         }
+        ],
+        "scope": "roundtrip"
+       },
+       "parameters": {},
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "filter": {
+        "name": "/won",
+        "conditions": [
+         [
+          {
+           "a": "{{3.secret}}",
+           "o": "text:equal",
+           "b": "{{2.webhook_secret}}"
+          },
+          {
+           "a": "{{3.from}}",
+           "o": "text:equal",
+           "b": "{{2.owner_chat_id}}"
+          },
+          {
+           "a": "{{1.message.message_id}}",
+           "o": "exist"
+          },
+          {
+           "a": "{{3.cmd}}",
+           "o": "text:equal",
+           "b": "/won"
+          }
+         ]
+        ]
+       }
+      },
+      {
+       "id": 251,
+       "module": "datastore:GetRecord",
+       "version": 1,
+       "mapper": {
+        "key": "{{ifempty(250.wl; \"-\")}}",
+        "returnWrapped": false
+       },
+       "parameters": {
+        "datastore": 207950
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      },
+      {
+       "id": 252,
+       "module": "builtin:BasicRouter",
+       "version": 1,
+       "mapper": null,
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "routes": [
+        {
+         "flow": [
+          {
+           "id": 253,
+           "module": "datastore:UpdateRecord",
+           "version": 1,
+           "mapper": {
+            "key": "{{250.wl}}",
+            "upsert": false,
+            "overwriteArrays": false,
+            "data": {
+             "status": "WON",
+             "deal_amount_eur": "{{250.wa}}",
+             "won_at": "{{ifempty(251.won_at; now)}}",
+             "status_at": "{{now}}",
+             "updated_at": "{{now}}"
+            }
+           },
+           "parameters": {
+            "datastore": 207950
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "filter": {
+            "name": "Лид есть, сумма — число",
+            "conditions": [
+             [
+              {
+               "a": "{{251.status}}",
+               "o": "exist"
+              },
+              {
+               "a": "{{250.wa}}",
+               "o": "text:pattern",
+               "b": "^[0-9]+(\\.[0-9]+)?$"
+              }
+             ]
+            ]
+           }
+          },
+          {
+           "id": 254,
+           "module": "datastore:AddRecord",
+           "version": 1,
+           "mapper": {
+            "key": "{{uuid}}",
+            "overwrite": true,
+            "data": {
+             "table": "events",
+             "event_id": "{{uuid}}",
+             "lead_id": "{{250.wl}}",
+             "event": "DEAL_AMOUNT_SET",
+             "details": "owner /won {{250.wa}} EUR",
+             "old_status": "{{251.status}}",
+             "new_status": "WON",
+             "created_at": "{{now}}",
+             "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+            }
+           },
+           "parameters": {
+            "datastore": 207952
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           }
+          },
+          {
+           "id": 255,
+           "module": "telegram:UniversalAPICall",
+           "version": 1,
+           "mapper": {
+            "method": "POST",
+            "bodyType": "assembled_body",
+            "body_spec": [
+             {
+              "key": "chat_id",
+              "value": "{{2.owner_chat_id}}"
+             },
+             {
+              "key": "text",
+              "value": "🏆 {{250.wl}}: сумма сделки {{250.wa}} € сохранена (WON)."
+             }
+            ],
+            "urlMethod": "sendMessage"
+           },
+           "parameters": {
+            "__IMTCONN__": 9480305
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "onerror": [
+            {
+             "id": 755,
+             "module": "builtin:Ignore",
+             "version": 1,
+             "mapper": null,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             }
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "flow": [
+          {
+           "id": 256,
+           "module": "telegram:UniversalAPICall",
+           "version": 1,
+           "mapper": {
+            "method": "POST",
+            "bodyType": "assembled_body",
+            "body_spec": [
+             {
+              "key": "chat_id",
+              "value": "{{2.owner_chat_id}}"
+             },
+             {
+              "key": "text",
+              "value": "Формат: /won LH-YYYYMMDD-xxxxxx 1500 (лид не найден или сумма не число)."
+             }
+            ],
+            "urlMethod": "sendMessage"
+           },
+           "parameters": {
+            "__IMTCONN__": 9480305
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "filter": {
+            "name": "Ошибка формата",
+            "conditions": [
+             [
+              {
+               "a": "{{251.status}}",
+               "o": "notexist"
+              }
+             ],
+             [
+              {
+               "a": "{{250.wa}}",
+               "o": "text:notpattern",
+               "b": "^[0-9]+(\\.[0-9]+)?$"
+              }
+             ]
+            ]
+           },
+           "onerror": [
+            {
+             "id": 756,
+             "module": "builtin:Ignore",
+             "version": 1,
+             "mapper": null,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             }
+            }
+           ]
+          }
+         ]
         }
        ]
       }
@@ -2730,6 +5532,56 @@
            "a": "{{3.a}}",
            "o": "text:notequal",
            "b": "z"
+          },
+          {
+           "a": "{{3.a}}",
+           "o": "text:notequal",
+           "b": "ft"
+          },
+          {
+           "a": "{{3.a}}",
+           "o": "text:notequal",
+           "b": "of"
+          },
+          {
+           "a": "{{3.a}}",
+           "o": "text:notequal",
+           "b": "cm"
+          },
+          {
+           "a": "{{3.a}}",
+           "o": "text:notequal",
+           "b": "qs"
+          },
+          {
+           "a": "{{3.a}}",
+           "o": "text:notequal",
+           "b": "mx"
+          },
+          {
+           "a": "{{3.a}}",
+           "o": "text:notequal",
+           "b": "ct"
+          },
+          {
+           "a": "{{3.a}}",
+           "o": "text:notequal",
+           "b": "wn"
+          },
+          {
+           "a": "{{3.a}}",
+           "o": "text:notequal",
+           "b": "ls"
+          },
+          {
+           "a": "{{3.a}}",
+           "o": "text:notequal",
+           "b": "lr"
+          },
+          {
+           "a": "{{3.a}}",
+           "o": "text:notequal",
+           "b": "ar"
           }
          ]
         ]

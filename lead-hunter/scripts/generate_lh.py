@@ -184,9 +184,11 @@ def lh20():
     HELP = ("ℹ️ Lead Hunter — пульт владельца\n\n"
             "1. Перешлите сюда заявку: текст, текст + ссылка или пост из канала.\n"
             "2. Через ~1 мин придёт карточка: оценка 0–100, HOT/WARM/COLD/REJECT, причины.\n"
-            "3. Кнопки: ✅ Approve — отметить (клиенту ничего не отправляется), ❌ Reject — с причиной, 🔍 More analysis.\n\n"
+            "3. ✅ Approve — Architect + Sales готовят ТЗ и КП (~1–3 мин), придёт коммерческая карточка; ❌ Reject — с причиной.\n"
+            "4. На карточке: 📋 Full ТЗ (+ файл .md), 💰 Offer, 💬 Client Message, ❓ Questions, 🔍 More Analysis (1 раз), 📞 Contacted, 🏆 Won, ❌ Lost, 📦 Archive.\n"
+            "Клиенту бот ничего не отправляет — только вы вручную.\n\n"
             "/new — новые HOT/WARM без решения (до 5)\n/today — итоги дня\n/stats — 7 и 30 дней\n"
-            "/pause — пауза AI (заявки копятся в очереди)\n/resume — продолжить и разобрать очередь\n/settings — настройки\n\n"
+            "/won LEAD сумма — исправить сумму сделки\n/pause — пауза AI (заявки копятся в очереди)\n/resume — продолжить и разобрать очередь\n/settings — настройки\n\n"
             "Скриншоты и файлы пока не разбираются — пришлите текст и ссылку.")
     routes.append([tg(30, "sendMessage", [("chat_id", OWNER), ("text", HELP)], name="/help", conds=[cmd("/help")])])
     # --- /settings
@@ -284,13 +286,29 @@ def lh20():
     dec = lambda mid, action, reason="": ds_add(mid, S_LOG, "{{uuid}}", {
         "table": "decisions", "decision_id": "{{uuid}}", "lead_id": LEADK, "owner_chat_id": "{{3.from}}", "action": action,
         "reason": reason, "telegram_message_id": "{{3.mid}}", "created_at": "{{now}}", "day": DAY_S})
+    # --- ✅ Approve → защита от повтора → LH-11 (Architect + Sales), этап 3
+    URL11X = "{{ifempty(2.lh11_url; \"" + URL11 + "\")}}"
+    call11 = lambda mid, run, mode: http_form(mid, URL11X, [("token", "{{2.internal_token}}"), ("lead_id", LEADK), ("run_id", run), ("mode", mode)])
+    can_run = [[c("{{90.status}}", "exist"), c('{{ifempty(90.architect_run_id; "none")}}', "text:equal", "none")],
+               [c("{{90.status}}", "exist"), c("{{90.status}}", "text:equal", "ERROR")]]
+    COLDW = '{{if(90.grade = "COLD"; newline + "⚠️ Grade COLD: Architect запущен по вашему решению."; if(90.grade = "REJECT"; newline + "⚠️ Grade REJECT: Architect запущен по вашему решению, проверьте риски."; ""))}}'
     routes.append([ds_get(90, S_LEADS, LEADK, name="✅ Approve", conds=[act("ap")]),
-                   ds_upd(91, S_LEADS, LEADK, {"status": "APPROVED", "status_at": "{{now}}", "updated_at": "{{now}}"}, upsert=False),
-                   dec(92, "APPROVE"), ev(93, LEADK, "OWNER_APPROVED", "button", old="{{90.status}}", new="APPROVED"),
-                   answer(94, "Approved"),
-                   tg(95, "editMessageReplyMarkup", [("chat_id", OWNER), ("message_id", "{{3.mid}}"),
-                                                     ("reply_markup", KB([[{"text": "✅ Approved", "callback_data": "z"}]]))]),
-                   tg(96, "sendMessage", [("chat_id", OWNER), ("text", "Lead approved. Client contact is still manual.\n" + LEADK)])])
+                   router(132, [
+                       [setvars(133, [("run", "{{uuid}}")], name="Первый Approve (или повтор после ERROR)", conds=can_run),
+                        ds_upd(91, S_LEADS, LEADK, {"status": "APPROVED", "status_at": "{{now}}", "approved_at": "{{now}}",
+                                                    "architect_run_id": "{{133.run}}", "error_code": "", "error_message": "",
+                                                    "updated_at": "{{now}}"}, upsert=False),
+                        dec(92, "APPROVE"), ev(93, LEADK, "OWNER_APPROVED", "button · run {{133.run}}", old="{{90.status}}", new="APPROVED"),
+                        answer(94, "Approved → Architect + Sales"),
+                        tg(95, "editMessageReplyMarkup", [("chat_id", OWNER), ("message_id", "{{3.mid}}"),
+                                                          ("reply_markup", KB([[{"text": "✅ Approved · Architect работает", "callback_data": "z"}]]))]),
+                        tg(96, "sendMessage", [("chat_id", OWNER), ("text", "✅ " + LEADK + " одобрен. Architect + Sales готовят ТЗ и КП (~1–3 мин), пришлю коммерческую карточку.\n"
+                                               "Клиенту ничего не отправляется." + COLDW)]),
+                        call11(134, "{{133.run}}", "normal")],
+                       [answer(135, "Уже одобрен: Architect уже запускался ({{ifempty(90.status; \"лид не найден\")}}). Повтор — только после ERROR.",
+                               name="Повторный Approve — без запуска",
+                               conds=[[c('{{ifempty(90.architect_run_id; "none")}}', "text:notequal", "none"), c("{{90.status}}", "text:notequal", "ERROR")],
+                                      [c("{{90.status}}", "notexist")]])]])])
     REASONS = [("1", "💰 Too cheap"), ("2", "🎯 Not our profile"), ("3", "⚠️ Suspicious"), ("4", "🏗 Too complex"), ("5", "❌ Other")]
     routes.append([answer(100, "Причина?", name="❌ Reject → причины", conds=[act("rj")]),
                    tg(101, "editMessageReplyMarkup", [("chat_id", OWNER), ("message_id", "{{3.mid}}"),
@@ -310,10 +328,127 @@ def lh20():
                           name="🔍 More analysis", conds=[act("ma")]),
                    ev(121, LEADK, "MORE_ANALYSIS_REQUESTED", "button"),
                    answer(122, "OK"),
-                   tg(123, "sendMessage", [("chat_id", OWNER), ("text", "Detailed Architect analysis will be available in the next phase.\n" + LEADK)])])
+                   tg(123, "sendMessage", [("chat_id", OWNER), ("text", "🔍 Углублённый анализ делает Architect после ✅ Approve. На коммерческой карточке будет кнопка 🔍 More Analysis (1 повторный прогон на лид).\n" + LEADK)])])
+    # --- кнопки коммерческой карточки (этап 3); клиенту ничего не отправляется
+    lst = lambda p: '{{if(length(' + p + ') > 0; "- " + join(' + p + '; newline + "- "); "- —")}}'
+    X = "142."
+    MD = ("# Техническое задание (черновик) — " + LEADK + "\n\n"
+          "{{140.title}}\nИсточник: {{140.source}} · {{ifempty(140.source_url; \"нет ссылки\")}}\n"
+          "Черновик Architect ({{ifempty(2.architect_prompt_version; \"" + ARCH_VERSION + "\")}}), требует проверки. Метки: CLIENT_REQUIREMENT — написал клиент; "
+          "INFERRED — вывод из текста; RECOMMENDATION — наше предложение; UNKNOWN — уточнить у клиента.\n\n"
+          "## 1. Суть проекта\n{{142.project_summary}}\n\n## 2. Цель клиента\n{{142.client_goal}}\n\n"
+          "## 3. Решение в Telegram\n" + "".join(f"- {t}: {{{{142.telegram_solution.{k}}}}}\n" for k, t in
+              [("bot", "Бот"), ("mini_app", "Mini App"), ("ai", "AI"), ("crm", "CRM"), ("payments", "Платежи"),
+               ("notifications", "Уведомления"), ("admin_panel", "Админ-панель")]) + "\n" +
+          "".join(f"## {n}. {t}\n" + lst(X + k) + "\n\n" for n, (k, t) in enumerate([
+              ("functional_requirements", "Функциональные требования"), ("user_roles", "Роли пользователей"),
+              ("user_flow", "Пользовательский сценарий"), ("mvp", "MVP"), ("phase_2", "Фаза 2"), ("integrations", "Интеграции"),
+              ("api_requirements", "Требования к API")], start=4)) +
+          "## 11. База данных\nНужна: {{142.database.required}} · предлагаем: {{ifempty(142.database.suggested; \"—\")}}\n" + lst(X + "database.entities") + "\n\n"
+          "## 12. Админ-панель\nНужна: {{142.admin_panel.required}}\n" + lst(X + "admin_panel.functions") + "\n\n" +
+          "".join(f"## {n}. {t}\n" + lst(X + k) + "\n\n" for n, (k, t) in enumerate([
+              ("ai_features", "AI-функции"), ("notifications", "Уведомления"), ("analytics", "Аналитика"), ("security", "Безопасность"),
+              ("technology_stack", "Технологии"), ("technical_risks", "Технические риски"), ("missing_information", "Чего не хватает"),
+              ("questions_for_client", "Вопросы клиенту (по приоритету)"), ("required_specialists", "Нужные специалисты")], start=13)) +
+          "## 22. Аутентификация и хостинг\n- Аутентификация: {{142.authentication}}\n- Хостинг: {{142.hosting}}\n\n"
+          "## 23. Оценка\nСложность: {{142.complexity}} · {{142.estimated_hours_min}}–{{142.estimated_hours_max}} ч (диапазон, оценка Architect)\n\n"
+          "## 24. Заметки архитектора\n{{142.architecture_notes}}\n")
+    SUMMARY = ("📋 ТЗ " + LEADK + " · {{142.complexity}} · ⏱ {{142.estimated_hours_min}}–{{142.estimated_hours_max}} ч\n"
+               "{{substring(142.project_summary; 0; 700)}}\n\nMVP:\n• {{join(slice(142.mvp; 0; 6); newline + \"• \")}}\n\nПолное ТЗ — в файле .md ниже.")
+    NOTREADY = lambda mid, what: answer(mid, what + " ещё не готово (нужен ✅ Approve и завершённый Architect + Sales).")
+    doc = m(146, "telegram:SendDocument", 1, {"chatId": OWNER, "sendType": "send_bydata", "filename": "TZ_" + LEADK + ".md",
+            "data": "{{toBinary(144.md)}}", "caption": "ТЗ " + LEADK + " — черновик Architect (не отправлено клиенту)", "contentType": "text/plain"},
+            {"__IMTCONN__": CONN_TG})
+    doc["onerror"] = ignore(646)
+    routes.append([ds_get(140, S_LEADS, LEADK, name="📋 Full ТЗ", conds=[act("ft")]),
+                   router(141, [
+                       [m(142, "json:ParseJSON", 1, {"json": "{{140.architect_json}}"}, {"type": DS_ARCH}, onerror=ignore(642),
+                          name="ТЗ есть", conds=[[c("{{140.architect_json}}", "exist")]]),
+                        answer(143, "ТЗ"), setvars(144, [("md", MD)]),
+                        tg(145, "sendMessage", [("chat_id", OWNER), ("text", SUMMARY)]), doc],
+                       [dict(NOTREADY(147, "ТЗ"), filter=flt("ТЗ нет", [[c("{{140.architect_json}}", "notexist")]]))]])])
+    PK = lambda k, t: ("📦 " + t + " — {{152.packages." + k + ".price}} € · {{ifempty(152.packages." + k + ".timeline; \"срок ?\")}}\n"
+                       "✅ {{join(slice(152.packages." + k + ".included; 0; 8); \"; \")}}\n🚫 {{join(slice(152.packages." + k + ".excluded; 0; 5); \"; \")}}\n\n")
+    OFFER = ("💰 КП " + LEADK + " (наша оценка, не бюджет клиента)\n"
+             "Себестоимость ≈ {{152.estimated_cost}} € · рекомендуем {{152.recommended_price}} € · цель {{152.target_price}} € · минимум {{152.minimum_acceptable_price}} €\n"
+             "{{substring(152.price_reasoning; 0; 500)}}\n\n" + PK("basic", "Basic") + PK("professional", "Professional") + PK("premium", "Premium") +
+             "📈 Win {{152.win_probability}}% — {{152.win_probability_reason}}\n"
+             "🏦 Потенциал {{152.commercial_potential}} — {{152.commercial_potential_reason}}\n"
+             "Выручка: проект {{ifempty(152.potential_revenue; \"UNKNOWN\")}} · фаза 2 {{ifempty(152.phase_2_revenue; \"UNKNOWN\")}} · "
+             "поддержка {{ifempty(152.maintenance_revenue; \"UNKNOWN\")}} · upsell {{ifempty(152.upsell_revenue; \"UNKNOWN\")}}\n"
+             "➕ Upsells: {{ifempty(join(152.upsells; \"; \"); \"—\")}}\n"
+             "📎 Допущения: {{ifempty(join(slice(152.assumptions; 0; 5); \"; \"); \"—\")}}")
+    routes.append([ds_get(150, S_LEADS, LEADK, name="💰 Offer", conds=[act("of")]),
+                   router(151, [
+                       [m(152, "json:ParseJSON", 1, {"json": "{{150.sales_json}}"}, {"type": DS_SALES}, onerror=ignore(652),
+                          name="КП есть", conds=[[c("{{150.sales_json}}", "exist")]]),
+                        setvars(156, [("t", OFFER)]), answer(153, "Offer"),
+                        tg(154, "sendMessage", [("chat_id", OWNER), ("text", "{{substring(156.t; 0; 4000)}}")])],
+                       [dict(NOTREADY(155, "КП"), filter=flt("КП нет", [[c("{{150.sales_json}}", "notexist")]]))]])])
+    routes.append([ds_get(160, S_LEADS, LEADK, name="💬 Client Message", conds=[act("cm")]),
+                   router(161, [
+                       [answer(162, "Client message", name="Есть", conds=[[c("{{160.client_message}}", "exist")]]),
+                        tg(163, "sendMessage", [("chat_id", OWNER), ("text",
+                           "💬 Сообщение клиенту ({{ifempty(160.language; \"?\")}}) — отправляете только вы, вручную:\n\n"
+                           "{{substring(160.client_message; 0; 1800)}}\n\n🇷🇺 Перевод:\n{{substring(160.client_message_ru; 0; 1800)}}")])],
+                       [dict(NOTREADY(164, "Сообщение"), filter=flt("Нет", [[c("{{160.client_message}}", "notexist")]]))]])])
+    routes.append([ds_get(170, S_LEADS, LEADK, name="❓ Questions", conds=[act("qs")]),
+                   router(171, [
+                       [answer(172, "Questions", name="Есть", conds=[[c("{{170.client_questions}}", "exist")]]),
+                        tg(173, "sendMessage", [("chat_id", OWNER), ("text",
+                           "❓ Вопросы клиенту " + LEADK + " (по приоритету):\n{{substring(170.client_questions; 0; 2500)}}\n\n"
+                           "🧩 Чего не хватает:\n{{ifempty(substring(170.missing_information; 0; 1200); \"—\")}}")])],
+                       [dict(NOTREADY(174, "Вопросы"), filter=flt("Нет", [[c("{{170.client_questions}}", "notexist")]]))]])])
+    # 🔍 More Analysis — 1 углублённый прогон Architect + Sales на лид
+    can_more = [c("{{180.sales_json}}", "exist"), c('{{ifempty(180.more_analysis_at; "none")}}', "text:equal", "none")]
+    routes.append([ds_get(180, S_LEADS, LEADK, name="🔍 More Analysis", conds=[act("mx")]),
+                   router(181, [
+                       [setvars(182, [("run", "{{uuid}}")], name="Ещё не было", conds=[can_more]),
+                        ds_upd(183, S_LEADS, LEADK, {"more_analysis_at": "{{now}}", "architect_run_id": "{{182.run}}", "updated_at": "{{now}}"}, upsert=False),
+                        dec(184, "MORE_ANALYSIS_REQUESTED"), ev(185, LEADK, "MORE_ANALYSIS_REQUESTED", "deep re-run {{182.run}}"),
+                        answer(186, "Углублённый анализ запущен"),
+                        tg(187, "sendMessage", [("chat_id", OWNER), ("text", "🔍 " + LEADK + ": углублённый прогон Architect + Sales запущен "
+                                                "(единственный для этого лида). Пришлю новую карточку через ~1–3 мин.")]),
+                        call11(188, "{{182.run}}", "more")],
+                       [answer(189, "Углублённый анализ уже был (1 раз на лид) или КП ещё не готово.", name="Нельзя",
+                               conds=negate_each(can_more))]])])
+    st = lambda base, label, status, action, extra, emo: [
+        ds_get(base, S_LEADS, LEADK, name=label, conds=[act(action)]),
+        ds_upd(base + 1, S_LEADS, LEADK, dict({"status": status, "status_at": "{{now}}", "updated_at": "{{now}}"}, **extra), upsert=False),
+        dec(base + 2, status), ev(base + 3, LEADK, "OWNER_" + status, "button", old="{{" + str(base) + ".status}}", new=status),
+        answer(base + 4, emo)]
+    routes.append(st(200, "📞 Contacted", "CONTACTED", "ct", {"contacted_at": "{{now}}"}, "📞 Contacted (бот клиенту ничего не отправлял)"))
+    routes.append(st(210, "🏆 Won", "WON", "wn", {"won_at": "{{now}}", "deal_amount_eur": "{{210.recommended_price}}"}, "🏆 Won") +
+                  [tg(215, "sendMessage", [("chat_id", OWNER), ("text", "🏆 " + LEADK + " — WON. Сумма сделки = рекомендованная цена: "
+                                           "{{ifempty(210.recommended_price; \"не задана\")}} €.\nИсправить: /won " + LEADK + " <сумма в EUR>")])])
+    routes.append(st(240, "📦 Archive", "ARCHIVED", "ar", {}, "📦 В архиве"))
+    LOST = [("1", "💸 Дорого для клиента"), ("2", "🤝 Выбрали другого"), ("3", "🔇 Клиент пропал"), ("4", "🚫 Проект отменён"), ("5", "❓ Другое")]
+    routes.append([answer(220, "Причина?", name="❌ Lost → причины", conds=[act("ls")]),
+                   tg(221, "sendMessage", [("chat_id", OWNER), ("text", "❌ " + LEADK + ": почему проиграли?"),
+                      ("reply_markup", KB([[{"text": t, "callback_data": "lr|" + LEADK + "|" + k}] for k, t in LOST]))])])
+    LRS = "switch(3.r; " + "; ".join(f'"{k}"; "{t}"' for k, t in LOST) + '; "Другое")'
+    routes.append([ds_get(230, S_LEADS, LEADK, name="❌ Lost с причиной", conds=[act("lr")]),
+                   ds_upd(231, S_LEADS, LEADK, {"status": "LOST", "lost_reason": "{{" + LRS + "}}", "status_at": "{{now}}", "updated_at": "{{now}}"}, upsert=False),
+                   dec(232, "LOST", "{{" + LRS + "}}"),
+                   ev(233, LEADK, "OWNER_LOST", "{{" + LRS + "}}", old="{{230.status}}", new="LOST"),
+                   answer(234, "Lost"),
+                   tg(235, "editMessageReplyMarkup", [("chat_id", OWNER), ("message_id", "{{3.mid}}"),
+                      ("reply_markup", KB([[{"text": "❌ Lost: {{" + LRS + "}}", "callback_data": "z"}]]))])])
+    # /won LEAD СУММА — исправление суммы сделки
+    routes.append([setvars(250, [("wl", '{{get(split(3.txt; " "); 2)}}'), ("wa", '{{replace(get(split(3.txt; " "); 3); ","; ".")}}')],
+                           name="/won", conds=[cmd("/won")]),
+                   ds_get(251, S_LEADS, "{{ifempty(250.wl; \"-\")}}"),
+                   router(252, [
+                       [ds_upd(253, S_LEADS, "{{250.wl}}", {"status": "WON", "deal_amount_eur": "{{250.wa}}", "won_at": "{{ifempty(251.won_at; now)}}",
+                                                            "status_at": "{{now}}", "updated_at": "{{now}}"}, upsert=False,
+                               name="Лид есть, сумма — число", conds=[[c("{{251.status}}", "exist"), c("{{250.wa}}", "text:pattern", NUM_RE)]]),
+                        ev(254, "{{250.wl}}", "DEAL_AMOUNT_SET", "owner /won {{250.wa}} EUR", old="{{251.status}}", new="WON"),
+                        tg(255, "sendMessage", [("chat_id", OWNER), ("text", "🏆 {{250.wl}}: сумма сделки {{250.wa}} € сохранена (WON).")])],
+                       [tg(256, "sendMessage", [("chat_id", OWNER), ("text", "Формат: /won LH-YYYYMMDD-xxxxxx 1500 (лид не найден или сумма не число).")],
+                           name="Ошибка формата", conds=[[c("{{251.status}}", "notexist")], [c("{{250.wa}}", "text:notpattern", NUM_RE)]])]])])
     routes.append([answer(130, "", name="Служебная кнопка", conds=[act("z")])])
     routes.append([answer(131, "Эта кнопка из старой системы и больше не используется.", name="Неизвестная кнопка",
-                          conds=[CB + [c("{{3.a}}", "text:notequal", a) for a in ("ap", "rj", "rr", "ma", "z")]])])
+                          conds=[CB + [c("{{3.a}}", "text:notequal", a) for a in ("ap", "rj", "rr", "ma", "z", "ft", "of", "cm", "qs", "mx", "ct", "wn", "ls", "lr", "ar")]])])
     flow = [hook(1, HOOK20), ds_get(2, S_SET, "main"), v, router(4, routes, 600, 0)]
     return {"name": "LH-20 Lead Hunter — Telegram Owner Panel", "metadata": {"version": 1, "instant": True}, "flow": flow}
 
@@ -526,6 +661,205 @@ def lh10():
             ds_upd(4, S_SET, "day_" + DAY_S, {"day": DAY_S}), ds_get(5, S_SET, "day_" + DAY_S),
             router(6, [process, over], 900, 0)]
     return {"name": "LH-10 Lead Hunter — Lead Pipeline (Analyst)", "metadata": {"version": 1, "instant": True}, "flow": flow}
+
+
+# ================= LH-11: Architect + Sales (этап 3) =================
+NUM_RE = "^[0-9]+(\\.[0-9]+)?$"
+NEG = {"text:equal": "text:notequal", "text:notequal": "text:equal", "text:pattern": "text:notpattern",
+       "number:lessorequal": "number:greater", "number:greater": "number:lessorequal", "number:less": "number:greaterorequal",
+       "number:greaterorequal": "number:less", "exist": "notexist"}
+def negate_each(conds): return [[dict(x, o=NEG[x["o"]])] for x in conds]
+def clean_json(ref):  # снять ```-обёртку и минифицировать (переводы строк вне строк JSON)
+    return ('{{replace(trim(replace(replace(' + ref + '; "/^\\s*```(json)?/"; ""); "/```\\s*$/"; "")); "/\\n\\s*/g"; "")}}')
+def resume(mid, mapper): return [{"id": mid, "module": "builtin:Resume", "version": 1, "metadata": meta(0, 0), "mapper": mapper}]
+LH11_KB = lambda L: KB([[{"text": "📋 Full ТЗ", "callback_data": "ft|" + L}, {"text": "💰 Offer", "callback_data": "of|" + L}],
+                        [{"text": "💬 Client Message", "callback_data": "cm|" + L}, {"text": "❓ Questions", "callback_data": "qs|" + L}],
+                        [{"text": "🔍 More Analysis", "callback_data": "mx|" + L}, {"text": "📞 Contacted", "callback_data": "ct|" + L}],
+                        [{"text": "🏆 Won", "callback_data": "wn|" + L}, {"text": "❌ Lost", "callback_data": "ls|" + L},
+                         {"text": "📦 Archive", "callback_data": "ar|" + L}]])
+RETRY_KB = lambda L: KB([[{"text": "🔁 Повторить Architect + Sales", "callback_data": "ap|" + L}]])
+
+def lh11():
+    L = "{{1.lead_id}}"
+    TOK = [c("{{1.token}}", "text:equal", "{{2.internal_token}}")]
+    PIN, POUT = "ifempty(2.sonnet_price_in_mtok; 2)", "ifempty(2.sonnet_price_out_mtok; 10)"
+    cost = lambda m: ("if(" + m + ".usage.input_tokens; " + m + ".usage.input_tokens * " + PIN + " / 1000000 + "
+                      "ifempty(" + m + ".usage.output_tokens; 0) * " + POUT + " / 1000000; 0)")
+    budget_txt = ('{{if(8.budget_amount; 8.budget_amount + " " + 8.budget_currency + " (" + ifempty(8.budget_type; "unknown") + ")"; "not stated")}}')
+    lead_block = ('LEAD (approved by the owner; analyst summary + original text):\n'
+                  '{"lead_id":"{{1.lead_id}}","title":"{{8.title}}","source":"{{8.source}}","source_url":"{{ifempty(8.source_url; "null")}}",'
+                  '"language":"{{ifempty(8.language; "unknown")}}","country":"{{ifempty(8.country; "unknown")}}","bot_type":"{{ifempty(8.bot_type; "unknown")}}",'
+                  '"kind":"{{8.kind}}","client_budget_from_lead":"' + budget_txt + '","analyst_grade":"{{8.grade}}","analyst_score":"{{8.score}}"}\n'
+                  '<description_ru>\n{{8.description_ru}}\n</description_ru>\n'
+                  '<description_original>\n{{8.description_original}}\n</description_original>\n')
+    deep_a = ('{{if(1.mode = "more"; "DEEP ANALYSIS MODE (owner pressed More Analysis; the only allowed re-run for this lead): '
+              're-check every item of PREVIOUS_ANALYSIS against the lead text, expand technical_risks and missing_information, '
+              'make questions_for_client sharper and strictly prioritized, refine the hour range. Same output format. PREVIOUS_ANALYSIS: "; "")}}'
+              '{{if(1.mode = "more"; 8.architect_json; "")}}\n')
+    deep_s = ('{{if(1.mode = "more"; "DEEP ANALYSIS MODE: the spec was refined; re-check prices, packages and win probability. PREVIOUS_OFFER: "; "")}}'
+              '{{if(1.mode = "more"; 8.sales_json; "")}}\n')
+    # ---------- Architect
+    started = ev(12, L, "ARCHITECT_STARTED", "run {{1.run_id}} · mode {{ifempty(1.mode; \"normal\")}} · prompt " + ARCH_VERSION, old="{{8.status}}", new="{{8.status}}")
+    t0 = setvars(13, [("t0", "{{now}}")])
+    arch = m(14, "anthropic-claude:simpleTextPrompt", 1,
+             {"model": "claude-sonnet-5-5", "textPrompt": ARCH_PROMPT + "\n\n" + lead_block + deep_a +
+              "Return ONLY the minified JSON object for lead_id {{1.lead_id}}.",
+              "max_tokens": "{{ifempty(2.architect_max_tokens; 8000)}}"},
+             onerror=resume(514, {"result": "", "stop_reason": "error", "usage": {"input_tokens": 0, "output_tokens": 0}}))
+    aj = setvars(15, [("aj", clean_json("14.result"))])
+    pa = m(16, "json:ParseJSON", 1, {"json": "{{15.aj}}"}, {"type": DS_ARCH}, onerror=resume(516, {"lead_id": ""}))
+    A = "16."
+    va = [c("{{16.lead_id}}", "text:equal", "{{1.lead_id}}"), c("{{16.complexity}}", "text:pattern", "^(S|M|L|XL)$"),
+          c("{{16.estimated_hours_min}}", "text:pattern", NUM_RE), c("{{16.estimated_hours_max}}", "text:pattern", NUM_RE),
+          c("{{16.estimated_hours_min}}", "number:lessorequal", "{{16.estimated_hours_max}}"),
+          c("{{14.stop_reason}}", "text:notequal", "max_tokens"), c("{{16.project_summary}}", "exist"),
+          c("{{16.telegram_solution.bot}}", "exist"), c("{{16.database.required}}", "exist"), c("{{16.admin_panel.required}}", "exist")] + \
+         [c("{{length(16." + k + ")}}", "number:greater", "0") for k in ("functional_requirements", "mvp", "technology_stack", "questions_for_client")]
+    acost = cost("14")
+    a_vars = setvars(18, [("acost", "{{" + acost + "}}"),
+                          ("q", '{{"• " + join(slice(16.questions_for_client; 0; 10); newline + "• ")}}'),
+                          ("miss", '{{if(length(16.missing_information) > 0; "• " + join(16.missing_information; newline + "• "); "")}}')],
+                     name="ТЗ валидно", conds=[va])
+    a_save = ds_upd(19, S_LEADS, L, {"architect_json": "{{15.aj}}", "complexity": "{{16.complexity}}",
+                    "estimated_hours_min": "{{16.estimated_hours_min}}", "estimated_hours_max": "{{16.estimated_hours_max}}",
+                    "missing_information": "{{18.miss}}", "client_questions": "{{18.q}}", "status": "TECHNICAL_SPEC_READY",
+                    "status_at": "{{now}}", "error_code": "", "error_message": "", "updated_at": "{{now}}"}, upsert=False)
+    run = lambda mid, agent, mod, t_start, status, costx, version, err=None, **kw: ds_add(mid, S_LOG, "{{uuid}}", dict({
+        "table": "runs", "run_id": "{{1.run_id}}", "lead_id": L, "agent": agent,
+        "model": "{{ifempty(" + mod + ".model; \"claude-sonnet-5-5\")}}", "started_at": t_start, "finished_at": "{{now}}",
+        "input_tokens": "{{" + mod + ".usage.input_tokens}}", "output_tokens": "{{" + mod + ".usage.output_tokens}}",
+        "estimated_cost_usd": "{{" + costx + "}}", "status": status, "attempt": "{{if(1.mode = \"more\"; 2; 1)}}",
+        "prompt_version": version, "created_at": "{{now}}", "day": DAY_S}, **(err or {})), **kw)
+    a_run = run(20, "architect", "14", "{{13.t0}}", "OK", "18.acost", ARCH_VERSION)
+    a_done = ev(21, L, "ARCHITECT_COMPLETED", "complexity {{16.complexity}}, {{16.estimated_hours_min}}-{{16.estimated_hours_max}} h, "
+                "tokens {{14.usage.input_tokens}}/{{14.usage.output_tokens}}, ${{18.acost}}", old="{{8.status}}", new="TECHNICAL_SPEC_READY")
+    s_start = ev(22, L, "SALES_STARTED", "run {{1.run_id}} · prompt " + SALES_VERSION, old="TECHNICAL_SPEC_READY", new="TECHNICAL_SPEC_READY")
+    # ---------- Sales
+    settings_block = ('SETTINGS: {"currency":"EUR","minimum_order_eur":{{ifempty(2.minimum_order_eur; 500)}},'
+                      '"internal_hourly_rate_eur":"{{ifempty(2.sales_hourly_rate_eur; "UNKNOWN")}}"}\n')
+    sales = m(23, "anthropic-claude:simpleTextPrompt", 1,
+              {"model": "claude-sonnet-5-5", "textPrompt": SALES_PROMPT + "\n\n" + settings_block + lead_block +
+               "ARCHITECT_SPEC (JSON):\n{{15.aj}}\n" + deep_s + "Return ONLY the minified JSON object for lead_id {{1.lead_id}}.",
+               "max_tokens": "{{ifempty(2.sales_max_tokens; 4000)}}"},
+              onerror=resume(523, {"result": "", "stop_reason": "error", "usage": {"input_tokens": 0, "output_tokens": 0}}))
+    sj = setvars(24, [("sj", clean_json("23.result")), ("t1", "{{now}}")])
+    ps = m(25, "json:ParseJSON", 1, {"json": "{{24.sj}}"}, {"type": DS_SALES}, onerror=resume(525, {"lead_id": ""}))
+    P = lambda k: "{{25." + k + "}}"
+    prices = ["estimated_cost", "recommended_price", "target_price", "minimum_acceptable_price",
+              "packages.basic.price", "packages.professional.price", "packages.premium.price"]
+    vs = [c(P("lead_id"), "text:equal", "{{1.lead_id}}")] + [c(P(k), "text:pattern", NUM_RE) for k in prices] + [
+          c(P("minimum_acceptable_price"), "number:greaterorequal", "{{ifempty(2.minimum_order_eur; 500)}}"),
+          c(P("minimum_acceptable_price"), "number:lessorequal", P("recommended_price")),
+          c(P("recommended_price"), "number:lessorequal", P("target_price")),
+          c(P("packages.basic.price"), "number:less", P("packages.professional.price")),
+          c(P("packages.professional.price"), "number:less", P("packages.premium.price")),
+          c(P("win_probability"), "text:pattern", "^(100|[0-9]{1,2})(\\.0+)?$"),
+          c(P("commercial_potential"), "text:pattern", "^(LOW|MEDIUM|HIGH)$"),
+          c(P("client_message"), "exist"), c(P("client_message_ru"), "exist"),
+          c("{{23.stop_reason}}", "text:notequal", "max_tokens")]
+    scost = cost("23")
+    s_vars = setvars(27, [("scost", "{{" + scost + "}}"), ("total", "{{18.acost + " + scost + "}}"),
+                          ("ups", '{{join(slice(25.upsells; 0; 5); "; ")}}')], name="КП валидно", conds=[vs])
+    CARD = ("💼 КП готово · {{1.lead_id}}{{if(1.mode = \"more\"; \" · 🔍 углублённый анализ\"; \"\")}}\n"
+            "📌 {{8.title}}\n"
+            "🎯 Тип: {{ifempty(8.bot_type; \"unknown\")}} · 🌍 {{ifempty(8.country; \"страна неизвестна\")}} · 🌐 {{ifempty(8.language; \"?\")}}\n"
+            "💰 Бюджет клиента: {{if(8.budget_amount; 8.budget_amount + \" \" + 8.budget_currency + \" (\" + ifempty(8.budget_type; \"тип ?\") + "
+            "if(8.budget_eur; \", ≈ \" + 8.budget_eur + \" EUR\"; \"\") + \"; источник: текст заявки)\"; \"не указан в заявке\")}}\n"
+            "📊 Score {{8.score}}/100 · {{8.grade}} · сложность {{16.complexity}} · ⏱ {{16.estimated_hours_min}}–{{16.estimated_hours_max}} ч\n\n"
+            "💵 Наша оценка (не бюджет клиента):\n"
+            "себестоимость ≈ {{25.estimated_cost}} € · рекомендуем {{25.recommended_price}} € · цель {{25.target_price}} € · минимум {{25.minimum_acceptable_price}} €\n"
+            "📦 Basic {{25.packages.basic.price}} € · Professional {{25.packages.professional.price}} € · Premium {{25.packages.premium.price}} €\n"
+            "📈 Win {{25.win_probability}}% — {{25.win_probability_reason}}\n"
+            "🏦 Потенциал {{25.commercial_potential}} · фаза 2: {{ifempty(25.phase_2_revenue; \"UNKNOWN\")}} · поддержка: {{ifempty(25.maintenance_revenue; \"UNKNOWN\")}}\n"
+            "➕ Upsells: {{ifempty(27.ups; \"—\")}}\n\n"
+            "📝 ТЗ кратко: {{substring(16.project_summary; 0; 450)}}\n"
+            "⚠️ Риски:\n• {{join(slice(16.technical_risks; 0; 3); newline + \"• \")}}\n"
+            "❓ Главные вопросы:\n• {{join(slice(16.questions_for_client; 0; 3); newline + \"• \")}}\n\n"
+            "✉️ Первое сообщение ({{ifempty(25.client_language; 8.language)}}):\n{{substring(25.client_message; 0; 700)}}\n\n"
+            "Клиенту ничего не отправлено. 🆔 {{1.lead_id}}")
+    card = setvars(28, [("card", CARD)])
+    s_save = ds_upd(29, S_LEADS, L, {
+        "sales_json": "{{24.sj}}", "recommended_price": P("recommended_price"), "target_price": P("target_price"),
+        "minimum_acceptable_price": P("minimum_acceptable_price"), "commercial_potential": P("commercial_potential"),
+        "win_probability": P("win_probability"), "basic_price": P("packages.basic.price"),
+        "professional_price": P("packages.professional.price"), "premium_price": P("packages.premium.price"),
+        "client_message": P("client_message"), "client_message_ru": P("client_message_ru"), "upsells": "{{27.ups}}",
+        "phase_2_revenue": '{{ifempty(25.phase_2_revenue; "UNKNOWN")}}', "maintenance_revenue": '{{ifempty(25.maintenance_revenue; "UNKNOWN")}}',
+        "sales_run_id": "{{1.run_id}}", "status": "COMMERCIAL_READY", "status_at": "{{now}}", "updated_at": "{{now}}"}, upsert=False)
+    s_run = run(30, "sales", "23", "{{24.t1}}", "OK", "27.scost", SALES_VERSION)
+    day_cost = lambda mid, add: ds_upd(mid, S_SET, "day_" + DAY_S, {"day": DAY_S, "cost_usd": "{{ifempty(10.cost_usd; 0) + " + add + "}}"})
+    s_done = ev(32, L, "SALES_COMPLETED", "rec {{25.recommended_price}} €, win {{25.win_probability}}%, tokens {{23.usage.input_tokens}}/{{23.usage.output_tokens}}, ${{27.scost}}",
+                old="TECHNICAL_SPEC_READY", new="COMMERCIAL_READY")
+    send = tg(33, "sendMessage", [("chat_id", OWNER), ("text", "{{substring(28.card; 0; 3500)}}"), ("reply_markup", LH11_KB(L))], onerror=False)
+    send["onerror"] = [ds_upd(533, S_LEADS, L, {"status": "ERROR", "error_code": "TELEGRAM_SEND", "error_message": "commercial card sendMessage failed",
+                              "status_at": "{{now}}"}, upsert=False),
+                       ev(633, L, "ERROR", "TELEGRAM_SEND: commercial card not delivered", old="COMMERCIAL_READY", new="ERROR"),
+                       {"id": 733, "module": "builtin:Ignore", "version": 1, "mapper": None, "metadata": meta(0, 0)}]
+    sent = ds_upd(34, S_LEADS, L, {"status": "SENT_TO_TELEGRAM", "commercial_message_id": "{{33.body.result.message_id}}", "status_at": "{{now}}"}, upsert=False)
+    e_sent = ev(35, L, "COMMERCIAL_SENT_TO_OWNER", "message {{33.body.result.message_id}}", old="COMMERCIAL_READY", new="SENT_TO_TELEGRAM")
+    spent = "(ifempty(10.cost_usd; 0) + 27.total)"
+    budget_r = router(36, [
+        [ds_upd(37, S_SET, "main", {"warned_80": DAY_S}, name="80 % бюджета",
+                conds=[[c("{{" + spent + "}}", "number:greaterorequal", "{{2.daily_budget_usd * 0.8}}"),
+                        c("{{" + spent + "}}", "number:less", "{{2.daily_budget_usd}}"), c("{{2.warned_80}}", "text:notequal", DAY_S)]]),
+         tg(38, "sendMessage", [("chat_id", OWNER), ("text", "⚠️ Израсходовано 80 % дневного бюджета Claude: ${{formatNumber(" + spent + "; 4; \".\"; \"\")}} из ${{2.daily_budget_usd}}.")])],
+        [ds_upd(39, S_SET, "main", {"paused": True, "paused_reason": "дневной бюджет исчерпан", "updated_at": "{{now}}"},
+                name="100 % бюджета", conds=[[c("{{" + spent + "}}", "number:greaterorequal", "{{2.daily_budget_usd}}")]]),
+         ev(40, "", "BUDGET_PAUSED", "spent ${{" + spent + "}}"),
+         tg(41, "sendMessage", [("chat_id", OWNER), ("text", "⛔ Дневной бюджет Claude исчерпан (${{2.daily_budget_usd}}). AI-обработка на паузе. /resume — продолжить.")])]])
+    s_ok = [s_vars, card, s_save, s_run, day_cost(31, "27.total"), s_done, send, sent, e_sent, budget_r]
+    s_code = ('{{if(23.stop_reason = "error"; "MODEL_ERROR"; if(23.stop_reason = "max_tokens"; "TRUNCATED"; '
+              'if(23.stop_reason = "refusal"; "REFUSAL"; if(25.lead_id; "VALIDATION_FAILED"; "JSON_INVALID"))))}}')
+    s_bad = [run(42, "sales", "23", "{{24.t1}}", "FAILED", scost, SALES_VERSION,
+                 {"error_code": s_code, "error_message": "{{substring(ifempty(23.result; \"(empty)\"); 0; 300)}}"},
+                 name="КП невалидно", conds=negate_each(vs)),
+             day_cost(43, "18.acost + " + scost),
+             ds_upd(44, S_LEADS, L, {"status": "ERROR", "error_code": "SALES_FAILED", "error_message": s_code,
+                    "status_at": "{{now}}", "updated_at": "{{now}}"}, upsert=False),
+             ev(45, L, "SALES_ERROR", s_code + " (run {{1.run_id}})", old="TECHNICAL_SPEC_READY", new="ERROR"),
+             tg(46, "sendMessage", [("chat_id", OWNER), ("text", "⚠️ {{1.lead_id}}: Sales не дал корректное КП (" + s_code + "). ТЗ сохранено, статус ERROR. "
+                                     "Повторить — кнопка ниже (новый прогон Architect + Sales, ≈ $0,1)."), ("reply_markup", RETRY_KB(L))])]
+    a_ok = [a_vars, a_save, a_run, a_done, s_start, sales, sj, ps, router(26, [s_ok, s_bad], 3600, 0)]
+    a_code = ('{{if(14.stop_reason = "error"; "MODEL_ERROR"; if(14.stop_reason = "max_tokens"; "TRUNCATED"; '
+              'if(14.stop_reason = "refusal"; "REFUSAL"; if(16.lead_id; "VALIDATION_FAILED"; "JSON_INVALID"))))}}')
+    a_bad = [run(47, "architect", "14", "{{13.t0}}", "FAILED", acost, ARCH_VERSION,
+                 {"error_code": a_code, "error_message": "{{substring(ifempty(14.result; \"(empty)\"); 0; 300)}}"},
+                 name="ТЗ невалидно", conds=negate_each(va)),
+             day_cost(48, acost),
+             ds_upd(49, S_LEADS, L, {"status": "ERROR", "error_code": "ARCHITECT_FAILED", "error_message": a_code,
+                    "status_at": "{{now}}", "updated_at": "{{now}}"}, upsert=False),
+             ev(50, L, "ARCHITECT_ERROR", a_code + " (run {{1.run_id}})", old="{{8.status}}", new="ERROR"),
+             tg(51, "sendMessage", [("chat_id", OWNER), ("text", "⚠️ {{1.lead_id}}: Architect не дал корректное ТЗ (" + a_code + "). Статус ERROR, лид сохранён. "
+                                     "Повторить — кнопка ниже (≈ $0,1)."), ("reply_markup", RETRY_KB(L))])]
+    # ---------- маршрутизация: run_id из LH-20 = защита от повторов; бюджет и пауза
+    base = [c("{{1.run_id}}", "exist"), c("{{8.architect_run_id}}", "text:equal", "{{1.run_id}}"),
+            c('{{ifempty(8.sales_run_id; "none")}}', "text:notequal", "{{1.run_id}}")]
+    modes = [[c("{{1.mode}}", "text:notequal", "more"), c("{{8.status}}", "text:equal", "APPROVED")], [c("{{1.mode}}", "text:equal", "more")]]
+    ok_b = [c("{{2.paused}}", "text:notequal", "true"), c("{{ifempty(10.cost_usd; 0)}}", "number:less", "{{2.daily_budget_usd}}")]
+    started["filter"] = flt("Запуск: run_id совпадает, бюджет есть", [base + md + ok_b for md in modes])
+    run_flow = [started, t0, arch, aj, pa, router(17, [a_ok, a_bad], 2400, 0)]
+    over_groups = [base + md + [x] for md in modes for x in (c("{{2.paused}}", "text:equal", "true"),
+                                                               c("{{ifempty(10.cost_usd; 0)}}", "number:greaterorequal", "{{2.daily_budget_usd}}"))]
+    over = [ds_upd(52, S_LEADS, L, {"status": "ERROR", "error_code": "BUDGET_OR_PAUSED", "error_message": "дневной бюджет исчерпан или пауза",
+                   "status_at": "{{now}}", "updated_at": "{{now}}"}, upsert=False, name="Пауза / бюджет исчерпан", conds=over_groups),
+            ev(53, L, "ARCHITECT_ERROR", "BUDGET_OR_PAUSED: spent ${{ifempty(10.cost_usd; 0)}} of ${{2.daily_budget_usd}}, paused={{2.paused}}", old="{{8.status}}", new="ERROR"),
+            tg(54, "sendMessage", [("chat_id", OWNER), ("text", "⏸ {{1.lead_id}}: Architect не запущен — AI на паузе или дневной бюджет Claude исчерпан "
+                                    "(${{formatNumber(ifempty(10.cost_usd; 0); 4; \".\"; \"\")}} из ${{2.daily_budget_usd}}). После /resume нажмите кнопку ниже."),
+                                   ("reply_markup", RETRY_KB(L))])]
+    main = [ds_get(8, S_LEADS, L, name="Внутренний токен", conds=[TOK]),
+            ds_upd(9, S_SET, "day_" + DAY_S, {"day": DAY_S}), ds_get(10, S_SET, "day_" + DAY_S),
+            router(11, [run_flow, over], 900, 0)]
+    # ---------- хранилище, вариант A (решение владельца T-0009): у LOST/ARCHIVED старше N дней очищаются тяжёлые поля
+    since = "{{addDays(now; 0 - ifempty(2.cleanup_days; 30))}}"
+    cleanup = [ds_search(4, S_LEADS, [[c("status", "text:equal", st), c("status_at", "date:less", since), c("architect_json", "exist")]
+                                      for st in ("LOST", "ARCHIVED")], limit=5, cont=False, name="Очистка (вариант A)", conds=[TOK]),
+               ds_upd(5, S_LEADS, "{{4.key}}", {"architect_json": "", "sales_json": "", "client_message": "", "client_message_ru": "",
+                      "card_text": "", "updated_at": "{{now}}"}, upsert=False),
+               ev(6, "{{4.key}}", "STORAGE_CLEANED", "variant A: architect_json, sales_json, client_message(_ru), card_text cleared ({{4.data.status}} > {{ifempty(2.cleanup_days; 30)}} d)")]
+    denied = [ev(7, "", "SECURITY_DENIED", 'LH-11: неверный internal token (token_present={{if(1.token; "yes"; "no")}})',
+                 name="Неверный токен", conds=[[c("{{1.token}}", "text:notequal", "{{2.internal_token}}")]])]
+    flow = [hook(1, HOOK11), ds_get(2, S_SET, "main"), router(3, [cleanup, denied, main], 300, 0)]
+    return {"name": "LH-11 Lead Hunter — Architect + Sales", "metadata": {"version": 1, "instant": True}, "flow": flow}
 
 
 def check(bp):
