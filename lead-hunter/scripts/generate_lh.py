@@ -433,7 +433,7 @@ def lh20():
                    ev(233, LEADK, "OWNER_LOST", "{{" + LRS + "}}", old="{{230.status}}", new="LOST"),
                    answer(234, "Lost"),
                    tg(235, "editMessageReplyMarkup", [("chat_id", OWNER), ("message_id", "{{3.mid}}"),
-                      ("reply_markup", KB([[{"text": "❌ Lost: {{" + LRS + "}}", "callback_data": "z"}]]))])])
+                      ("reply_markup", KB([[{"text": "❌ Lost — причина сохранена", "callback_data": "z"}]]))])])
     # /won LEAD СУММА — исправление суммы сделки
     routes.append([setvars(250, [("wl", '{{get(split(3.txt; " "); 2)}}'), ("wa", '{{replace(get(split(3.txt; " "); 3); ","; ".")}}')],
                            name="/won", conds=[cmd("/won")]),
