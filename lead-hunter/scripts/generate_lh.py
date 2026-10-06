@@ -289,8 +289,11 @@ def lh20():
     # --- ✅ Approve → защита от повтора → LH-11 (Architect + Sales), этап 3
     URL11X = "{{ifempty(2.lh11_url; \"" + URL11 + "\")}}"
     call11 = lambda mid, run, mode: http_form(mid, URL11X, [("token", "{{2.internal_token}}"), ("lead_id", LEADK), ("run_id", run), ("mode", mode)])
+    STALE = "{{addMinutes(now; -10)}}"  # «сторож»: APPROVED без движения > 10 мин = завис, повтор разрешён
+    AP_AT = '{{ifempty(90.approved_at; "2000-01-01T00:00:00.000Z")}}'
     can_run = [[c("{{90.status}}", "exist"), c('{{ifempty(90.architect_run_id; "none")}}', "text:equal", "none")],
-               [c("{{90.status}}", "exist"), c("{{90.status}}", "text:equal", "ERROR")]]
+               [c("{{90.status}}", "exist"), c("{{90.status}}", "text:equal", "ERROR")],
+               [c("{{90.status}}", "text:equal", "APPROVED"), c(AP_AT, "date:less", STALE)]]
     COLDW = '{{if(90.grade = "COLD"; newline + "⚠️ Grade COLD: Architect запущен по вашему решению."; if(90.grade = "REJECT"; newline + "⚠️ Grade REJECT: Architect запущен по вашему решению, проверьте риски."; ""))}}'
     routes.append([ds_get(90, S_LEADS, LEADK, name="✅ Approve", conds=[act("ap")]),
                    router(132, [
@@ -299,15 +302,18 @@ def lh20():
                                                     "architect_run_id": "{{133.run}}", "error_code": "", "error_message": "",
                                                     "updated_at": "{{now}}"}, upsert=False),
                         dec(92, "APPROVE"), ev(93, LEADK, "OWNER_APPROVED", "button · run {{133.run}}", old="{{90.status}}", new="APPROVED"),
+                        call11(134, "{{133.run}}", "normal"),  # D1: LH-11 до любых Telegram-вызовов
                         answer(94, "Approved → Architect + Sales"),
                         tg(95, "editMessageReplyMarkup", [("chat_id", OWNER), ("message_id", "{{3.mid}}"),
                                                           ("reply_markup", KB([[{"text": "✅ Approved · Architect работает", "callback_data": "z"}]]))]),
                         tg(96, "sendMessage", [("chat_id", OWNER), ("text", "✅ " + LEADK + " одобрен. Architect + Sales готовят ТЗ и КП (~1–3 мин), пришлю коммерческую карточку.\n"
-                                               "Клиенту ничего не отправляется." + COLDW)]),
-                        call11(134, "{{133.run}}", "normal")],
-                       [answer(135, "Уже одобрен: Architect уже запускался ({{ifempty(90.status; \"лид не найден\")}}). Повтор — только после ERROR.",
+                                               "Клиенту ничего не отправляется." + COLDW)])],
+                       [answer(135, "Уже одобрен: Architect уже запускался ({{ifempty(90.status; \"лид не найден\")}}). Повтор — после ERROR или если APPROVED завис > 10 мин.",
                                name="Повторный Approve — без запуска",
-                               conds=[[c('{{ifempty(90.architect_run_id; "none")}}', "text:notequal", "none"), c("{{90.status}}", "text:notequal", "ERROR")],
+                               conds=[[c('{{ifempty(90.architect_run_id; "none")}}', "text:notequal", "none"), c("{{90.status}}", "text:notequal", "ERROR"),
+                                       c("{{90.status}}", "text:notequal", "APPROVED")],
+                                      [c('{{ifempty(90.architect_run_id; "none")}}', "text:notequal", "none"), c("{{90.status}}", "text:equal", "APPROVED"),
+                                       c(AP_AT, "date:greaterorequal", STALE)],
                                       [c("{{90.status}}", "notexist")]])]])])
     REASONS = [("1", "💰 Too cheap"), ("2", "🎯 Not our profile"), ("3", "⚠️ Suspicious"), ("4", "🏗 Too complex"), ("5", "❌ Other")]
     routes.append([answer(100, "Причина?", name="❌ Reject → причины", conds=[act("rj")]),
@@ -400,18 +406,26 @@ def lh20():
                            "🧩 Чего не хватает:\n{{ifempty(substring(170.missing_information; 0; 1200); \"—\")}}")])],
                        [dict(NOTREADY(174, "Вопросы"), filter=flt("Нет", [[c("{{170.client_questions}}", "notexist")]]))]])])
     # 🔍 More Analysis — 1 углублённый прогон Architect + Sales на лид
-    can_more = [c("{{180.sales_json}}", "exist"), c('{{ifempty(180.more_analysis_at; "none")}}', "text:equal", "none")]
+    MX_DONE = c('{{ifempty(180.sales_run_id; "none")}}', "text:notequal", '{{ifempty(180.architect_run_id; "none")}}')  # углублённый прогон не завершён
+    MX_AT = '{{ifempty(180.more_analysis_at; "2000-01-01T00:00:00.000Z")}}'
+    MX_SET = c('{{ifempty(180.more_analysis_at; "none")}}', "text:notequal", "none")
+    can_more = [[c("{{180.sales_json}}", "exist"), c('{{ifempty(180.more_analysis_at; "none")}}', "text:equal", "none")],
+                [c("{{180.sales_json}}", "exist"), MX_SET, MX_DONE, c("{{180.status}}", "text:equal", "ERROR")],
+                [c("{{180.sales_json}}", "exist"), MX_SET, MX_DONE, c(MX_AT, "date:less", "{{addMinutes(now; -10)}}")]]
+    no_more = [[c("{{180.sales_json}}", "notexist")],
+               [MX_SET, c('{{ifempty(180.sales_run_id; "none")}}', "text:equal", '{{ifempty(180.architect_run_id; "none")}}')],
+               [MX_SET, c("{{180.status}}", "text:notequal", "ERROR"), c(MX_AT, "date:greaterorequal", "{{addMinutes(now; -10)}}")]]
     routes.append([ds_get(180, S_LEADS, LEADK, name="🔍 More Analysis", conds=[act("mx")]),
                    router(181, [
-                       [setvars(182, [("run", "{{uuid}}")], name="Ещё не было", conds=[can_more]),
+                       [setvars(182, [("run", "{{uuid}}")], name="Ещё не было (или прошлый завис/ERROR)", conds=can_more),
                         ds_upd(183, S_LEADS, LEADK, {"more_analysis_at": "{{now}}", "architect_run_id": "{{182.run}}", "updated_at": "{{now}}"}, upsert=False),
                         dec(184, "MORE_ANALYSIS_REQUESTED"), ev(185, LEADK, "MORE_ANALYSIS_REQUESTED", "deep re-run {{182.run}}"),
+                        call11(188, "{{182.run}}", "more"),  # D1: LH-11 до любых Telegram-вызовов
                         answer(186, "Углублённый анализ запущен"),
                         tg(187, "sendMessage", [("chat_id", OWNER), ("text", "🔍 " + LEADK + ": углублённый прогон Architect + Sales запущен "
-                                                "(единственный для этого лида). Пришлю новую карточку через ~1–3 мин.")]),
-                        call11(188, "{{182.run}}", "more")],
+                                                "(единственный для этого лида). Пришлю новую карточку через ~1–3 мин.")])],
                        [answer(189, "Углублённый анализ уже был (1 раз на лид) или КП ещё не готово.", name="Нельзя",
-                               conds=negate_each(can_more))]])])
+                               conds=no_more)]])])
     st = lambda base, label, status, action, extra, emo: [
         ds_get(base, S_LEADS, LEADK, name=label, conds=[act(action)]),
         ds_upd(base + 1, S_LEADS, LEADK, dict({"status": status, "status_at": "{{now}}", "updated_at": "{{now}}"}, **extra), upsert=False),
@@ -798,7 +812,7 @@ def lh11():
     sent = ds_upd(34, S_LEADS, L, {"status": "SENT_TO_TELEGRAM", "commercial_message_id": "{{33.body.result.message_id}}", "status_at": "{{now}}"}, upsert=False)
     e_sent = ev(35, L, "COMMERCIAL_SENT_TO_OWNER", "message {{33.body.result.message_id}}", old="COMMERCIAL_READY", new="SENT_TO_TELEGRAM")
     spent = "(ifempty(10.cost_usd; 0) + 27.total)"
-    budget_r = router(36, [
+    budget_r = lambda card_route: router(36, [
         [ds_upd(37, S_SET, "main", {"warned_80": DAY_S}, name="80 % бюджета",
                 conds=[[c("{{" + spent + "}}", "number:greaterorequal", "{{2.daily_budget_usd * 0.8}}"),
                         c("{{" + spent + "}}", "number:less", "{{2.daily_budget_usd}}"), c("{{2.warned_80}}", "text:notequal", DAY_S)]]),
@@ -806,8 +820,9 @@ def lh11():
         [ds_upd(39, S_SET, "main", {"paused": True, "paused_reason": "дневной бюджет исчерпан", "updated_at": "{{now}}"},
                 name="100 % бюджета", conds=[[c("{{" + spent + "}}", "number:greaterorequal", "{{2.daily_budget_usd}}")]]),
          ev(40, "", "BUDGET_PAUSED", "spent ${{" + spent + "}}"),
-         tg(41, "sendMessage", [("chat_id", OWNER), ("text", "⛔ Дневной бюджет Claude исчерпан (${{2.daily_budget_usd}}). AI-обработка на паузе. /resume — продолжить.")])]])
-    s_ok = [s_vars, card, s_save, s_run, day_cost(31, "27.total"), s_done, send, sent, e_sent, budget_r]
+         tg(41, "sendMessage", [("chat_id", OWNER), ("text", "⛔ Дневной бюджет Claude исчерпан (${{2.daily_budget_usd}}). AI-обработка на паузе. /resume — продолжить.")])],
+        card_route])
+    s_ok = [s_vars, card, s_save, s_run, day_cost(31, "27.total"), s_done, budget_r([send, sent, e_sent])]
     s_code = ('{{if(23.stop_reason = "error"; "MODEL_ERROR"; if(23.stop_reason = "max_tokens"; "TRUNCATED"; '
               'if(23.stop_reason = "refusal"; "REFUSAL"; if(25.lead_id; "VALIDATION_FAILED"; "JSON_INVALID"))))}}')
     s_bad = [run(42, "sales", "23", "{{24.t1}}", "FAILED", scost, SALES_VERSION,
@@ -862,6 +877,36 @@ def lh11():
     return {"name": "LH-11 Lead Hunter — Architect + Sales", "metadata": {"version": 1, "instant": True}, "flow": flow}
 
 
+TG_MODS = ("telegram:UniversalAPICall", "telegram:SendDocument")
+def tg_resume(flow):
+    """D1: Ignore обрывает остаток маршрута. Если после Telegram-модуля в маршруте ещё есть модули — Resume (пустой выход)."""
+    n = 0
+    for i, mod in enumerate(flow):
+        oe = mod.get("onerror") or []
+        if mod["module"] in TG_MODS and i < len(flow) - 1 and len(oe) == 1 and oe[0]["module"] == "builtin:Ignore":
+            mod["onerror"] = resume(oe[0]["id"], {"statusCode": 0} if mod["module"] == TG_MODS[0] else {})
+            n += 1
+        for r in mod.get("routes", []) or []: n += tg_resume(r["flow"])
+    return n
+
+def lh98():
+    """LH-98: режим lh_log — журнал lh_log по lead_id (поле data) через Return output (обход лимита 100 записей у records_list)."""
+    bp = json.load(open(os.path.join(ROOT, "blueprints", "LH-98.json")))
+    routes = bp["flow"][1]["routes"]
+    routes[:] = [r for r in routes if r["flow"][0]["id"] != 11]
+    F = lambda k: "{{11.data." + k + "}}"
+    routes.append({"flow": [
+        ds_search(11, S_LOG, [[c("lead_id", "text:equal", "{{var.input.data}}")]], limit=50, cont=False, x=600, y=1000,
+                  name="mode=lh_log + data LH-id", conds=[[c("{{var.input.mode}}", "text:equal", "lh_log"),
+                                                           c("{{var.input.data}}", "text:pattern", "^LH-[0-9]{8}-[0-9a-f]{6}$")]]),
+        agg(12, 11, {"table": F("table"), "event": F("event"), "details": F("details"), "created_at": F("created_at"),
+                     "status": F("status"), "agent": F("agent"), "tokens_in": F("input_tokens"), "tokens_out": F("output_tokens"),
+                     "estimated_cost_usd": F("estimated_cost_usd"), "prompt_version": F("prompt_version"),
+                     "error_code": F("error_code"), "old_status": F("old_status"), "new_status": F("new_status"), "run_id": F("run_id")},
+            x=900, y=1000),
+        m(13, "scenario-service:ReturnData", 2, {"log": "{{12.array}}", "count": "{{length(12.array)}}"}, {}, x=1200, y=1000)]})
+    return bp
+
 def check(bp):
     ids = []
     def walk(flow):
@@ -878,8 +923,9 @@ def check(bp):
 
 if __name__ == "__main__":
     os.makedirs(os.path.join(ROOT, "blueprints"), exist_ok=True)
-    for name, fn in [("LH-99", lh99), ("LH-20", lh20), ("LH-03", lh03), ("LH-10", lh10), ("LH-11", lh11)]:
+    for name, fn in [("LH-99", lh99), ("LH-20", lh20), ("LH-03", lh03), ("LH-10", lh10), ("LH-11", lh11), ("LH-98", lh98)]:
         bp = fn()
+        if name in ("LH-20", "LH-11"): print(name, "Telegram onerror Ignore→Resume:", tg_resume(bp["flow"]))
         n = check(bp)
         json.dump(bp, open(os.path.join(ROOT, "blueprints", name + ".json"), "w"), ensure_ascii=False, indent=1)
         print(name, "modules", n, "bytes", len(json.dumps(bp, ensure_ascii=False)))

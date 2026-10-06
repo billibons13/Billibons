@@ -432,6 +432,101 @@
        }
       }
      ]
+    },
+    {
+     "flow": [
+      {
+       "id": 11,
+       "module": "datastore:SearchRecord",
+       "version": 1,
+       "mapper": {
+        "filter": [
+         [
+          {
+           "a": "lead_id",
+           "o": "text:equal",
+           "b": "{{var.input.data}}"
+          }
+         ]
+        ],
+        "sort": []
+       },
+       "parameters": {
+        "datastore": 207952,
+        "continueWhenNoRes": false,
+        "limit": 50
+       },
+       "metadata": {
+        "designer": {
+         "x": 600,
+         "y": 1000
+        }
+       },
+       "filter": {
+        "name": "mode=lh_log + data LH-id",
+        "conditions": [
+         [
+          {
+           "a": "{{var.input.mode}}",
+           "o": "text:equal",
+           "b": "lh_log"
+          },
+          {
+           "a": "{{var.input.data}}",
+           "o": "text:pattern",
+           "b": "^LH-[0-9]{8}-[0-9a-f]{6}$"
+          }
+         ]
+        ]
+       }
+      },
+      {
+       "id": 12,
+       "module": "builtin:BasicAggregator",
+       "version": 1,
+       "mapper": {
+        "table": "{{11.data.table}}",
+        "event": "{{11.data.event}}",
+        "details": "{{11.data.details}}",
+        "created_at": "{{11.data.created_at}}",
+        "status": "{{11.data.status}}",
+        "agent": "{{11.data.agent}}",
+        "tokens_in": "{{11.data.input_tokens}}",
+        "tokens_out": "{{11.data.output_tokens}}",
+        "estimated_cost_usd": "{{11.data.estimated_cost_usd}}",
+        "prompt_version": "{{11.data.prompt_version}}",
+        "error_code": "{{11.data.error_code}}",
+        "old_status": "{{11.data.old_status}}",
+        "new_status": "{{11.data.new_status}}",
+        "run_id": "{{11.data.run_id}}"
+       },
+       "parameters": {
+        "feeder": 11
+       },
+       "metadata": {
+        "designer": {
+         "x": 900,
+         "y": 1000
+        }
+       }
+      },
+      {
+       "id": 13,
+       "module": "scenario-service:ReturnData",
+       "version": 2,
+       "mapper": {
+        "log": "{{12.array}}",
+        "count": "{{length(12.array)}}"
+       },
+       "parameters": {},
+       "metadata": {
+        "designer": {
+         "x": 1200,
+         "y": 1000
+        }
+       }
+      }
+     ]
     }
    ]
   }

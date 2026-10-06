@@ -779,14 +779,16 @@
        "onerror": [
         {
          "id": 545,
-         "module": "builtin:Ignore",
+         "module": "builtin:Resume",
          "version": 1,
-         "mapper": null,
          "metadata": {
           "designer": {
            "x": 0,
            "y": 0
           }
+         },
+         "mapper": {
+          "statusCode": 0
          }
         }
        ]
@@ -1916,6 +1918,18 @@
                "o": "text:equal",
                "b": "ERROR"
               }
+             ],
+             [
+              {
+               "a": "{{90.status}}",
+               "o": "text:equal",
+               "b": "APPROVED"
+              },
+              {
+               "a": "{{ifempty(90.approved_at; \"2000-01-01T00:00:00.000Z\")}}",
+               "o": "date:less",
+               "b": "{{addMinutes(now; -10)}}"
+              }
              ]
             ]
            }
@@ -2007,139 +2021,6 @@
            }
           },
           {
-           "id": 94,
-           "module": "telegram:UniversalAPICall",
-           "version": 1,
-           "mapper": {
-            "method": "POST",
-            "bodyType": "assembled_body",
-            "body_spec": [
-             {
-              "key": "callback_query_id",
-              "value": "{{3.cbid}}"
-             },
-             {
-              "key": "text",
-              "value": "Approved → Architect + Sales"
-             }
-            ],
-            "urlMethod": "answerCallbackQuery"
-           },
-           "parameters": {
-            "__IMTCONN__": 9480305
-           },
-           "metadata": {
-            "designer": {
-             "x": 0,
-             "y": 0
-            }
-           },
-           "onerror": [
-            {
-             "id": 594,
-             "module": "builtin:Ignore",
-             "version": 1,
-             "mapper": null,
-             "metadata": {
-              "designer": {
-               "x": 0,
-               "y": 0
-              }
-             }
-            }
-           ]
-          },
-          {
-           "id": 95,
-           "module": "telegram:UniversalAPICall",
-           "version": 1,
-           "mapper": {
-            "method": "POST",
-            "bodyType": "assembled_body",
-            "body_spec": [
-             {
-              "key": "chat_id",
-              "value": "{{2.owner_chat_id}}"
-             },
-             {
-              "key": "message_id",
-              "value": "{{3.mid}}"
-             },
-             {
-              "key": "reply_markup",
-              "value": "{\"inline_keyboard\": [[{\"text\": \"✅ Approved · Architect работает\", \"callback_data\": \"z\"}]]}"
-             }
-            ],
-            "urlMethod": "editMessageReplyMarkup"
-           },
-           "parameters": {
-            "__IMTCONN__": 9480305
-           },
-           "metadata": {
-            "designer": {
-             "x": 0,
-             "y": 0
-            }
-           },
-           "onerror": [
-            {
-             "id": 595,
-             "module": "builtin:Ignore",
-             "version": 1,
-             "mapper": null,
-             "metadata": {
-              "designer": {
-               "x": 0,
-               "y": 0
-              }
-             }
-            }
-           ]
-          },
-          {
-           "id": 96,
-           "module": "telegram:UniversalAPICall",
-           "version": 1,
-           "mapper": {
-            "method": "POST",
-            "bodyType": "assembled_body",
-            "body_spec": [
-             {
-              "key": "chat_id",
-              "value": "{{2.owner_chat_id}}"
-             },
-             {
-              "key": "text",
-              "value": "✅ {{3.lead}} одобрен. Architect + Sales готовят ТЗ и КП (~1–3 мин), пришлю коммерческую карточку.\nКлиенту ничего не отправляется.{{if(90.grade = \"COLD\"; newline + \"⚠️ Grade COLD: Architect запущен по вашему решению.\"; if(90.grade = \"REJECT\"; newline + \"⚠️ Grade REJECT: Architect запущен по вашему решению, проверьте риски.\"; \"\"))}}"
-             }
-            ],
-            "urlMethod": "sendMessage"
-           },
-           "parameters": {
-            "__IMTCONN__": 9480305
-           },
-           "metadata": {
-            "designer": {
-             "x": 0,
-             "y": 0
-            }
-           },
-           "onerror": [
-            {
-             "id": 596,
-             "module": "builtin:Ignore",
-             "version": 1,
-             "mapper": null,
-             "metadata": {
-              "designer": {
-               "x": 0,
-               "y": 0
-              }
-             }
-            }
-           ]
-          },
-          {
            "id": 134,
            "module": "http:ActionSendData",
            "version": 3,
@@ -2201,6 +2082,143 @@
              }
             }
            ]
+          },
+          {
+           "id": 94,
+           "module": "telegram:UniversalAPICall",
+           "version": 1,
+           "mapper": {
+            "method": "POST",
+            "bodyType": "assembled_body",
+            "body_spec": [
+             {
+              "key": "callback_query_id",
+              "value": "{{3.cbid}}"
+             },
+             {
+              "key": "text",
+              "value": "Approved → Architect + Sales"
+             }
+            ],
+            "urlMethod": "answerCallbackQuery"
+           },
+           "parameters": {
+            "__IMTCONN__": 9480305
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "onerror": [
+            {
+             "id": 594,
+             "module": "builtin:Resume",
+             "version": 1,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             },
+             "mapper": {
+              "statusCode": 0
+             }
+            }
+           ]
+          },
+          {
+           "id": 95,
+           "module": "telegram:UniversalAPICall",
+           "version": 1,
+           "mapper": {
+            "method": "POST",
+            "bodyType": "assembled_body",
+            "body_spec": [
+             {
+              "key": "chat_id",
+              "value": "{{2.owner_chat_id}}"
+             },
+             {
+              "key": "message_id",
+              "value": "{{3.mid}}"
+             },
+             {
+              "key": "reply_markup",
+              "value": "{\"inline_keyboard\": [[{\"text\": \"✅ Approved · Architect работает\", \"callback_data\": \"z\"}]]}"
+             }
+            ],
+            "urlMethod": "editMessageReplyMarkup"
+           },
+           "parameters": {
+            "__IMTCONN__": 9480305
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "onerror": [
+            {
+             "id": 595,
+             "module": "builtin:Resume",
+             "version": 1,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             },
+             "mapper": {
+              "statusCode": 0
+             }
+            }
+           ]
+          },
+          {
+           "id": 96,
+           "module": "telegram:UniversalAPICall",
+           "version": 1,
+           "mapper": {
+            "method": "POST",
+            "bodyType": "assembled_body",
+            "body_spec": [
+             {
+              "key": "chat_id",
+              "value": "{{2.owner_chat_id}}"
+             },
+             {
+              "key": "text",
+              "value": "✅ {{3.lead}} одобрен. Architect + Sales готовят ТЗ и КП (~1–3 мин), пришлю коммерческую карточку.\nКлиенту ничего не отправляется.{{if(90.grade = \"COLD\"; newline + \"⚠️ Grade COLD: Architect запущен по вашему решению.\"; if(90.grade = \"REJECT\"; newline + \"⚠️ Grade REJECT: Architect запущен по вашему решению, проверьте риски.\"; \"\"))}}"
+             }
+            ],
+            "urlMethod": "sendMessage"
+           },
+           "parameters": {
+            "__IMTCONN__": 9480305
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "onerror": [
+            {
+             "id": 596,
+             "module": "builtin:Ignore",
+             "version": 1,
+             "mapper": null,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             }
+            }
+           ]
           }
          ]
         },
@@ -2220,7 +2238,7 @@
              },
              {
               "key": "text",
-              "value": "Уже одобрен: Architect уже запускался ({{ifempty(90.status; \"лид не найден\")}}). Повтор — только после ERROR."
+              "value": "Уже одобрен: Architect уже запускался ({{ifempty(90.status; \"лид не найден\")}}). Повтор — после ERROR или если APPROVED завис > 10 мин."
              }
             ],
             "urlMethod": "answerCallbackQuery"
@@ -2247,6 +2265,28 @@
                "a": "{{90.status}}",
                "o": "text:notequal",
                "b": "ERROR"
+              },
+              {
+               "a": "{{90.status}}",
+               "o": "text:notequal",
+               "b": "APPROVED"
+              }
+             ],
+             [
+              {
+               "a": "{{ifempty(90.architect_run_id; \"none\")}}",
+               "o": "text:notequal",
+               "b": "none"
+              },
+              {
+               "a": "{{90.status}}",
+               "o": "text:equal",
+               "b": "APPROVED"
+              },
+              {
+               "a": "{{ifempty(90.approved_at; \"2000-01-01T00:00:00.000Z\")}}",
+               "o": "date:greaterorequal",
+               "b": "{{addMinutes(now; -10)}}"
               }
              ],
              [
@@ -2337,14 +2377,16 @@
        "onerror": [
         {
          "id": 600,
-         "module": "builtin:Ignore",
+         "module": "builtin:Resume",
          "version": 1,
-         "mapper": null,
          "metadata": {
           "designer": {
            "x": 0,
            "y": 0
           }
+         },
+         "mapper": {
+          "statusCode": 0
          }
         }
        ]
@@ -2557,14 +2599,16 @@
        "onerror": [
         {
          "id": 614,
-         "module": "builtin:Ignore",
+         "module": "builtin:Resume",
          "version": 1,
-         "mapper": null,
          "metadata": {
           "designer": {
            "x": 0,
            "y": 0
           }
+         },
+         "mapper": {
+          "statusCode": 0
          }
         }
        ]
@@ -2735,14 +2779,16 @@
        "onerror": [
         {
          "id": 622,
-         "module": "builtin:Ignore",
+         "module": "builtin:Resume",
          "version": 1,
-         "mapper": null,
          "metadata": {
           "designer": {
            "x": 0,
            "y": 0
           }
+         },
+         "mapper": {
+          "statusCode": 0
          }
         }
        ]
@@ -2925,14 +2971,16 @@
            "onerror": [
             {
              "id": 643,
-             "module": "builtin:Ignore",
+             "module": "builtin:Resume",
              "version": 1,
-             "mapper": null,
              "metadata": {
               "designer": {
                "x": 0,
                "y": 0
               }
+             },
+             "mapper": {
+              "statusCode": 0
              }
             }
            ]
@@ -2989,14 +3037,16 @@
            "onerror": [
             {
              "id": 645,
-             "module": "builtin:Ignore",
+             "module": "builtin:Resume",
              "version": 1,
-             "mapper": null,
              "metadata": {
               "designer": {
                "x": 0,
                "y": 0
               }
+             },
+             "mapper": {
+              "statusCode": 0
              }
             }
            ]
@@ -3255,14 +3305,16 @@
            "onerror": [
             {
              "id": 653,
-             "module": "builtin:Ignore",
+             "module": "builtin:Resume",
              "version": 1,
-             "mapper": null,
              "metadata": {
               "designer": {
                "x": 0,
                "y": 0
               }
+             },
+             "mapper": {
+              "statusCode": 0
              }
             }
            ]
@@ -3476,14 +3528,16 @@
            "onerror": [
             {
              "id": 662,
-             "module": "builtin:Ignore",
+             "module": "builtin:Resume",
              "version": 1,
-             "mapper": null,
              "metadata": {
               "designer": {
                "x": 0,
                "y": 0
               }
+             },
+             "mapper": {
+              "statusCode": 0
              }
             }
            ]
@@ -3697,14 +3751,16 @@
            "onerror": [
             {
              "id": 672,
-             "module": "builtin:Ignore",
+             "module": "builtin:Resume",
              "version": 1,
-             "mapper": null,
              "metadata": {
               "designer": {
                "x": 0,
                "y": 0
               }
+             },
+             "mapper": {
+              "statusCode": 0
              }
             }
            ]
@@ -3897,7 +3953,7 @@
             }
            },
            "filter": {
-            "name": "Ещё не было",
+            "name": "Ещё не было (или прошлый завис/ERROR)",
             "conditions": [
              [
               {
@@ -3908,6 +3964,48 @@
                "a": "{{ifempty(180.more_analysis_at; \"none\")}}",
                "o": "text:equal",
                "b": "none"
+              }
+             ],
+             [
+              {
+               "a": "{{180.sales_json}}",
+               "o": "exist"
+              },
+              {
+               "a": "{{ifempty(180.more_analysis_at; \"none\")}}",
+               "o": "text:notequal",
+               "b": "none"
+              },
+              {
+               "a": "{{ifempty(180.sales_run_id; \"none\")}}",
+               "o": "text:notequal",
+               "b": "{{ifempty(180.architect_run_id; \"none\")}}"
+              },
+              {
+               "a": "{{180.status}}",
+               "o": "text:equal",
+               "b": "ERROR"
+              }
+             ],
+             [
+              {
+               "a": "{{180.sales_json}}",
+               "o": "exist"
+              },
+              {
+               "a": "{{ifempty(180.more_analysis_at; \"none\")}}",
+               "o": "text:notequal",
+               "b": "none"
+              },
+              {
+               "a": "{{ifempty(180.sales_run_id; \"none\")}}",
+               "o": "text:notequal",
+               "b": "{{ifempty(180.architect_run_id; \"none\")}}"
+              },
+              {
+               "a": "{{ifempty(180.more_analysis_at; \"2000-01-01T00:00:00.000Z\")}}",
+               "o": "date:less",
+               "b": "{{addMinutes(now; -10)}}"
               }
              ]
             ]
@@ -3996,92 +4094,6 @@
            }
           },
           {
-           "id": 186,
-           "module": "telegram:UniversalAPICall",
-           "version": 1,
-           "mapper": {
-            "method": "POST",
-            "bodyType": "assembled_body",
-            "body_spec": [
-             {
-              "key": "callback_query_id",
-              "value": "{{3.cbid}}"
-             },
-             {
-              "key": "text",
-              "value": "Углублённый анализ запущен"
-             }
-            ],
-            "urlMethod": "answerCallbackQuery"
-           },
-           "parameters": {
-            "__IMTCONN__": 9480305
-           },
-           "metadata": {
-            "designer": {
-             "x": 0,
-             "y": 0
-            }
-           },
-           "onerror": [
-            {
-             "id": 686,
-             "module": "builtin:Ignore",
-             "version": 1,
-             "mapper": null,
-             "metadata": {
-              "designer": {
-               "x": 0,
-               "y": 0
-              }
-             }
-            }
-           ]
-          },
-          {
-           "id": 187,
-           "module": "telegram:UniversalAPICall",
-           "version": 1,
-           "mapper": {
-            "method": "POST",
-            "bodyType": "assembled_body",
-            "body_spec": [
-             {
-              "key": "chat_id",
-              "value": "{{2.owner_chat_id}}"
-             },
-             {
-              "key": "text",
-              "value": "🔍 {{3.lead}}: углублённый прогон Architect + Sales запущен (единственный для этого лида). Пришлю новую карточку через ~1–3 мин."
-             }
-            ],
-            "urlMethod": "sendMessage"
-           },
-           "parameters": {
-            "__IMTCONN__": 9480305
-           },
-           "metadata": {
-            "designer": {
-             "x": 0,
-             "y": 0
-            }
-           },
-           "onerror": [
-            {
-             "id": 687,
-             "module": "builtin:Ignore",
-             "version": 1,
-             "mapper": null,
-             "metadata": {
-              "designer": {
-               "x": 0,
-               "y": 0
-              }
-             }
-            }
-           ]
-          },
-          {
            "id": 188,
            "module": "http:ActionSendData",
            "version": 3,
@@ -4143,6 +4155,94 @@
              }
             }
            ]
+          },
+          {
+           "id": 186,
+           "module": "telegram:UniversalAPICall",
+           "version": 1,
+           "mapper": {
+            "method": "POST",
+            "bodyType": "assembled_body",
+            "body_spec": [
+             {
+              "key": "callback_query_id",
+              "value": "{{3.cbid}}"
+             },
+             {
+              "key": "text",
+              "value": "Углублённый анализ запущен"
+             }
+            ],
+            "urlMethod": "answerCallbackQuery"
+           },
+           "parameters": {
+            "__IMTCONN__": 9480305
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "onerror": [
+            {
+             "id": 686,
+             "module": "builtin:Resume",
+             "version": 1,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             },
+             "mapper": {
+              "statusCode": 0
+             }
+            }
+           ]
+          },
+          {
+           "id": 187,
+           "module": "telegram:UniversalAPICall",
+           "version": 1,
+           "mapper": {
+            "method": "POST",
+            "bodyType": "assembled_body",
+            "body_spec": [
+             {
+              "key": "chat_id",
+              "value": "{{2.owner_chat_id}}"
+             },
+             {
+              "key": "text",
+              "value": "🔍 {{3.lead}}: углублённый прогон Architect + Sales запущен (единственный для этого лида). Пришлю новую карточку через ~1–3 мин."
+             }
+            ],
+            "urlMethod": "sendMessage"
+           },
+           "parameters": {
+            "__IMTCONN__": 9480305
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "onerror": [
+            {
+             "id": 687,
+             "module": "builtin:Ignore",
+             "version": 1,
+             "mapper": null,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             }
+            }
+           ]
           }
          ]
         },
@@ -4190,6 +4290,28 @@
                "a": "{{ifempty(180.more_analysis_at; \"none\")}}",
                "o": "text:notequal",
                "b": "none"
+              },
+              {
+               "a": "{{ifempty(180.sales_run_id; \"none\")}}",
+               "o": "text:equal",
+               "b": "{{ifempty(180.architect_run_id; \"none\")}}"
+              }
+             ],
+             [
+              {
+               "a": "{{ifempty(180.more_analysis_at; \"none\")}}",
+               "o": "text:notequal",
+               "b": "none"
+              },
+              {
+               "a": "{{180.status}}",
+               "o": "text:notequal",
+               "b": "ERROR"
+              },
+              {
+               "a": "{{ifempty(180.more_analysis_at; \"2000-01-01T00:00:00.000Z\")}}",
+               "o": "date:greaterorequal",
+               "b": "{{addMinutes(now; -10)}}"
               }
              ]
             ]
@@ -4550,14 +4672,16 @@
        "onerror": [
         {
          "id": 714,
-         "module": "builtin:Ignore",
+         "module": "builtin:Resume",
          "version": 1,
-         "mapper": null,
          "metadata": {
           "designer": {
            "x": 0,
            "y": 0
           }
+         },
+         "mapper": {
+          "statusCode": 0
          }
         }
        ]
@@ -4839,14 +4963,16 @@
        "onerror": [
         {
          "id": 720,
-         "module": "builtin:Ignore",
+         "module": "builtin:Resume",
          "version": 1,
-         "mapper": null,
          "metadata": {
           "designer": {
            "x": 0,
            "y": 0
           }
+         },
+         "mapper": {
+          "statusCode": 0
          }
         }
        ]
@@ -5060,14 +5186,16 @@
        "onerror": [
         {
          "id": 734,
-         "module": "builtin:Ignore",
+         "module": "builtin:Resume",
          "version": 1,
-         "mapper": null,
          "metadata": {
           "designer": {
            "x": 0,
            "y": 0
           }
+         },
+         "mapper": {
+          "statusCode": 0
          }
         }
        ]

@@ -1144,160 +1144,6 @@
                    }
                   },
                   {
-                   "id": 33,
-                   "module": "telegram:UniversalAPICall",
-                   "version": 1,
-                   "mapper": {
-                    "method": "POST",
-                    "bodyType": "assembled_body",
-                    "body_spec": [
-                     {
-                      "key": "chat_id",
-                      "value": "{{2.owner_chat_id}}"
-                     },
-                     {
-                      "key": "text",
-                      "value": "{{substring(28.card; 0; 3500)}}"
-                     },
-                     {
-                      "key": "reply_markup",
-                      "value": "{\"inline_keyboard\": [[{\"text\": \"📋 Full ТЗ\", \"callback_data\": \"ft|{{1.lead_id}}\"}, {\"text\": \"💰 Offer\", \"callback_data\": \"of|{{1.lead_id}}\"}], [{\"text\": \"💬 Client Message\", \"callback_data\": \"cm|{{1.lead_id}}\"}, {\"text\": \"❓ Questions\", \"callback_data\": \"qs|{{1.lead_id}}\"}], [{\"text\": \"🔍 More Analysis\", \"callback_data\": \"mx|{{1.lead_id}}\"}, {\"text\": \"📞 Contacted\", \"callback_data\": \"ct|{{1.lead_id}}\"}], [{\"text\": \"🏆 Won\", \"callback_data\": \"wn|{{1.lead_id}}\"}, {\"text\": \"❌ Lost\", \"callback_data\": \"ls|{{1.lead_id}}\"}, {\"text\": \"📦 Archive\", \"callback_data\": \"ar|{{1.lead_id}}\"}]]}"
-                     }
-                    ],
-                    "urlMethod": "sendMessage"
-                   },
-                   "parameters": {
-                    "__IMTCONN__": 9480305
-                   },
-                   "metadata": {
-                    "designer": {
-                     "x": 0,
-                     "y": 0
-                    }
-                   },
-                   "onerror": [
-                    {
-                     "id": 533,
-                     "module": "datastore:UpdateRecord",
-                     "version": 1,
-                     "mapper": {
-                      "key": "{{1.lead_id}}",
-                      "upsert": false,
-                      "overwriteArrays": false,
-                      "data": {
-                       "status": "ERROR",
-                       "error_code": "TELEGRAM_SEND",
-                       "error_message": "commercial card sendMessage failed",
-                       "status_at": "{{now}}"
-                      }
-                     },
-                     "parameters": {
-                      "datastore": 207950
-                     },
-                     "metadata": {
-                      "designer": {
-                       "x": 0,
-                       "y": 0
-                      }
-                     }
-                    },
-                    {
-                     "id": 633,
-                     "module": "datastore:AddRecord",
-                     "version": 1,
-                     "mapper": {
-                      "key": "{{uuid}}",
-                      "overwrite": true,
-                      "data": {
-                       "table": "events",
-                       "event_id": "{{uuid}}",
-                       "lead_id": "{{1.lead_id}}",
-                       "event": "ERROR",
-                       "details": "TELEGRAM_SEND: commercial card not delivered",
-                       "old_status": "COMMERCIAL_READY",
-                       "new_status": "ERROR",
-                       "created_at": "{{now}}",
-                       "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
-                      }
-                     },
-                     "parameters": {
-                      "datastore": 207952
-                     },
-                     "metadata": {
-                      "designer": {
-                       "x": 0,
-                       "y": 0
-                      }
-                     }
-                    },
-                    {
-                     "id": 733,
-                     "module": "builtin:Ignore",
-                     "version": 1,
-                     "mapper": null,
-                     "metadata": {
-                      "designer": {
-                       "x": 0,
-                       "y": 0
-                      }
-                     }
-                    }
-                   ]
-                  },
-                  {
-                   "id": 34,
-                   "module": "datastore:UpdateRecord",
-                   "version": 1,
-                   "mapper": {
-                    "key": "{{1.lead_id}}",
-                    "upsert": false,
-                    "overwriteArrays": false,
-                    "data": {
-                     "status": "SENT_TO_TELEGRAM",
-                     "commercial_message_id": "{{33.body.result.message_id}}",
-                     "status_at": "{{now}}"
-                    }
-                   },
-                   "parameters": {
-                    "datastore": 207950
-                   },
-                   "metadata": {
-                    "designer": {
-                     "x": 0,
-                     "y": 0
-                    }
-                   }
-                  },
-                  {
-                   "id": 35,
-                   "module": "datastore:AddRecord",
-                   "version": 1,
-                   "mapper": {
-                    "key": "{{uuid}}",
-                    "overwrite": true,
-                    "data": {
-                     "table": "events",
-                     "event_id": "{{uuid}}",
-                     "lead_id": "{{1.lead_id}}",
-                     "event": "COMMERCIAL_SENT_TO_OWNER",
-                     "details": "message {{33.body.result.message_id}}",
-                     "old_status": "COMMERCIAL_READY",
-                     "new_status": "SENT_TO_TELEGRAM",
-                     "created_at": "{{now}}",
-                     "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
-                    }
-                   },
-                   "parameters": {
-                    "datastore": 207952
-                   },
-                   "metadata": {
-                    "designer": {
-                     "x": 0,
-                     "y": 0
-                    }
-                   }
-                  },
-                  {
                    "id": 36,
                    "module": "builtin:BasicRouter",
                    "version": 1,
@@ -1509,6 +1355,164 @@
                          }
                         }
                        ]
+                      }
+                     ]
+                    },
+                    {
+                     "flow": [
+                      {
+                       "id": 33,
+                       "module": "telegram:UniversalAPICall",
+                       "version": 1,
+                       "mapper": {
+                        "method": "POST",
+                        "bodyType": "assembled_body",
+                        "body_spec": [
+                         {
+                          "key": "chat_id",
+                          "value": "{{2.owner_chat_id}}"
+                         },
+                         {
+                          "key": "text",
+                          "value": "{{substring(28.card; 0; 3500)}}"
+                         },
+                         {
+                          "key": "reply_markup",
+                          "value": "{\"inline_keyboard\": [[{\"text\": \"📋 Full ТЗ\", \"callback_data\": \"ft|{{1.lead_id}}\"}, {\"text\": \"💰 Offer\", \"callback_data\": \"of|{{1.lead_id}}\"}], [{\"text\": \"💬 Client Message\", \"callback_data\": \"cm|{{1.lead_id}}\"}, {\"text\": \"❓ Questions\", \"callback_data\": \"qs|{{1.lead_id}}\"}], [{\"text\": \"🔍 More Analysis\", \"callback_data\": \"mx|{{1.lead_id}}\"}, {\"text\": \"📞 Contacted\", \"callback_data\": \"ct|{{1.lead_id}}\"}], [{\"text\": \"🏆 Won\", \"callback_data\": \"wn|{{1.lead_id}}\"}, {\"text\": \"❌ Lost\", \"callback_data\": \"ls|{{1.lead_id}}\"}, {\"text\": \"📦 Archive\", \"callback_data\": \"ar|{{1.lead_id}}\"}]]}"
+                         }
+                        ],
+                        "urlMethod": "sendMessage"
+                       },
+                       "parameters": {
+                        "__IMTCONN__": 9480305
+                       },
+                       "metadata": {
+                        "designer": {
+                         "x": 0,
+                         "y": 0
+                        }
+                       },
+                       "onerror": [
+                        {
+                         "id": 533,
+                         "module": "datastore:UpdateRecord",
+                         "version": 1,
+                         "mapper": {
+                          "key": "{{1.lead_id}}",
+                          "upsert": false,
+                          "overwriteArrays": false,
+                          "data": {
+                           "status": "ERROR",
+                           "error_code": "TELEGRAM_SEND",
+                           "error_message": "commercial card sendMessage failed",
+                           "status_at": "{{now}}"
+                          }
+                         },
+                         "parameters": {
+                          "datastore": 207950
+                         },
+                         "metadata": {
+                          "designer": {
+                           "x": 0,
+                           "y": 0
+                          }
+                         }
+                        },
+                        {
+                         "id": 633,
+                         "module": "datastore:AddRecord",
+                         "version": 1,
+                         "mapper": {
+                          "key": "{{uuid}}",
+                          "overwrite": true,
+                          "data": {
+                           "table": "events",
+                           "event_id": "{{uuid}}",
+                           "lead_id": "{{1.lead_id}}",
+                           "event": "ERROR",
+                           "details": "TELEGRAM_SEND: commercial card not delivered",
+                           "old_status": "COMMERCIAL_READY",
+                           "new_status": "ERROR",
+                           "created_at": "{{now}}",
+                           "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+                          }
+                         },
+                         "parameters": {
+                          "datastore": 207952
+                         },
+                         "metadata": {
+                          "designer": {
+                           "x": 0,
+                           "y": 0
+                          }
+                         }
+                        },
+                        {
+                         "id": 733,
+                         "module": "builtin:Ignore",
+                         "version": 1,
+                         "mapper": null,
+                         "metadata": {
+                          "designer": {
+                           "x": 0,
+                           "y": 0
+                          }
+                         }
+                        }
+                       ]
+                      },
+                      {
+                       "id": 34,
+                       "module": "datastore:UpdateRecord",
+                       "version": 1,
+                       "mapper": {
+                        "key": "{{1.lead_id}}",
+                        "upsert": false,
+                        "overwriteArrays": false,
+                        "data": {
+                         "status": "SENT_TO_TELEGRAM",
+                         "commercial_message_id": "{{33.body.result.message_id}}",
+                         "status_at": "{{now}}"
+                        }
+                       },
+                       "parameters": {
+                        "datastore": 207950
+                       },
+                       "metadata": {
+                        "designer": {
+                         "x": 0,
+                         "y": 0
+                        }
+                       }
+                      },
+                      {
+                       "id": 35,
+                       "module": "datastore:AddRecord",
+                       "version": 1,
+                       "mapper": {
+                        "key": "{{uuid}}",
+                        "overwrite": true,
+                        "data": {
+                         "table": "events",
+                         "event_id": "{{uuid}}",
+                         "lead_id": "{{1.lead_id}}",
+                         "event": "COMMERCIAL_SENT_TO_OWNER",
+                         "details": "message {{33.body.result.message_id}}",
+                         "old_status": "COMMERCIAL_READY",
+                         "new_status": "SENT_TO_TELEGRAM",
+                         "created_at": "{{now}}",
+                         "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+                        }
+                       },
+                       "parameters": {
+                        "datastore": 207952
+                       },
+                       "metadata": {
+                        "designer": {
+                         "x": 0,
+                         "y": 0
+                        }
+                       }
                       }
                      ]
                     }
