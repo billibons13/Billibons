@@ -493,11 +493,15 @@
             "variables": [
              {
               "name": "full",
-              "value": "{{switch(14.grade; \"HOT\"; \"🔥\"; \"WARM\"; \"🌤\"; \"COLD\"; \"❄️\"; \"⛔\")}} {{14.grade}} · {{13.score}}/100\n📌 {{3.title}}\n🌍 {{ifempty(10.country; \"страна неизвестна\")}} · 🌐 {{ifempty(10.language; \"?\")}} · 📍 {{3.source}}\n💰 Бюджет: {{if(10.budget.amount; 10.budget.amount + \" \" + 10.budget.currency + if(12.beur; \" ≈ \" + 12.beur + \" EUR\"; \" (курс не задан)\"); \"не указан\")}}\n🎯 Тип: {{ifempty(10.bot_type; \"unknown\")}} · {{10.kind}}\n🧠 Суть: {{10.description_ru}}\n\n📊 Оценка:\nTelegram relevance: {{10.scores.telegram_relevance}}/10 — {{10.reasons.telegram_relevance}}\nBudget: {{10.scores.budget}}/10 — {{10.reasons.budget}}\nClarity: {{10.scores.project_clarity}}/10 — {{10.reasons.project_clarity}}\nCredibility: {{10.scores.client_credibility}}/10 — {{10.reasons.client_credibility}}\nCommercial: {{10.scores.commercial_potential}}/10 — {{10.reasons.commercial_potential}}\nFit: {{10.scores.fit}}/10 — {{10.reasons.fit}}\nUrgency: {{10.scores.urgency}}/10 — {{10.reasons.urgency}}\nCompetition: {{10.scores.competition}}/10 — {{10.reasons.competition}}\nSource: {{10.scores.source_quality}}/10 — {{10.reasons.source_quality}}\nComplexity fit: {{10.scores.complexity_fit}}/10 — {{10.reasons.complexity_fit}}\n\n{{if(12.flags; \"⚠️ Risk: \" + 12.flags + newline; \"\")}}{{if(13.cap_reason; \"🧮 Ограничение: \" + 13.cap_reason + newline; \"\")}}🔗 Original: {{ifempty(3.source_url; \"нет ссылки\")}}\n🆔 {{1.lead_id}}"
+              "value": "{{switch(14.grade; \"HOT\"; \"🔥\"; \"WARM\"; \"🌤\"; \"COLD\"; \"❄️\"; \"⛔\")}} {{14.grade}} · {{13.score}}/100\n📌 {{3.title}}\n🌍 {{ifempty(10.country; \"страна неизвестна\")}} · 🌐 {{ifempty(10.language; \"?\")}} · 📍 {{3.source}}\n💰 Бюджет: {{if(10.budget.amount; 10.budget.amount + \" \" + 10.budget.currency + if(12.beur; \" ≈ \" + 12.beur + \" EUR\"; \" (курс не задан)\"); \"не указан\")}}\n🎯 Тип: {{ifempty(10.bot_type; \"unknown\")}} · {{10.kind}}\n🧠 Суть: {{10.description_ru}}\n\n📊 Оценка:\nTelegram relevance: {{10.scores.telegram_relevance}}/10 — {{10.reasons.telegram_relevance}}\nBudget: {{10.scores.budget}}/10 — {{10.reasons.budget}}\nClarity: {{10.scores.project_clarity}}/10 — {{10.reasons.project_clarity}}\nCredibility: {{10.scores.client_credibility}}/10 — {{10.reasons.client_credibility}}\nCommercial: {{10.scores.commercial_potential}}/10 — {{10.reasons.commercial_potential}}\nFit: {{10.scores.fit}}/10 — {{10.reasons.fit}}\nUrgency: {{10.scores.urgency}}/10 — {{10.reasons.urgency}}\nCompetition: {{10.scores.competition}}/10 — {{10.reasons.competition}}\nSource: {{10.scores.source_quality}}/10 — {{10.reasons.source_quality}}\nComplexity fit: {{10.scores.complexity_fit}}/10 — {{10.reasons.complexity_fit}}\n\n{{if(12.flags; \"⚠️ Risk: \" + 12.flags + newline; \"\")}}{{if(13.cap_reason; \"🧮 Ограничение: \" + 13.cap_reason + newline; \"\")}}🔗 Original: {{ifempty(3.source_url; \"нет ссылки\")}}\n{{if(if(3.client_hint; if(replace(3.client_hint; \"/^[a-z0-9_]+$/\"; \"\") = \"\"; if(length(3.client_hint) >= 5; if(length(3.client_hint) <= 32; \"https://t.me/\" + 3.client_hint; ifempty(3.source_url; \"\")); ifempty(3.source_url; \"\")); ifempty(3.source_url; \"\")); ifempty(3.source_url; \"\")); \"\"; \"✍️ Контакт неизвестен — ответьте на площадке\" + newline)}}🆔 {{1.lead_id}}"
              },
              {
               "name": "short",
               "value": "{{switch(14.grade; \"HOT\"; \"🔥\"; \"WARM\"; \"🌤\"; \"COLD\"; \"❄️\"; \"⛔\")}} {{1.lead_id}} · {{14.grade}} {{13.score}} — в архиве, причина: {{if(13.cap_reason; replace(13.cap_reason; \"/;\\s*$/\"; \"\"); replace(first(sort(split(if(parseNumber(10.scores.telegram_relevance; \".\") < 10; \"0\"; \"\") + toString(10.scores.telegram_relevance) + \"|Telegram relevance \" + toString(10.scores.telegram_relevance) + \"/10: \" + 20.r_telegram_relevance + \"§\" + if(parseNumber(10.scores.budget; \".\") < 10; \"0\"; \"\") + toString(10.scores.budget) + \"|Budget \" + toString(10.scores.budget) + \"/10: \" + 20.r_budget + \"§\" + if(parseNumber(10.scores.project_clarity; \".\") < 10; \"0\"; \"\") + toString(10.scores.project_clarity) + \"|Clarity \" + toString(10.scores.project_clarity) + \"/10: \" + 20.r_project_clarity + \"§\" + if(parseNumber(10.scores.client_credibility; \".\") < 10; \"0\"; \"\") + toString(10.scores.client_credibility) + \"|Credibility \" + toString(10.scores.client_credibility) + \"/10: \" + 20.r_client_credibility + \"§\" + if(parseNumber(10.scores.commercial_potential; \".\") < 10; \"0\"; \"\") + toString(10.scores.commercial_potential) + \"|Commercial \" + toString(10.scores.commercial_potential) + \"/10: \" + 20.r_commercial_potential + \"§\" + if(parseNumber(10.scores.fit; \".\") < 10; \"0\"; \"\") + toString(10.scores.fit) + \"|Fit \" + toString(10.scores.fit) + \"/10: \" + 20.r_fit + \"§\" + if(parseNumber(10.scores.urgency; \".\") < 10; \"0\"; \"\") + toString(10.scores.urgency) + \"|Urgency \" + toString(10.scores.urgency) + \"/10: \" + 20.r_urgency + \"§\" + if(parseNumber(10.scores.competition; \".\") < 10; \"0\"; \"\") + toString(10.scores.competition) + \"|Competition \" + toString(10.scores.competition) + \"/10: \" + 20.r_competition + \"§\" + if(parseNumber(10.scores.source_quality; \".\") < 10; \"0\"; \"\") + toString(10.scores.source_quality) + \"|Source \" + toString(10.scores.source_quality) + \"/10: \" + 20.r_source_quality + \"§\" + if(parseNumber(10.scores.complexity_fit; \".\") < 10; \"0\"; \"\") + toString(10.scores.complexity_fit) + \"|Complexity fit \" + toString(10.scores.complexity_fit) + \"/10: \" + 20.r_complexity_fit; \"§\"))); \"/^[0-9.]+\\|/\"; \"\"))}}"
+             },
+             {
+              "name": "wurl",
+              "value": "{{if(14.grade = \"HOT\"; if(3.client_hint; if(replace(3.client_hint; \"/^[a-z0-9_]+$/\"; \"\") = \"\"; if(length(3.client_hint) >= 5; if(length(3.client_hint) <= 32; \"https://t.me/\" + 3.client_hint; ifempty(3.source_url; \"\")); ifempty(3.source_url; \"\")); ifempty(3.source_url; \"\")); ifempty(3.source_url; \"\")); if(14.grade = \"WARM\"; if(3.client_hint; if(replace(3.client_hint; \"/^[a-z0-9_]+$/\"; \"\") = \"\"; if(length(3.client_hint) >= 5; if(length(3.client_hint) <= 32; \"https://t.me/\" + 3.client_hint; ifempty(3.source_url; \"\")); ifempty(3.source_url; \"\")); ifempty(3.source_url; \"\")); ifempty(3.source_url; \"\")); \"\"))}}"
              }
             ],
             "scope": "roundtrip"
@@ -523,6 +527,14 @@
              {
               "name": "next",
               "value": "{{if(14.grade = \"HOT\"; \"SENT_TO_TELEGRAM\"; if(14.grade = \"WARM\"; \"SENT_TO_TELEGRAM\"; \"ARCHIVED\"))}}"
+             },
+             {
+              "name": "kb1",
+              "value": "{\"inline_keyboard\": [[{\"text\": \"✍️ Написать клиенту\", \"url\": \"{{25.wurl}}\"}], [{\"text\": \"✅ Approve\", \"callback_data\": \"ap|{{1.lead_id}}\"}, {\"text\": \"❌ Reject\", \"callback_data\": \"rj|{{1.lead_id}}\"}], [{\"text\": \"🔍 More analysis\", \"callback_data\": \"ma|{{1.lead_id}}\"}]]}"
+             },
+             {
+              "name": "kb0",
+              "value": "{\"inline_keyboard\": [[{\"text\": \"✅ Approve\", \"callback_data\": \"ap|{{1.lead_id}}\"}, {\"text\": \"❌ Reject\", \"callback_data\": \"rj|{{1.lead_id}}\"}], [{\"text\": \"🔍 More analysis\", \"callback_data\": \"ma|{{1.lead_id}}\"}]]}"
              }
             ],
             "scope": "roundtrip"
@@ -714,7 +726,7 @@
              },
              {
               "key": "reply_markup",
-              "value": "{\"inline_keyboard\": [[{\"text\": \"✅ Approve\", \"callback_data\": \"ap|{{1.lead_id}}\"}, {\"text\": \"❌ Reject\", \"callback_data\": \"rj|{{1.lead_id}}\"}], [{\"text\": \"🔍 More analysis\", \"callback_data\": \"ma|{{1.lead_id}}\"}]]}"
+              "value": "{{if(25.wurl; 15.kb1; 15.kb0)}}"
              }
             ],
             "urlMethod": "sendMessage"

@@ -3543,6 +3543,52 @@
            ]
           },
           {
+           "id": 165,
+           "module": "util:SetVariables",
+           "version": 1,
+           "mapper": {
+            "variables": [
+             {
+              "name": "wurl",
+              "value": "{{if(160.client_hint; if(replace(160.client_hint; \"/^[a-z0-9_]+$/\"; \"\") = \"\"; if(length(160.client_hint) >= 5; if(length(160.client_hint) <= 32; \"https://t.me/\" + 160.client_hint; ifempty(160.source_url; \"\")); ifempty(160.source_url; \"\")); ifempty(160.source_url; \"\")); ifempty(160.source_url; \"\"))}}"
+             }
+            ],
+            "scope": "roundtrip"
+           },
+           "parameters": {},
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           }
+          },
+          {
+           "id": 166,
+           "module": "util:SetVariables",
+           "version": 1,
+           "mapper": {
+            "variables": [
+             {
+              "name": "kb1",
+              "value": "{\"inline_keyboard\": [[{\"text\": \"✍️ Написать клиенту\", \"url\": \"{{165.wurl}}\"}]]}"
+             },
+             {
+              "name": "kb0",
+              "value": "{\"inline_keyboard\": []}"
+             }
+            ],
+            "scope": "roundtrip"
+           },
+           "parameters": {},
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           }
+          },
+          {
            "id": 163,
            "module": "telegram:UniversalAPICall",
            "version": 1,
@@ -3556,7 +3602,7 @@
              },
              {
               "key": "text",
-              "value": "💬 Сообщение клиенту ({{ifempty(160.language; \"?\")}}) — отправляете только вы, вручную:\n\n{{substring(160.client_message; 0; 1800)}}\n\n🇷🇺 Перевод:\n{{substring(160.client_message_ru; 0; 1800)}}"
+              "value": "💬 Сообщение клиенту {{3.lead}} ({{ifempty(160.language; \"?\")}}) — отправляете только вы, вручную. Текст для копирования — следующим сообщением.\n{{if(165.wurl; \"✍️ Кнопка «Написать клиенту» — под ним.\"; \"✍️ Контакт неизвестен — ответьте на площадке\")}}\n\n🇷🇺 Перевод:\n{{substring(160.client_message_ru; 0; 3500)}}"
              }
             ],
             "urlMethod": "sendMessage"
@@ -3573,6 +3619,55 @@
            "onerror": [
             {
              "id": 663,
+             "module": "builtin:Resume",
+             "version": 1,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             },
+             "mapper": {
+              "statusCode": 0
+             }
+            }
+           ]
+          },
+          {
+           "id": 167,
+           "module": "telegram:UniversalAPICall",
+           "version": 1,
+           "mapper": {
+            "method": "POST",
+            "bodyType": "assembled_body",
+            "body_spec": [
+             {
+              "key": "chat_id",
+              "value": "{{2.owner_chat_id}}"
+             },
+             {
+              "key": "text",
+              "value": "{{substring(160.client_message; 0; 4000)}}"
+             },
+             {
+              "key": "reply_markup",
+              "value": "{{if(165.wurl; 166.kb1; 166.kb0)}}"
+             }
+            ],
+            "urlMethod": "sendMessage"
+           },
+           "parameters": {
+            "__IMTCONN__": 9480305
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "onerror": [
+            {
+             "id": 667,
              "module": "builtin:Ignore",
              "version": 1,
              "mapper": null,

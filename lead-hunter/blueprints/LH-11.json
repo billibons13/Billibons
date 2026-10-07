@@ -638,6 +638,24 @@
                }
               },
               {
+               "id": 55,
+               "module": "datastore:GetRecord",
+               "version": 1,
+               "mapper": {
+                "key": "{{1.lead_id}}",
+                "returnWrapped": false
+               },
+               "parameters": {
+                "datastore": 207950
+               },
+               "metadata": {
+                "designer": {
+                 "x": 0,
+                 "y": 0
+                }
+               }
+              },
+              {
                "id": 19,
                "module": "datastore:UpdateRecord",
                "version": 1,
@@ -652,8 +670,8 @@
                  "estimated_hours_max": "{{16.estimated_hours_max}}",
                  "missing_information": "{{18.miss}}",
                  "client_questions": "{{18.q}}",
-                 "status": "TECHNICAL_SPEC_READY",
-                 "status_at": "{{now}}",
+                 "status": "{{if(switch(55.status; \"WON\"; 1; \"LOST\"; 1; \"ARCHIVED\"; 1; \"CONTACTED\"; 1; 0) = 1; 55.status; \"TECHNICAL_SPEC_READY\")}}",
+                 "status_at": "{{if(switch(55.status; \"WON\"; 1; \"LOST\"; 1; \"ARCHIVED\"; 1; \"CONTACTED\"; 1; 0) = 1; 55.status_at; now)}}",
                  "error_code": "",
                  "error_message": "",
                  "updated_at": "{{now}}"
@@ -717,8 +735,8 @@
                  "lead_id": "{{1.lead_id}}",
                  "event": "ARCHITECT_COMPLETED",
                  "details": "complexity {{16.complexity}}, {{16.estimated_hours_min}}-{{16.estimated_hours_max}} h, tokens {{14.usage.input_tokens}}/{{14.usage.output_tokens}}, ${{18.acost}}",
-                 "old_status": "{{8.status}}",
-                 "new_status": "TECHNICAL_SPEC_READY",
+                 "old_status": "{{55.status}}",
+                 "new_status": "{{if(switch(55.status; \"WON\"; 1; \"LOST\"; 1; \"ARCHIVED\"; 1; \"CONTACTED\"; 1; 0) = 1; 55.status; \"TECHNICAL_SPEC_READY\")}}",
                  "created_at": "{{now}}",
                  "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
                 }
@@ -889,6 +907,18 @@
                      {
                       "name": "ups",
                       "value": "{{join(slice(25.upsells; 0; 5); \"; \")}}"
+                     },
+                     {
+                      "name": "tin",
+                      "value": "{{ifempty(14.usage.input_tokens; 0) + ifempty(23.usage.input_tokens; 0)}}"
+                     },
+                     {
+                      "name": "tout",
+                      "value": "{{ifempty(14.usage.output_tokens; 0) + ifempty(23.usage.output_tokens; 0)}}"
+                     },
+                     {
+                      "name": "wurl",
+                      "value": "{{if(8.client_hint; if(replace(8.client_hint; \"/^[a-z0-9_]+$/\"; \"\") = \"\"; if(length(8.client_hint) >= 5; if(length(8.client_hint) <= 32; \"https://t.me/\" + 8.client_hint; ifempty(8.source_url; \"\")); ifempty(8.source_url; \"\")); ifempty(8.source_url; \"\")); ifempty(8.source_url; \"\"))}}"
                      }
                     ],
                     "scope": "roundtrip"
@@ -1005,11 +1035,41 @@
                      {
                       "name": "card",
                       "value": "💼 КП готово · {{1.lead_id}}{{if(1.mode = \"more\"; \" · 🔍 углублённый анализ\"; \"\")}}\n📌 {{8.title}}\n🎯 Тип: {{ifempty(8.bot_type; \"unknown\")}} · 🌍 {{ifempty(8.country; \"страна неизвестна\")}} · 🌐 {{ifempty(8.language; \"?\")}}\n💰 Бюджет клиента: {{if(8.budget_amount; 8.budget_amount + \" \" + 8.budget_currency + \" (\" + ifempty(8.budget_type; \"тип ?\") + if(8.budget_eur; \", ≈ \" + 8.budget_eur + \" EUR\"; \"\") + \"; источник: текст заявки)\"; \"не указан в заявке\")}}\n📊 Score {{8.score}}/100 · {{8.grade}} · сложность {{16.complexity}} · ⏱ {{16.estimated_hours_min}}–{{16.estimated_hours_max}} ч\n\n💵 Наша оценка (не бюджет клиента):\nсебестоимость ≈ {{25.estimated_cost}} € · рекомендуем {{25.recommended_price}} € · цель {{25.target_price}} € · минимум {{25.minimum_acceptable_price}} €\n📦 Basic {{25.packages.basic.price}} € · Professional {{25.packages.professional.price}} € · Premium {{25.packages.premium.price}} €\n📈 Win {{25.win_probability}}% — {{25.win_probability_reason}}\n🏦 Потенциал {{25.commercial_potential}} · фаза 2: {{ifempty(25.phase_2_revenue; \"UNKNOWN\")}} · поддержка: {{ifempty(25.maintenance_revenue; \"UNKNOWN\")}}\n➕ Upsells: {{ifempty(27.ups; \"—\")}}\n\n📝 ТЗ кратко: {{substring(16.project_summary; 0; 450)}}\n⚠️ Риски:\n• {{join(slice(16.technical_risks; 0; 3); newline + \"• \")}}\n❓ Главные вопросы:\n• {{join(slice(16.questions_for_client; 0; 3); newline + \"• \")}}\n\n✉️ Первое сообщение ({{ifempty(25.client_language; 8.language)}}):\n{{substring(25.client_message; 0; 700)}}\n\nКлиенту ничего не отправлено. 🆔 {{1.lead_id}}"
+                     },
+                     {
+                      "name": "foot",
+                      "value": "{{if(27.wurl; \"✍️ Написать клиенту — кнопка ниже\"; \"✍️ Контакт неизвестен — ответьте на площадке\")}}\n💵 AI: ${{formatNumber(27.total; 4; \".\"; \"\")}}"
+                     },
+                     {
+                      "name": "kb1",
+                      "value": "{\"inline_keyboard\": [[{\"text\": \"✍️ Написать клиенту\", \"url\": \"{{27.wurl}}\"}], [{\"text\": \"📋 Full ТЗ\", \"callback_data\": \"ft|{{1.lead_id}}\"}, {\"text\": \"💰 Offer\", \"callback_data\": \"of|{{1.lead_id}}\"}], [{\"text\": \"💬 Client Message\", \"callback_data\": \"cm|{{1.lead_id}}\"}, {\"text\": \"❓ Questions\", \"callback_data\": \"qs|{{1.lead_id}}\"}], [{\"text\": \"🔍 More Analysis\", \"callback_data\": \"mx|{{1.lead_id}}\"}, {\"text\": \"📞 Contacted\", \"callback_data\": \"ct|{{1.lead_id}}\"}], [{\"text\": \"🏆 Won\", \"callback_data\": \"wn|{{1.lead_id}}\"}, {\"text\": \"❌ Lost\", \"callback_data\": \"ls|{{1.lead_id}}\"}, {\"text\": \"📦 Archive\", \"callback_data\": \"ar|{{1.lead_id}}\"}]]}"
+                     },
+                     {
+                      "name": "kb0",
+                      "value": "{\"inline_keyboard\": [[{\"text\": \"📋 Full ТЗ\", \"callback_data\": \"ft|{{1.lead_id}}\"}, {\"text\": \"💰 Offer\", \"callback_data\": \"of|{{1.lead_id}}\"}], [{\"text\": \"💬 Client Message\", \"callback_data\": \"cm|{{1.lead_id}}\"}, {\"text\": \"❓ Questions\", \"callback_data\": \"qs|{{1.lead_id}}\"}], [{\"text\": \"🔍 More Analysis\", \"callback_data\": \"mx|{{1.lead_id}}\"}, {\"text\": \"📞 Contacted\", \"callback_data\": \"ct|{{1.lead_id}}\"}], [{\"text\": \"🏆 Won\", \"callback_data\": \"wn|{{1.lead_id}}\"}, {\"text\": \"❌ Lost\", \"callback_data\": \"ls|{{1.lead_id}}\"}, {\"text\": \"📦 Archive\", \"callback_data\": \"ar|{{1.lead_id}}\"}]]}"
                      }
                     ],
                     "scope": "roundtrip"
                    },
                    "parameters": {},
+                   "metadata": {
+                    "designer": {
+                     "x": 0,
+                     "y": 0
+                    }
+                   }
+                  },
+                  {
+                   "id": 56,
+                   "module": "datastore:GetRecord",
+                   "version": 1,
+                   "mapper": {
+                    "key": "{{1.lead_id}}",
+                    "returnWrapped": false
+                   },
+                   "parameters": {
+                    "datastore": 207950
+                   },
                    "metadata": {
                     "designer": {
                      "x": 0,
@@ -1040,9 +1100,12 @@
                      "upsells": "{{27.ups}}",
                      "phase_2_revenue": "{{ifempty(25.phase_2_revenue; \"UNKNOWN\")}}",
                      "maintenance_revenue": "{{ifempty(25.maintenance_revenue; \"UNKNOWN\")}}",
+                     "last_run_tokens_in": "{{27.tin}}",
+                     "last_run_tokens_out": "{{27.tout}}",
+                     "last_run_cost_usd": "{{27.total}}",
                      "sales_run_id": "{{1.run_id}}",
-                     "status": "COMMERCIAL_READY",
-                     "status_at": "{{now}}",
+                     "status": "{{if(switch(56.status; \"WON\"; 1; \"LOST\"; 1; \"ARCHIVED\"; 1; \"CONTACTED\"; 1; 0) = 1; 56.status; \"COMMERCIAL_READY\")}}",
+                     "status_at": "{{if(switch(56.status; \"WON\"; 1; \"LOST\"; 1; \"ARCHIVED\"; 1; \"CONTACTED\"; 1; 0) = 1; 56.status_at; now)}}",
                      "updated_at": "{{now}}"
                     }
                    },
@@ -1127,8 +1190,8 @@
                      "lead_id": "{{1.lead_id}}",
                      "event": "SALES_COMPLETED",
                      "details": "rec {{25.recommended_price}} €, win {{25.win_probability}}%, tokens {{23.usage.input_tokens}}/{{23.usage.output_tokens}}, ${{27.scost}}",
-                     "old_status": "TECHNICAL_SPEC_READY",
-                     "new_status": "COMMERCIAL_READY",
+                     "old_status": "{{56.status}}",
+                     "new_status": "{{if(switch(56.status; \"WON\"; 1; \"LOST\"; 1; \"ARCHIVED\"; 1; \"CONTACTED\"; 1; 0) = 1; 56.status; \"COMMERCIAL_READY\")}}",
                      "created_at": "{{now}}",
                      "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
                     }
@@ -1374,11 +1437,11 @@
                          },
                          {
                           "key": "text",
-                          "value": "{{substring(28.card; 0; 3500)}}"
+                          "value": "{{substring(28.card; 0; 3500)}}\n{{28.foot}}"
                          },
                          {
                           "key": "reply_markup",
-                          "value": "{\"inline_keyboard\": [[{\"text\": \"📋 Full ТЗ\", \"callback_data\": \"ft|{{1.lead_id}}\"}, {\"text\": \"💰 Offer\", \"callback_data\": \"of|{{1.lead_id}}\"}], [{\"text\": \"💬 Client Message\", \"callback_data\": \"cm|{{1.lead_id}}\"}, {\"text\": \"❓ Questions\", \"callback_data\": \"qs|{{1.lead_id}}\"}], [{\"text\": \"🔍 More Analysis\", \"callback_data\": \"mx|{{1.lead_id}}\"}, {\"text\": \"📞 Contacted\", \"callback_data\": \"ct|{{1.lead_id}}\"}], [{\"text\": \"🏆 Won\", \"callback_data\": \"wn|{{1.lead_id}}\"}, {\"text\": \"❌ Lost\", \"callback_data\": \"ls|{{1.lead_id}}\"}, {\"text\": \"📦 Archive\", \"callback_data\": \"ar|{{1.lead_id}}\"}]]}"
+                          "value": "{{if(27.wurl; 28.kb1; 28.kb0)}}"
                          }
                         ],
                         "urlMethod": "sendMessage"
@@ -1462,6 +1525,24 @@
                        ]
                       },
                       {
+                       "id": 57,
+                       "module": "datastore:GetRecord",
+                       "version": 1,
+                       "mapper": {
+                        "key": "{{1.lead_id}}",
+                        "returnWrapped": false
+                       },
+                       "parameters": {
+                        "datastore": 207950
+                       },
+                       "metadata": {
+                        "designer": {
+                         "x": 0,
+                         "y": 0
+                        }
+                       }
+                      },
+                      {
                        "id": 34,
                        "module": "datastore:UpdateRecord",
                        "version": 1,
@@ -1470,9 +1551,9 @@
                         "upsert": false,
                         "overwriteArrays": false,
                         "data": {
-                         "status": "SENT_TO_TELEGRAM",
+                         "status": "{{if(switch(57.status; \"WON\"; 1; \"LOST\"; 1; \"ARCHIVED\"; 1; \"CONTACTED\"; 1; 0) = 1; 57.status; \"SENT_TO_TELEGRAM\")}}",
                          "commercial_message_id": "{{33.body.result.message_id}}",
-                         "status_at": "{{now}}"
+                         "status_at": "{{if(switch(57.status; \"WON\"; 1; \"LOST\"; 1; \"ARCHIVED\"; 1; \"CONTACTED\"; 1; 0) = 1; 57.status_at; now)}}"
                         }
                        },
                        "parameters": {
@@ -1497,9 +1578,9 @@
                          "event_id": "{{uuid}}",
                          "lead_id": "{{1.lead_id}}",
                          "event": "COMMERCIAL_SENT_TO_OWNER",
-                         "details": "message {{33.body.result.message_id}}",
-                         "old_status": "COMMERCIAL_READY",
-                         "new_status": "SENT_TO_TELEGRAM",
+                         "details": "message {{33.body.result.message_id}}{{if(switch(57.status; \"WON\"; 1; \"LOST\"; 1; \"ARCHIVED\"; 1; \"CONTACTED\"; 1; 0) = 1; \" · статус владельца \" + 57.status + \" сохранён\"; \"\")}}",
+                         "old_status": "{{57.status}}",
+                         "new_status": "{{if(switch(57.status; \"WON\"; 1; \"LOST\"; 1; \"ARCHIVED\"; 1; \"CONTACTED\"; 1; 0) = 1; 57.status; \"SENT_TO_TELEGRAM\")}}",
                          "created_at": "{{now}}",
                          "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
                         }
