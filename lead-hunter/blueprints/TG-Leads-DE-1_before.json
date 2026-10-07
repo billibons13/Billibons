@@ -1,0 +1,44 @@
+{
+ "_saved": "2026-10-07 scenarios_get 7744024 (до T-20261007-0020); scheduling: indefinitely 10800 s; isActive: true",
+ "name": "TG-Leads DE — 1. Lead Hunter + Verification (Freelancer.com → Telegram)",
+ "metadata": {"instant": false, "version": 1, "scenario": {"dlq": false, "dataloss": false, "maxErrors": 3, "autoCommit": true, "roundtrips": 1, "sequential": true, "confidential": false, "autoCommitTriggerLast": true}},
+ "flow": [
+  {"id": 1, "module": "http:ActionSendData", "version": 3, "parameters": {"handleErrors": false, "useNewZLibDeCompress": true},
+   "mapper": {"qs": [{"name": "currency_codes[]", "value": "EUR"}], "url": "https://www.freelancer.com/api/projects/0.1/currencies/", "gzip": true, "method": "get",
+    "headers": [{"name": "User-Agent", "value": "TGLeadsDE/1.0 (Make.com; contact: owner)"}], "useMtls": false, "serializeUrl": false, "shareCookies": false, "parseResponse": true, "followRedirect": true, "useQuerystring": false, "followAllRedirects": false, "rejectUnauthorized": true}},
+  {"id": 2, "module": "http:ActionSendData", "version": 3, "parameters": {"handleErrors": false, "useNewZLibDeCompress": true},
+   "mapper": {"qs": [{"name": "query", "value": "telegram"}, {"name": "limit", "value": "50"}, {"name": "full_description", "value": "true"}, {"name": "compact", "value": "true"}, {"name": "from_time", "value": "{{formatDate(addDays(now; -3); \"X\")}}"}],
+    "url": "https://www.freelancer.com/api/projects/0.1/projects/active/", "gzip": true, "method": "get",
+    "headers": [{"name": "User-Agent", "value": "TGLeadsDE/1.0 (Make.com; contact: owner)"}], "useMtls": false, "serializeUrl": false, "shareCookies": false, "parseResponse": true, "followRedirect": true, "useQuerystring": false, "followAllRedirects": false, "rejectUnauthorized": true}},
+  {"id": 3, "module": "builtin:BasicFeeder", "version": 1, "parameters": {}, "mapper": {"array": "{{2.data.result.projects}}"}},
+  {"id": 4, "module": "util:SetVariables", "version": 1, "parameters": {},
+   "filter": {"name": "fixed · ≥500 EUR · бот", "conditions": [
+     [{"a": "{{3.type}}", "b": "fixed", "o": "text:equal"}, {"a": "{{round(3.budget.maximum * 3.currency.exchange_rate / first(map(1.data.result.currencies; \"exchange_rate\")))}}", "b": "500", "o": "number:greaterorequal"}, {"a": "{{3.title}}", "b": "bot", "o": "text:contain:ci"}],
+     [{"a": "{{3.type}}", "b": "fixed", "o": "text:equal"}, {"a": "{{round(3.budget.maximum * 3.currency.exchange_rate / first(map(1.data.result.currencies; \"exchange_rate\")))}}", "b": "500", "o": "number:greaterorequal"}, {"a": "{{3.description}}", "b": "bot", "o": "text:contain:ci"}]]},
+   "mapper": {"scope": "roundtrip", "variables": [{"name": "eur_max", "value": "{{round(3.budget.maximum * 3.currency.exchange_rate / first(map(1.data.result.currencies; \"exchange_rate\")))}}"}, {"name": "key", "value": "fl-{{3.id}}"}]}},
+  {"id": 5, "module": "util:SetVariables", "version": 1, "parameters": {},
+   "mapper": {"scope": "roundtrip", "variables": [
+    {"name": "de_strong", "value": "{{if(3.language = \"de\"; \"язык проекта = de (API); \"; \"\")}}{{if(contains(lower(3.title); \"deutsch\"); \"в заголовке «deutsch»; \"; \"\")}}{{if(contains(lower(3.description); \"deutsch\"); \"в описании «deutsch»; \"; \"\")}}{{if(contains(lower(3.title); \"german\"); \"в заголовке «german»; \"; \"\")}}{{if(contains(lower(3.description); \"german\"); \"в описании «german/germany»; \"; \"\")}}{{if(contains(lower(3.description); \"dsgvo\"); \"в описании «DSGVO»; \"; \"\")}}{{if(contains(lower(3.description); \"gmbh\"); \"в описании «GmbH»; \"; \"\")}}"},
+    {"name": "risks", "value": "{{if(contains(lower(3.description); \"whatsapp\"); \"упоминается WhatsApp (возможен увод общения с платформы); \"; \"\")}}{{if(contains(lower(3.description); \"skype\"); \"упоминается Skype; \"; \"\")}}{{if(contains(lower(3.description); \"@gmail\"); \"в тексте e-mail-адрес; \"; \"\")}}{{if(length(3.description) < 200; \"короткое описание (<200 символов); \"; \"\")}}{{if(3.bid_stats.bid_count > 40; \"высокая конкуренция (>40 ставок); \"; \"\")}}{{if(contains(lower(3.description); \"crypto\"); \"крипто-тематика; \"; \"\")}}{{if(contains(lower(3.description); \"free test\"); \"просят бесплатное тестовое; \"; \"\")}}{{if(contains(lower(3.description); \"unpaid\"); \"в тексте «unpaid»; \"; \"\")}}"}]}},
+  {"id": 6, "module": "datastore:GetRecord", "version": 1, "parameters": {"datastore": 205357},
+   "filter": {"name": "Признак DE или EUR", "conditions": [[{"a": "{{5.de_strong}}", "o": "exist"}], [{"a": "{{3.currency.code}}", "b": "EUR", "o": "text:equal"}]]},
+   "mapper": {"key": "{{4.key}}", "returnWrapped": false}},
+  {"id": 7, "module": "telegram:UniversalAPICall", "version": 1, "parameters": {"__IMTCONN__": 9480305},
+   "filter": {"name": "Новый (нет в базе)", "conditions": [[{"a": "{{6.source}}", "o": "notexist"}]]},
+   "mapper": {"method": "POST", "bodyType": "assembled_body", "urlMethod": "sendMessage", "body_spec": [
+    {"key": "chat_id", "value": "<OWNER_CHAT_ID>"},
+    {"key": "text", "value": "🆕 ЛИД: {{3.title}}\n━━━━━━━━━━━━\n📌 ФАКТЫ (официальный API Freelancer.com)\n• Источник: Freelancer.com, проект #{{3.id}}\n• Ссылка: https://www.freelancer.com/projects/{{3.seo_url}}\n• Бюджет: {{3.budget.minimum}}–{{3.budget.maximum}} {{3.currency.code}} (fixed){{if(3.currency.code = \"EUR\"; \"\"; \" ≈ до \")}}{{if(3.currency.code = \"EUR\"; \"\"; 4.eur_max)}}{{if(3.currency.code = \"EUR\"; \"\"; \" EUR по курсу Freelancer.com\")}}\n• Опубликовано: {{formatDate(parseDate(3.time_submitted; \"X\"); \"DD.MM.YYYY HH:mm\"; \"Europe/Berlin\")}}\n• Ставок на момент сбора: {{ifempty(3.bid_stats.bid_count; 0)}} · язык: {{3.language}}\n• Статус: {{3.status}}, публичный проект\n• Признаки Германии: {{ifempty(5.de_strong; \"нет прямых; валюта EUR (только ЕС-признак)\")}}\n⚠️ Риски (правила): {{ifempty(5.risks; \"правилами не выявлено\")}}\n━━━━━━━━━━━━\n🔎 ГИПОТЕЗЫ (НЕ проверено)\n• Страна клиента неизвестна: API без входа её не отдаёт. Германия — {{if(5.de_strong; \"вероятна по признакам выше\"; \"НЕ подтверждена\")}}.\n━━━━━━━━━━━━\n📝 Описание (начало, дословно):\n{{substring(3.description; 0; 900)}}{{if(length(3.description) > 900; \"…\"; \"\")}}\n\nКлиенту ничего не отправлено. Ключ: fl-{{3.id}}"},
+    {"key": "reply_markup", "value": "{\"inline_keyboard\":[[{\"text\":\"✅ Одобрить\",\"callback_data\":\"ok|fl-{{3.id}}\"},{\"text\":\"❌ Отклонить\",\"callback_data\":\"no|fl-{{3.id}}\"}],[{\"text\":\"📄 Посмотреть полное ТЗ\",\"callback_data\":\"tz|fl-{{3.id}}\"}],[{\"text\":\"🔗 Открыть источник\",\"url\":\"https://www.freelancer.com/projects/{{3.seo_url}}\"}]]}"},
+    {"key": "disable_web_page_preview", "value": "true"}]}},
+  {"id": 8, "module": "datastore:AddRecord", "version": 1, "parameters": {"datastore": 205357},
+   "mapper": {"key": "{{4.key}}", "overwrite": false, "data": {
+    "title": "{{3.title}}", "source": "Freelancer.com API", "status": "new", "currency": "{{3.currency.code}}", "language": "{{3.language}}",
+    "bid_count": "{{ifempty(3.bid_stats.bid_count; 0)}}", "de_signal": "{{ifempty(5.de_strong; \"только EUR (слабый признак)\")}}",
+    "posted_at": "{{parseDate(3.time_submitted; \"X\")}}", "source_id": "{{3.id}}", "budget_max": "{{3.budget.maximum}}", "budget_min": "{{3.budget.minimum}}",
+    "fetched_at": "{{now}}", "hypotheses": "Страна клиента не подтверждена (API без авторизации её не отдаёт).", "risk_flags": "{{5.risks}}",
+    "source_url": "https://www.freelancer.com/projects/{{3.seo_url}}", "description": "{{substring(3.description; 0; 4000)}}",
+    "delete_after": "{{addDays(now; 90)}}", "project_type": "{{3.type}}",
+    "verification": "API: status={{3.status}}, nonpublic={{3.nonpublic}}, deleted={{3.deleted}}; источник — официальный API Freelancer.com",
+    "tg_message_id": "{{7.body.result.message_id}}", "budget_max_eur": "{{4.eur_max}}"}}}
+ ]
+}
