@@ -323,7 +323,7 @@
              "old_status": "{{8.status}}",
              "new_status": "{{8.status}}",
              "created_at": "{{now}}",
-             "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+             "day": "{{10.day}}"
             }
            },
            "parameters": {
@@ -476,6 +476,10 @@
              {
               "name": "aj",
               "value": "{{replace(trim(replace(replace(14.result; \"/^\\s*```(json)?/\"; \"\"); \"/```\\s*$/\"; \"\")); \"/\\n\\s*/g\"; \"\")}}"
+             },
+             {
+              "name": "acost",
+              "value": "{{if(14.usage.input_tokens; 14.usage.input_tokens * ifempty(2.sonnet_price_in_mtok; 2) / 1000000 + ifempty(14.usage.output_tokens; 0) * ifempty(2.sonnet_price_out_mtok; 10) / 1000000; 0)}}"
              }
             ],
             "scope": "roundtrip"
@@ -543,7 +547,7 @@
                 "variables": [
                  {
                   "name": "acost",
-                  "value": "{{if(14.usage.input_tokens; 14.usage.input_tokens * ifempty(2.sonnet_price_in_mtok; 2) / 1000000 + ifempty(14.usage.output_tokens; 0) * ifempty(2.sonnet_price_out_mtok; 10) / 1000000; 0)}}"
+                  "value": "{{15.acost}}"
                  },
                  {
                   "name": "q",
@@ -709,7 +713,7 @@
                  "attempt": "{{if(1.mode = \"more\"; 2; 1)}}",
                  "prompt_version": "ARCHITECT_v1",
                  "created_at": "{{now}}",
-                 "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+                 "day": "{{10.day}}"
                 }
                },
                "parameters": {
@@ -738,7 +742,7 @@
                  "old_status": "{{55.status}}",
                  "new_status": "{{if(switch(55.status; \"WON\"; 1; \"LOST\"; 1; \"ARCHIVED\"; 1; \"CONTACTED\"; 1; 0) = 1; 55.status; \"TECHNICAL_SPEC_READY\")}}",
                  "created_at": "{{now}}",
-                 "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+                 "day": "{{10.day}}"
                 }
                },
                "parameters": {
@@ -767,7 +771,7 @@
                  "old_status": "TECHNICAL_SPEC_READY",
                  "new_status": "TECHNICAL_SPEC_READY",
                  "created_at": "{{now}}",
-                 "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+                 "day": "{{10.day}}"
                 }
                },
                "parameters": {
@@ -831,6 +835,10 @@
                  {
                   "name": "t1",
                   "value": "{{now}}"
+                 },
+                 {
+                  "name": "scost",
+                  "value": "{{if(23.usage.input_tokens; 23.usage.input_tokens * ifempty(2.sonnet_price_in_mtok; 2) / 1000000 + ifempty(23.usage.output_tokens; 0) * ifempty(2.sonnet_price_out_mtok; 10) / 1000000; 0)}}"
                  }
                 ],
                 "scope": "roundtrip"
@@ -898,11 +906,11 @@
                     "variables": [
                      {
                       "name": "scost",
-                      "value": "{{if(23.usage.input_tokens; 23.usage.input_tokens * ifempty(2.sonnet_price_in_mtok; 2) / 1000000 + ifempty(23.usage.output_tokens; 0) * ifempty(2.sonnet_price_out_mtok; 10) / 1000000; 0)}}"
+                      "value": "{{24.scost}}"
                      },
                      {
                       "name": "total",
-                      "value": "{{18.acost + if(23.usage.input_tokens; 23.usage.input_tokens * ifempty(2.sonnet_price_in_mtok; 2) / 1000000 + ifempty(23.usage.output_tokens; 0) * ifempty(2.sonnet_price_out_mtok; 10) / 1000000; 0)}}"
+                      "value": "{{15.acost + 24.scost}}"
                      },
                      {
                       "name": "ups",
@@ -1041,12 +1049,8 @@
                       "value": "{{if(27.wurl; \"✍️ Написать клиенту — кнопка ниже\"; \"✍️ Контакт неизвестен — ответьте на площадке\")}}\n💵 AI: ${{formatNumber(27.total; 4; \".\"; \"\")}}"
                      },
                      {
-                      "name": "kb1",
-                      "value": "{\"inline_keyboard\": [[{\"text\": \"✍️ Написать клиенту\", \"url\": \"{{27.wurl}}\"}], [{\"text\": \"📋 Full ТЗ\", \"callback_data\": \"ft|{{1.lead_id}}\"}, {\"text\": \"💰 Offer\", \"callback_data\": \"of|{{1.lead_id}}\"}], [{\"text\": \"💬 Client Message\", \"callback_data\": \"cm|{{1.lead_id}}\"}, {\"text\": \"❓ Questions\", \"callback_data\": \"qs|{{1.lead_id}}\"}], [{\"text\": \"🔍 More Analysis\", \"callback_data\": \"mx|{{1.lead_id}}\"}, {\"text\": \"📞 Contacted\", \"callback_data\": \"ct|{{1.lead_id}}\"}], [{\"text\": \"🏆 Won\", \"callback_data\": \"wn|{{1.lead_id}}\"}, {\"text\": \"❌ Lost\", \"callback_data\": \"ls|{{1.lead_id}}\"}, {\"text\": \"📦 Archive\", \"callback_data\": \"ar|{{1.lead_id}}\"}]]}"
-                     },
-                     {
-                      "name": "kb0",
-                      "value": "{\"inline_keyboard\": [[{\"text\": \"📋 Full ТЗ\", \"callback_data\": \"ft|{{1.lead_id}}\"}, {\"text\": \"💰 Offer\", \"callback_data\": \"of|{{1.lead_id}}\"}], [{\"text\": \"💬 Client Message\", \"callback_data\": \"cm|{{1.lead_id}}\"}, {\"text\": \"❓ Questions\", \"callback_data\": \"qs|{{1.lead_id}}\"}], [{\"text\": \"🔍 More Analysis\", \"callback_data\": \"mx|{{1.lead_id}}\"}, {\"text\": \"📞 Contacted\", \"callback_data\": \"ct|{{1.lead_id}}\"}], [{\"text\": \"🏆 Won\", \"callback_data\": \"wn|{{1.lead_id}}\"}, {\"text\": \"❌ Lost\", \"callback_data\": \"ls|{{1.lead_id}}\"}, {\"text\": \"📦 Archive\", \"callback_data\": \"ar|{{1.lead_id}}\"}]]}"
+                      "name": "wrow",
+                      "value": "[{\"text\":\"✍️ Написать клиенту\",\"url\":\"{{27.wurl}}\"}],"
                      }
                     ],
                     "scope": "roundtrip"
@@ -1141,7 +1145,7 @@
                      "attempt": "{{if(1.mode = \"more\"; 2; 1)}}",
                      "prompt_version": "SALES_v1",
                      "created_at": "{{now}}",
-                     "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+                     "day": "{{10.day}}"
                     }
                    },
                    "parameters": {
@@ -1159,11 +1163,11 @@
                    "module": "datastore:UpdateRecord",
                    "version": 1,
                    "mapper": {
-                    "key": "day_{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}",
+                    "key": "day_{{10.day}}",
                     "upsert": true,
                     "overwriteArrays": false,
                     "data": {
-                     "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}",
+                     "day": "{{10.day}}",
                      "cost_usd": "{{ifempty(10.cost_usd; 0) + 27.total}}"
                     }
                    },
@@ -1193,7 +1197,7 @@
                      "old_status": "{{56.status}}",
                      "new_status": "{{if(switch(56.status; \"WON\"; 1; \"LOST\"; 1; \"ARCHIVED\"; 1; \"CONTACTED\"; 1; 0) = 1; 56.status; \"COMMERCIAL_READY\")}}",
                      "created_at": "{{now}}",
-                     "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+                     "day": "{{10.day}}"
                     }
                    },
                    "parameters": {
@@ -1229,7 +1233,7 @@
                         "upsert": true,
                         "overwriteArrays": false,
                         "data": {
-                         "warned_80": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+                         "warned_80": "{{10.day}}"
                         }
                        },
                        "parameters": {
@@ -1258,7 +1262,7 @@
                           {
                            "a": "{{2.warned_80}}",
                            "o": "text:notequal",
-                           "b": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+                           "b": "{{10.day}}"
                           }
                          ]
                         ]
@@ -1363,7 +1367,7 @@
                          "old_status": "",
                          "new_status": "",
                          "created_at": "{{now}}",
-                         "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+                         "day": "{{10.day}}"
                         }
                        },
                        "parameters": {
@@ -1441,7 +1445,7 @@
                          },
                          {
                           "key": "reply_markup",
-                          "value": "{{if(27.wurl; 28.kb1; 28.kb0)}}"
+                          "value": "{\"inline_keyboard\":[{{if(27.wurl; 28.wrow; \"\")}}[{\"text\":\"📋 Full ТЗ\",\"callback_data\":\"ft|{{1.lead_id}}\"},{\"text\":\"💰 Offer\",\"callback_data\":\"of|{{1.lead_id}}\"}],[{\"text\":\"💬 Client Message\",\"callback_data\":\"cm|{{1.lead_id}}\"},{\"text\":\"❓ Questions\",\"callback_data\":\"qs|{{1.lead_id}}\"}],[{\"text\":\"🔍 More Analysis\",\"callback_data\":\"mx|{{1.lead_id}}\"},{\"text\":\"📞 Contacted\",\"callback_data\":\"ct|{{1.lead_id}}\"}],[{\"text\":\"🏆 Won\",\"callback_data\":\"wn|{{1.lead_id}}\"},{\"text\":\"❌ Lost\",\"callback_data\":\"ls|{{1.lead_id}}\"},{\"text\":\"📦 Archive\",\"callback_data\":\"ar|{{1.lead_id}}\"}]]}"
                          }
                         ],
                         "urlMethod": "sendMessage"
@@ -1497,7 +1501,7 @@
                            "old_status": "COMMERCIAL_READY",
                            "new_status": "ERROR",
                            "created_at": "{{now}}",
-                           "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+                           "day": "{{10.day}}"
                           }
                          },
                          "parameters": {
@@ -1582,7 +1586,7 @@
                          "old_status": "{{57.status}}",
                          "new_status": "{{if(switch(57.status; \"WON\"; 1; \"LOST\"; 1; \"ARCHIVED\"; 1; \"CONTACTED\"; 1; 0) = 1; 57.status; \"SENT_TO_TELEGRAM\")}}",
                          "created_at": "{{now}}",
-                         "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+                         "day": "{{10.day}}"
                         }
                        },
                        "parameters": {
@@ -1620,12 +1624,12 @@
                      "finished_at": "{{now}}",
                      "input_tokens": "{{23.usage.input_tokens}}",
                      "output_tokens": "{{23.usage.output_tokens}}",
-                     "estimated_cost_usd": "{{if(23.usage.input_tokens; 23.usage.input_tokens * ifempty(2.sonnet_price_in_mtok; 2) / 1000000 + ifempty(23.usage.output_tokens; 0) * ifempty(2.sonnet_price_out_mtok; 10) / 1000000; 0)}}",
+                     "estimated_cost_usd": "{{24.scost}}",
                      "status": "FAILED",
                      "attempt": "{{if(1.mode = \"more\"; 2; 1)}}",
                      "prompt_version": "SALES_v1",
                      "created_at": "{{now}}",
-                     "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}",
+                     "day": "{{10.day}}",
                      "error_code": "{{if(23.stop_reason = \"error\"; \"MODEL_ERROR\"; if(23.stop_reason = \"max_tokens\"; \"TRUNCATED\"; if(23.stop_reason = \"refusal\"; \"REFUSAL\"; if(25.lead_id; \"VALIDATION_FAILED\"; \"JSON_INVALID\"))))}}",
                      "error_message": "{{substring(ifempty(23.result; \"(empty)\"); 0; 300)}}"
                     }
@@ -1774,12 +1778,12 @@
                    "module": "datastore:UpdateRecord",
                    "version": 1,
                    "mapper": {
-                    "key": "day_{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}",
+                    "key": "day_{{10.day}}",
                     "upsert": true,
                     "overwriteArrays": false,
                     "data": {
-                     "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}",
-                     "cost_usd": "{{ifempty(10.cost_usd; 0) + 18.acost + if(23.usage.input_tokens; 23.usage.input_tokens * ifempty(2.sonnet_price_in_mtok; 2) / 1000000 + ifempty(23.usage.output_tokens; 0) * ifempty(2.sonnet_price_out_mtok; 10) / 1000000; 0)}}"
+                     "day": "{{10.day}}",
+                     "cost_usd": "{{ifempty(10.cost_usd; 0) + 18.acost + 24.scost}}"
                     }
                    },
                    "parameters": {
@@ -1834,7 +1838,7 @@
                      "old_status": "TECHNICAL_SPEC_READY",
                      "new_status": "ERROR",
                      "created_at": "{{now}}",
-                     "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+                     "day": "{{10.day}}"
                     }
                    },
                    "parameters": {
@@ -1919,12 +1923,12 @@
                  "finished_at": "{{now}}",
                  "input_tokens": "{{14.usage.input_tokens}}",
                  "output_tokens": "{{14.usage.output_tokens}}",
-                 "estimated_cost_usd": "{{if(14.usage.input_tokens; 14.usage.input_tokens * ifempty(2.sonnet_price_in_mtok; 2) / 1000000 + ifempty(14.usage.output_tokens; 0) * ifempty(2.sonnet_price_out_mtok; 10) / 1000000; 0)}}",
+                 "estimated_cost_usd": "{{15.acost}}",
                  "status": "FAILED",
                  "attempt": "{{if(1.mode = \"more\"; 2; 1)}}",
                  "prompt_version": "ARCHITECT_v1",
                  "created_at": "{{now}}",
-                 "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}",
+                 "day": "{{10.day}}",
                  "error_code": "{{if(14.stop_reason = \"error\"; \"MODEL_ERROR\"; if(14.stop_reason = \"max_tokens\"; \"TRUNCATED\"; if(14.stop_reason = \"refusal\"; \"REFUSAL\"; if(16.lead_id; \"VALIDATION_FAILED\"; \"JSON_INVALID\"))))}}",
                  "error_message": "{{substring(ifempty(14.result; \"(empty)\"); 0; 300)}}"
                 }
@@ -2043,12 +2047,12 @@
                "module": "datastore:UpdateRecord",
                "version": 1,
                "mapper": {
-                "key": "day_{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}",
+                "key": "day_{{10.day}}",
                 "upsert": true,
                 "overwriteArrays": false,
                 "data": {
-                 "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}",
-                 "cost_usd": "{{ifempty(10.cost_usd; 0) + if(14.usage.input_tokens; 14.usage.input_tokens * ifempty(2.sonnet_price_in_mtok; 2) / 1000000 + ifempty(14.usage.output_tokens; 0) * ifempty(2.sonnet_price_out_mtok; 10) / 1000000; 0)}}"
+                 "day": "{{10.day}}",
+                 "cost_usd": "{{ifempty(10.cost_usd; 0) + 15.acost}}"
                 }
                },
                "parameters": {
@@ -2103,7 +2107,7 @@
                  "old_status": "{{8.status}}",
                  "new_status": "ERROR",
                  "created_at": "{{now}}",
-                 "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+                 "day": "{{10.day}}"
                 }
                },
                "parameters": {
@@ -2332,7 +2336,7 @@
              "old_status": "{{8.status}}",
              "new_status": "ERROR",
              "created_at": "{{now}}",
-             "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(2.timezone; \"Europe/Berlin\"))}}"
+             "day": "{{10.day}}"
             }
            },
            "parameters": {

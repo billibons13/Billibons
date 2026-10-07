@@ -745,7 +745,7 @@ def lh11():
               "Return ONLY the minified JSON object for lead_id {{1.lead_id}}.",
               "max_tokens": "{{ifempty(2.architect_max_tokens; 8000)}}"},
              onerror=resume(514, {"result": "", "stop_reason": "error", "usage": {"input_tokens": 0, "output_tokens": 0}}))
-    aj = setvars(15, [("aj", clean_json("14.result"))])
+    aj = setvars(15, [("aj", clean_json("14.result")), ("acost", "{{" + cost("14") + "}}")])  # стоимость считается один раз
     pa = m(16, "json:ParseJSON", 1, {"json": "{{15.aj}}"}, {"type": DS_ARCH}, onerror=resume(516, {"lead_id": ""}))
     A = "16."
     va = [c("{{16.lead_id}}", "text:equal", "{{1.lead_id}}"), c("{{16.complexity}}", "text:pattern", "^(S|M|L|XL)$"),
@@ -754,8 +754,8 @@ def lh11():
           c("{{14.stop_reason}}", "text:notequal", "max_tokens"), c("{{16.project_summary}}", "exist"),
           c("{{16.telegram_solution.bot}}", "exist"), c("{{16.database.required}}", "exist"), c("{{16.admin_panel.required}}", "exist")] + \
          [c("{{length(16." + k + ")}}", "number:greater", "0") for k in ("functional_requirements", "mvp", "technology_stack", "questions_for_client")]
-    acost = cost("14")
-    a_vars = setvars(18, [("acost", "{{" + acost + "}}"),
+    acost = "15.acost"
+    a_vars = setvars(18, [("acost", "{{15.acost}}"),
                           ("q", '{{"• " + join(slice(16.questions_for_client; 0; 10); newline + "• ")}}'),
                           ("miss", '{{if(length(16.missing_information) > 0; "• " + join(16.missing_information; newline + "• "); "")}}')],
                      name="ТЗ валидно", conds=[va])
@@ -782,7 +782,7 @@ def lh11():
                "ARCHITECT_SPEC (JSON):\n{{15.aj}}\n" + deep_s + "Return ONLY the minified JSON object for lead_id {{1.lead_id}}.",
                "max_tokens": "{{ifempty(2.sales_max_tokens; 4000)}}"},
               onerror=resume(523, {"result": "", "stop_reason": "error", "usage": {"input_tokens": 0, "output_tokens": 0}}))
-    sj = setvars(24, [("sj", clean_json("23.result")), ("t1", "{{now}}")])
+    sj = setvars(24, [("sj", clean_json("23.result")), ("t1", "{{now}}"), ("scost", "{{" + cost("23") + "}}")])
     ps = m(25, "json:ParseJSON", 1, {"json": "{{24.sj}}"}, {"type": DS_SALES}, onerror=resume(525, {"lead_id": ""}))
     P = lambda k: "{{25." + k + "}}"
     prices = ["estimated_cost", "recommended_price", "target_price", "minimum_acceptable_price",
@@ -797,8 +797,8 @@ def lh11():
           c(P("commercial_potential"), "text:pattern", "^(LOW|MEDIUM|HIGH)$"),
           c(P("client_message"), "exist"), c(P("client_message_ru"), "exist"),
           c("{{23.stop_reason}}", "text:notequal", "max_tokens")]
-    scost = cost("23")
-    s_vars = setvars(27, [("scost", "{{" + scost + "}}"), ("total", "{{18.acost + " + scost + "}}"),
+    scost = "24.scost"
+    s_vars = setvars(27, [("scost", "{{24.scost}}"), ("total", "{{15.acost + 24.scost}}"),
                           ("ups", '{{join(slice(25.upsells; 0; 5); "; ")}}'),
                           ("tin", "{{ifempty(14.usage.input_tokens; 0) + ifempty(23.usage.input_tokens; 0)}}"),
                           ("tout", "{{ifempty(14.usage.output_tokens; 0) + ifempty(23.usage.output_tokens; 0)}}"),
@@ -822,7 +822,10 @@ def lh11():
             "Клиенту ничего не отправлено. 🆔 {{1.lead_id}}")
     FOOT = ('{{if(27.wurl; "✍️ Написать клиенту — кнопка ниже"; "' + NO_CONTACT + '")}}\n'
             '💵 AI: ${{formatNumber(27.total; 4; "."; "")}}')
-    card = setvars(28, [("card", CARD), ("foot", FOOT), ("kb1", LH11_KB(L, [WRITE_BTN("27.wurl")])), ("kb0", LH11_KB(L))])
+    # клавиатура: строка «✍️ Написать клиенту» (wrow) подставляется перед обычными кнопками, только если есть URL
+    card = setvars(28, [("card", CARD), ("foot", FOOT), ("wrow", json.dumps(WRITE_BTN("27.wurl"), ensure_ascii=False, separators=(",", ":")) + ",")])
+    KB11 = json.loads(LH11_KB(L))["inline_keyboard"]
+    KB11_TXT = '{"inline_keyboard":[{{if(27.wurl; 28.wrow; "")}}' + json.dumps(KB11, ensure_ascii=False, separators=(",", ":"))[1:]+ "}"
     s_save = ds_upd(29, S_LEADS, L, {
         "sales_json": "{{24.sj}}", "recommended_price": P("recommended_price"), "target_price": P("target_price"),
         "minimum_acceptable_price": P("minimum_acceptable_price"), "commercial_potential": P("commercial_potential"),
@@ -838,7 +841,7 @@ def lh11():
     s_done = ev(32, L, "SALES_COMPLETED", "rec {{25.recommended_price}} €, win {{25.win_probability}}%, tokens {{23.usage.input_tokens}}/{{23.usage.output_tokens}}, ${{27.scost}}",
                 old="{{56.status}}", new=KEEP("56", "COMMERCIAL_READY"))
     send = tg(33, "sendMessage", [("chat_id", OWNER), ("text", "{{substring(28.card; 0; 3500)}}\n{{28.foot}}"),
-                                  ("reply_markup", "{{if(27.wurl; 28.kb1; 28.kb0)}}")], onerror=False)
+                                  ("reply_markup", KB11_TXT)], onerror=False)
     send["onerror"] = [ds_upd(533, S_LEADS, L, {"status": "ERROR", "error_code": "TELEGRAM_SEND", "error_message": "commercial card sendMessage failed",
                               "status_at": "{{now}}"}, upsert=False),
                        ev(633, L, "ERROR", "TELEGRAM_SEND: commercial card not delivered", old="COMMERCIAL_READY", new="ERROR"),
@@ -910,6 +913,15 @@ def lh11():
                ev(6, "{{4.key}}", "STORAGE_CLEANED", "variant A: architect_json, sales_json, client_message(_ru), card_text cleared ({{4.data.status}} > {{ifempty(2.cleanup_days; 30)}} d)")]
     denied = [ev(7, "", "SECURITY_DENIED", 'LH-11: неверный internal token (token_present={{if(1.token; "yes"; "no")}})',
                  name="Неверный токен", conds=[[c("{{1.token}}", "text:notequal", "{{2.internal_token}}")]])]
+    # размер блюпринта: после модуля 10 (запись дня) дата дня = 10.day вместо повторяющегося formatDate(...)
+    def short_day(mods):
+        for mod in mods:
+            if mod["id"] not in (9, 10):
+                for k in ("mapper", "filter"):
+                    if mod.get(k): mod[k] = json.loads(json.dumps(mod[k], ensure_ascii=False).replace(json.dumps(DAY_S)[1:-1], "{{10.day}}"))
+            for e in mod.get("onerror") or []: short_day([e])
+            for r in mod.get("routes") or []: short_day(r["flow"])
+    short_day(main)
     flow = [hook(1, HOOK11), ds_get(2, S_SET, "main"), router(3, [cleanup, denied, main], 300, 0)]
     return {"name": "LH-11 Lead Hunter — Architect + Sales", "metadata": {"version": 1, "instant": True}, "flow": flow}
 
