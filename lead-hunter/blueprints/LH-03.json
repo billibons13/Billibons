@@ -110,11 +110,11 @@
          },
          {
           "name": "u",
-          "value": "{{ifempty(if(contains(1.text; \"http\"); replace(1.text; \"/^[\\s\\S]*?(https?:\\/\\/[^\\s<>)\\]]+)[\\s\\S]*$/\"; \"$1\"); \"\"); ifempty(first(split(1.text_links; \" \")); if(1.fwd_chat_username; \"https://t.me/\" + 1.fwd_chat_username + \"/\" + 1.fwd_message_id; \"\")))}}"
+          "value": "{{ifempty(1.source_url; ifempty(if(contains(1.text; \"http\"); replace(1.text; \"/^[\\s\\S]*?(https?:\\/\\/[^\\s<>)\\]]+)[\\s\\S]*$/\"; \"$1\"); \"\"); ifempty(first(split(1.text_links; \" \")); if(1.fwd_chat_username; \"https://t.me/\" + 1.fwd_chat_username + \"/\" + 1.fwd_message_id; \"\"))))}}"
          },
          {
           "name": "source",
-          "value": "{{if(1.fwd_chat_username; \"telegram:@\" + 1.fwd_chat_username; if(1.fwd_type = \"channel\"; \"telegram:\" + 1.fwd_chat_title; \"manual\"))}}"
+          "value": "{{ifempty(1.source; if(1.fwd_chat_username; \"telegram:@\" + 1.fwd_chat_username; if(1.fwd_type = \"channel\"; \"telegram:\" + 1.fwd_chat_title; \"manual\")))}}"
          },
          {
           "name": "client_hint",

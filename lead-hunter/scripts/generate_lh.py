@@ -490,8 +490,9 @@ def lh03():
     chan = ('if(1.fwd_chat_username; "https://t.me/" + 1.fwd_chat_username + "/" + 1.fwd_message_id; "")')
     v3 = setvars(3, [
         ("raw", "{{trim(" + T + ")}}"),
-        ("u", "{{ifempty(" + url_in_text + "; ifempty(first(split(1.text_links; \" \")); " + chan + "))}}"),
-        ("source", '{{if(1.fwd_chat_username; "telegram:@" + 1.fwd_chat_username; if(1.fwd_type = "channel"; "telegram:" + 1.fwd_chat_title; "manual"))}}'),
+        # T-0020 (решение 1): автоматические источники передают source и source_url; если пусто — как раньше
+        ("u", "{{ifempty(1.source_url; ifempty(" + url_in_text + "; ifempty(first(split(1.text_links; \" \")); " + chan + ")))}}"),
+        ("source", '{{ifempty(1.source; if(1.fwd_chat_username; "telegram:@" + 1.fwd_chat_username; if(1.fwd_type = "channel"; "telegram:" + 1.fwd_chat_title; "manual")))}}'),
         ("client_hint", "{{lower(ifempty(1.fwd_user_username; ifempty(1.fwd_chat_username; ifempty(1.fwd_user_name; \"\"))))}}"),
         ("published_at", '{{if(1.fwd_date; parseDate(1.fwd_date; "X"); "")}}'),
     ], name="Внутренний токен", conds=[[c("{{1.token}}", "text:equal", "{{2.internal_token}}")]])
