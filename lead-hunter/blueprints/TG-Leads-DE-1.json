@@ -64,53 +64,8 @@
     "useNewZLibDeCompress": true
    },
    "mapper": {
-    "qs": [
-     {
-      "name": "jobs[]",
-      "value": "2380"
-     },
-     {
-      "name": "jobs[]",
-      "value": "2068"
-     },
-     {
-      "name": "jobs[]",
-      "value": "2918"
-     },
-     {
-      "name": "jobs[]",
-      "value": "2917"
-     },
-     {
-      "name": "jobs[]",
-      "value": "2823"
-     },
-     {
-      "name": "project_types[]",
-      "value": "fixed"
-     },
-     {
-      "name": "project_types[]",
-      "value": "hourly"
-     },
-     {
-      "name": "limit",
-      "value": "50"
-     },
-     {
-      "name": "full_description",
-      "value": "true"
-     },
-     {
-      "name": "compact",
-      "value": "true"
-     },
-     {
-      "name": "from_time",
-      "value": "{{formatDate(addHours(now; -12); \"X\")}}"
-     }
-    ],
-    "url": "https://www.freelancer.com/api/projects/0.1/projects/active/",
+    "qs": [],
+    "url": "https://www.freelancer.com/api/projects/0.1/projects/active/?jobs[]=2380&jobs[]=2068&jobs[]=2918&jobs[]=2917&jobs[]=2823&project_types[]=fixed&project_types[]=hourly&limit=50&full_description=true&compact=true&from_time={{formatDate(addHours(now; -12); \"X\")}}",
     "gzip": true,
     "method": "get",
     "headers": [
