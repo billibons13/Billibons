@@ -1,0 +1,96 @@
+<title>Пульт директора RAIV</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: operations board — credit gauge on top, then three system lanes, then owner queue */
+:root{
+  --bg:#f3f5f4; --panel:#ffffff; --ink:#15211d; --muted:#5c6b66; --line:#d9e0dd;
+  --accent:#0f6b5a; --ok:#2e7d4f; --warn:#b26a00; --crit:#b3261e; --track:#e3e9e6;
+  --f-display:"Manrope",system-ui,sans-serif; --f-mono:"JetBrains Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1513; --panel:#17201d; --ink:#e4ece9; --muted:#93a39d; --line:#2a3632;
+  --accent:#4fc2a8; --ok:#5cc28a; --warn:#e5a23c; --crit:#ef6b62; --track:#24302c; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1513; --panel:#17201d; --ink:#e4ece9; --muted:#93a39d; --line:#2a3632;
+  --accent:#4fc2a8; --ok:#5cc28a; --warn:#e5a23c; --crit:#ef6b62; --track:#24302c; color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-display);line-height:1.5}
+.wrap{max-width:1040px;margin:0 auto;padding-inline:16px;padding-block:28px 48px;display:grid;gap:22px}
+h1{font-size:1.7rem;font-weight:800;margin:0;text-wrap:balance}
+h2{font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+.sub{color:var(--muted);margin:4px 0 0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.gauge{display:grid;gap:10px}
+.bar{position:relative;height:18px;background:var(--track);border-radius:4px;overflow:hidden}
+.bar span{position:absolute;inset:0 auto 0 0;background:var(--warn)}
+.bar i{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink)}
+.kv{display:flex;flex-wrap:wrap;gap:8px 28px}
+.kv div{min-width:0}.kv b{display:block;font-size:1.25rem}
+.kv small{color:var(--muted)}
+.lanes{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:16px}
+.lane{display:grid;gap:10px;align-content:start}
+.row{display:flex;gap:10px;align-items:flex-start;border-top:1px solid var(--line);padding-top:10px}
+.row:first-of-type{border-top:0;padding-top:0}
+.row p{margin:0;min-width:0}.row small{color:var(--muted);display:block}
+.pill{flex:none;font-size:.7rem;font-weight:600;padding:2px 8px;border-radius:99px;border:1px solid currentColor;white-space:nowrap}
+.ok{color:var(--ok)}.warn{color:var(--warn)}.crit{color:var(--crit)}.idle{color:var(--muted)}
+ol{margin:0;padding-left:20px;display:grid;gap:8px}
+ol li small{color:var(--muted)}
+.note{font-size:.85rem;color:var(--muted)}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Пульт директора</h1>
+    <p class="sub">Состояние на 07.10.2026, 12:10 UTC · RAIV FISH · Lead Hunter · Bau Hunter</p>
+  </header>
+
+  <section class="panel gauge" aria-label="Кредиты Make">
+    <h2>Кредиты Make · тариф Core 10 000 / мес · сброс 30.10</h2>
+    <div class="bar" role="img" aria-label="Израсходовано 5 581 из 10 000"><span style="width:55.8%"></span><i style="left:23.3%" title="доля месяца прошла"></i></div>
+    <div class="kv">
+      <div><b class="num">5 581</b><small>израсходовано (56 %)</small></div>
+      <div><b class="num">4 419</b><small>осталось</small></div>
+      <div><b class="num">≈ 2 800</b><small>ушло на тесты и наладку</small></div>
+      <div><b class="num">≤ 189 / сутки</b><small>нужно, чтобы дожить до 30.10</small></div>
+    </div>
+    <p class="note">Черта на шкале — доля месяца, которая уже прошла (23 %). Прогноз инженера надёжности: при прежнем темпе кредиты кончатся 13–16.10. Оценка директора: тесты закончены, AI-разбор Sonnet идёт только по вашей кнопке, поэтому рабочий расход ниже, около 200–300 в сутки, и кредиты кончатся примерно к 22–28.10. Решение по деньгам за вами.</p>
+  </section>
+
+  <section class="lanes">
+    <div class="panel lane">
+      <h2>RAIV FISH · бот заказов</h2>
+      <div class="row"><span class="pill ok">работает</span><p>Рабочий бот 7707233 (v9.5 Pro)<small>Вебхук в норме, ошибок за сутки 0, около 12 кредитов в сутки</small></p></div>
+      <div class="row"><span class="pill ok">работает</span><p>Корзина, напоминания, склад, отчёт, AI-помощник<small>Все по расписанию, nextExec заполнен</small></p></div>
+      <div class="row"><span class="pill warn">ждёт вас</span><p>Языки ru / de / es / uk (v9.6)<small>Импорт v9_6_lang_blueprint.json в 7707233</small></p></div>
+    </div>
+
+    <div class="panel lane">
+      <h2>Lead Hunter · заявки на ботов</h2>
+      <div class="row"><span class="pill ok">работает</span><p>Freelancer.com → Zulius<small>Опрос раз в 6 ч (было 3 ч, ради экономии); фильтр: Telegram, чат-боты, Make, от 300 €</small></p></div>
+      <div class="row"><span class="pill ok">работает</span><p>Analyst, Architect + Sales, карточка<small>Около 78 кредитов на лид; со своим ключом Anthropic около 40</small></p></div>
+      <div class="row"><span class="pill warn">ждёт вас</span><p>Кнопка «✍️ Написать клиенту» в пульте<small>Импорт LH-20.json в 7789394</small></p></div>
+      <div class="row"><span class="pill idle">выключен</span><p>LH-98, тестовый подаватель<small>Выключен ради экономии, вернуть можно одним действием</small></p></div>
+    </div>
+
+    <div class="panel lane">
+      <h2>Bau Hunter · стройзаказы Север DE</h2>
+      <div class="row"><span class="pill ok">новое</span><p>BH-01: сводка тендеров TED, ежедневно в 06:30<small>Стройка в SH, HH, HB, NI, MV; 5 кредитов за запуск; тестовый запуск прошёл без ошибок, сводку в Zulius нужно проверить глазами</small></p></div>
+      <div class="row"><span class="pill ok">готово</span><p>Аудит, план, калькулятор Bau, предложение «Tender-Radar»<small>bau-hunter/docs, kalkulation, sales</small></p></div>
+      <div class="row"><span class="pill warn">ждёт вас</span><p>Агенты 2–5: SCORE, расчёт, риски, КП<small>Нужны решение по кредитам, ставки и бот «Bau-Pult»</small></p></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Решения и действия владельца · по важности</h2>
+    <ol>
+      <li><b>Кредиты Make.</b> Свой ключ Anthropic (лид дешевле почти вдвое), докупка кредитов или жёсткие лимиты. <small>Без решения риск остановки всех ботов до 30.10.</small></li>
+      <li><b>Проверьте первую сводку тендеров в Zulius.</b> Если поля пустые или «сырые», инженер поправит. <small>Никто ещё не видел её текста.</small></li>
+      <li><b>Импорт двух файлов в Make:</b> LH-20.json → 7789394, v9_6_lang_blueprint.json → 7707233.</li>
+      <li><b>Ставки в Bau_Kalkulator.xlsx:</b> €/ч, материалы, наценка, накладные, прибыль. <small>Без них агент 3 считает только объёмы.</small></li>
+      <li><b>Создайте бота «Bau-Pult» в @BotFather</b> и пришлите данные: Gewerke, PLZ базы, радиус, реквизиты, PQ-VOB.</li>
+      <li><b>Tender-Radar:</b> цены 39 / 79 / 149 € в месяц (предложение). Запуск продаж — после 7 дней работы этапов 1–2 у нас.</li>
+    </ol>
+  </section>
+</div>
