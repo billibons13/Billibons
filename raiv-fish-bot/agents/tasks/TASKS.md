@@ -14,7 +14,7 @@
 - AGENT: 📣 Контент-менеджер
 - PRIORITY: P1 (обязательны для продаж в Германии; риск Abmahnung)
 - ACTION: черновики Impressum и Datenschutzerklärung для бота/витрины (DE) с пустыми местами для данных владельца; без выдуманных реквизитов; пометка «проверить юристом».
-- STATUS: NEW
+- STATUS: REVIEW — черновики в raiv-fish-bot/legal/ (Impressum_DE.md, Datenschutz_DE.md, Bot_Texte_privacy_impressum.md); ждут проверки директора, реквизитов владельца и юриста
 
 ## T-20261007-0024 · Продать бот RAIV FISH (пакеты 500 / 800 / 1 500 €)
 - AGENT: 💼 Менеджер продаж бота (+ 📣 Контент)
