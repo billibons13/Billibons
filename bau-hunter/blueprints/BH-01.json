@@ -1,0 +1,159 @@
+{
+ "name": "BH-01 Bau — TED Tagesübersicht",
+ "flow": [
+  {
+   "id": 1,
+   "module": "http:ActionSendData",
+   "version": 3,
+   "mapper": {
+    "url": "https://api.ted.europa.eu/v3/notices/search",
+    "method": "post",
+    "headers": [
+     {
+      "name": "Accept",
+      "value": "application/json"
+     }
+    ],
+    "qs": [],
+    "bodyType": "raw",
+    "contentType": "application/json",
+    "data": "{\"query\": \"classification-cpv=45* AND place-of-performance IN (DEF DE6 DE5 DE9 DE8) AND publication-date={{formatDate(addDays(now; -1); \"YYYYMMDD\"; \"Europe/Berlin\")}}\", \"fields\": [\"publication-number\", \"notice-title\", \"buyer-name\", \"buyer-city\", \"deadline-receipt-tender-date-lot\", \"estimated-value-lot\", \"estimated-value-cur-lot\", \"identifier-lot\"], \"limit\": 15, \"page\": 1, \"scope\": \"ALL\", \"paginationMode\": \"PAGE_NUMBER\", \"onlyLatestVersions\": true}",
+    "parseResponse": true,
+    "serializeUrl": false,
+    "shareCookies": false,
+    "rejectUnauthorized": true,
+    "followRedirect": true,
+    "followAllRedirects": false,
+    "useQuerystring": false,
+    "gzip": true,
+    "useMtls": false,
+    "timeout": 40
+   },
+   "parameters": {
+    "handleErrors": false,
+    "useNewZLibDeCompress": true
+   },
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   }
+  },
+  {
+   "id": 2,
+   "module": "builtin:BasicFeeder",
+   "version": 1,
+   "mapper": {
+    "array": "{{1.data.notices}}"
+   },
+   "parameters": {},
+   "metadata": {
+    "designer": {
+     "x": 300,
+     "y": 0
+    }
+   },
+   "filter": {
+    "name": "есть объявления",
+    "conditions": [
+     [
+      {
+       "a": "{{1.data.totalNoticeCount}}",
+       "o": "number:greater",
+       "b": "0"
+      }
+     ]
+    ]
+   }
+  },
+  {
+   "id": 3,
+   "module": "util:TextAggregator",
+   "version": 1,
+   "mapper": {
+    "value": "{{2.__IMTINDEX__}}. {{substring(ifempty(get(2.`notice-title`; \"deu\"); get(2.`notice-title`; \"eng\")); 0; 150)}}\n🏛 {{ifempty(first(get(2.`buyer-name`; \"deu\")); first(get(2.`buyer-name`; \"eng\")))}}{{if(ifempty(first(get(2.`buyer-city`; \"deu\")); first(get(2.`buyer-city`; \"eng\"))); \", \" + ifempty(first(get(2.`buyer-city`; \"deu\")); first(get(2.`buyer-city`; \"eng\"))); \"\")}}\n⏳ Frist: {{ifempty(substring(first(2.`deadline-receipt-tender-date-lot`); 0; 10); \"—\")}}{{if(first(2.`estimated-value-lot`); \" · 💶 \" + formatNumber(first(2.`estimated-value-lot`); 0; \",\"; \".\") + \" \" + ifempty(first(2.`estimated-value-cur-lot`); \"EUR\"); \"\")}}{{if(length(2.`identifier-lot`) > 1; \" · Lose: \" + length(2.`identifier-lot`); \"\")}}\n🔗 https://ted.europa.eu/de/notice/-/detail/{{2.`publication-number`}}\n"
+   },
+   "parameters": {
+    "feeder": 2,
+    "rowSeparator": "\n"
+   },
+   "metadata": {
+    "designer": {
+     "x": 600,
+     "y": 0
+    }
+   }
+  },
+  {
+   "id": 4,
+   "module": "datastore:GetRecord",
+   "version": 1,
+   "mapper": {
+    "key": "main",
+    "returnWrapped": false
+   },
+   "parameters": {
+    "datastore": 207951
+   },
+   "metadata": {
+    "designer": {
+     "x": 900,
+     "y": 0
+    }
+   }
+  },
+  {
+   "id": 5,
+   "module": "telegram:UniversalAPICall",
+   "version": 1,
+   "mapper": {
+    "method": "POST",
+    "bodyType": "assembled_body",
+    "body_spec": [
+     {
+      "key": "chat_id",
+      "value": "{{4.owner_chat_id}}"
+     },
+     {
+      "key": "text",
+      "value": "🏗 Тендеры стройки, Север DE — {{formatDate(addDays(now; -1); \"DD.MM.YYYY\"; \"Europe/Berlin\")}}: {{1.data.totalNoticeCount}}\nCPV 45 · SH, HH, HB, NI, MV · TED\n\n{{substring(3.text; 0; 3700)}}{{if(1.data.totalNoticeCount > 15; \"\n… ещё \" + (1.data.totalNoticeCount - 15) + \" на ted.europa.eu\"; \"\")}}"
+     },
+     {
+      "key": "link_preview_options",
+      "value": "{\"is_disabled\":true}"
+     }
+    ],
+    "urlMethod": "sendMessage"
+   },
+   "parameters": {
+    "__IMTCONN__": 9480305
+   },
+   "metadata": {
+    "designer": {
+     "x": 1200,
+     "y": 0
+    }
+   }
+  }
+ ],
+ "metadata": {
+  "version": 1,
+  "instant": false,
+  "scenario": {
+   "roundtrips": 1,
+   "maxErrors": 3,
+   "autoCommit": true,
+   "autoCommitTriggerLast": true,
+   "sequential": true,
+   "confidential": false,
+   "dataloss": false,
+   "dlq": false,
+   "freshVariables": false
+  },
+  "designer": {
+   "orphans": []
+  },
+  "zone": "eu1.make.com"
+ }
+}
