@@ -1,0 +1,715 @@
+{
+ "name": "AI-01 RAIV Director — чат владельца",
+ "flow": [
+  {
+   "id": 1,
+   "module": "telegram:WatchUpdates",
+   "version": 1,
+   "parameters": {
+    "__IMTHOOK__": 0
+   },
+   "mapper": {},
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   }
+  },
+  {
+   "id": 2,
+   "module": "datastore:GetRecord",
+   "version": 1,
+   "parameters": {
+    "datastore": 207951
+   },
+   "mapper": {
+    "key": "ai_chat_owner",
+    "returnWrapped": false
+   },
+   "metadata": {
+    "designer": {
+     "x": 300,
+     "y": 0
+    }
+   }
+  },
+  {
+   "id": 3,
+   "module": "util:SetVariables",
+   "version": 1,
+   "parameters": {},
+   "mapper": {
+    "scope": "roundtrip",
+    "variables": [
+     {
+      "name": "chat",
+      "value": "{{1.message.chat.id}}"
+     },
+     {
+      "name": "txt",
+      "value": "{{trim(ifempty(1.message.text; \"\"))}}"
+     },
+     {
+      "name": "cmd",
+      "value": "{{lower(first(split(first(split(trim(ifempty(1.message.text; \"\")); \" \")); \"@\")))}}"
+     },
+     {
+      "name": "today",
+      "value": "{{formatDate(now; \"YYYY-MM-DD\"; \"Europe/Berlin\")}}"
+     },
+     {
+      "name": "cnt",
+      "value": "{{if(2.day = formatDate(now; \"YYYY-MM-DD\"; \"Europe/Berlin\"); ifempty(2.ai_count; 0); 0)}}"
+     }
+    ]
+   },
+   "metadata": {
+    "designer": {
+     "x": 600,
+     "y": 0
+    }
+   },
+   "filter": {
+    "name": "Только владелец, только текст",
+    "conditions": [
+     [
+      {
+       "a": "{{2.owner_chat_id}}",
+       "o": "exist"
+      },
+      {
+       "a": "{{1.message.from.id}}",
+       "o": "text:equal",
+       "b": "{{2.owner_chat_id}}"
+      },
+      {
+       "a": "{{1.message.chat.type}}",
+       "o": "text:equal",
+       "b": "private"
+      },
+      {
+       "a": "{{1.message.text}}",
+       "o": "exist"
+      }
+     ]
+    ]
+   }
+  },
+  {
+   "id": 4,
+   "module": "builtin:BasicRouter",
+   "version": 1,
+   "mapper": null,
+   "metadata": {
+    "designer": {
+     "x": 900,
+     "y": 0
+    }
+   },
+   "routes": [
+    {
+     "flow": [
+      {
+       "id": 10,
+       "module": "telegram:UniversalAPICall",
+       "version": 1,
+       "parameters": {
+        "__IMTCONN__": 0
+       },
+       "mapper": {
+        "method": "POST",
+        "bodyType": "assembled_body",
+        "urlMethod": "sendMessage",
+        "body_spec": [
+         {
+          "key": "chat_id",
+          "value": "{{3.chat}}"
+         },
+         {
+          "key": "text",
+          "value": "🧭 RAIV Director — ваш AI-помощник по проекту RAIV FISH.\n\nПишите вопрос или задачу обычным текстом: совет, план, черновик поста, рассылки или КП.\nЯ только отвечаю и готовлю тексты — в Make, ценах и данных ничего не меняю, клиентам не пишу.\n\n/new — начать разговор заново (очистить память)\n/status — сводка и счётчик\nЛимит: 30 ответов в день."
+         }
+        ]
+       },
+       "metadata": {
+        "designer": {
+         "x": 900,
+         "y": 0
+        }
+       },
+       "filter": {
+        "name": "/start",
+        "conditions": [
+         [
+          {
+           "a": "{{3.cmd}}",
+           "o": "text:equal",
+           "b": "/start"
+          }
+         ]
+        ]
+       },
+       "onerror": [
+        {
+         "id": 510,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         },
+         "mapper": null
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 20,
+       "module": "datastore:UpdateRecord",
+       "version": 1,
+       "parameters": {
+        "datastore": 207951
+       },
+       "mapper": {
+        "key": "ai_chat_owner",
+        "upsert": false,
+        "overwriteArrays": false,
+        "data": {
+         "ai_history": ""
+        }
+       },
+       "metadata": {
+        "designer": {
+         "x": 900,
+         "y": 300
+        }
+       },
+       "filter": {
+        "name": "/new",
+        "conditions": [
+         [
+          {
+           "a": "{{3.cmd}}",
+           "o": "text:equal",
+           "b": "/new"
+          }
+         ]
+        ]
+       }
+      },
+      {
+       "id": 21,
+       "module": "telegram:UniversalAPICall",
+       "version": 1,
+       "parameters": {
+        "__IMTCONN__": 0
+       },
+       "mapper": {
+        "method": "POST",
+        "bodyType": "assembled_body",
+        "urlMethod": "sendMessage",
+        "body_spec": [
+         {
+          "key": "chat_id",
+          "value": "{{3.chat}}"
+         },
+         {
+          "key": "text",
+          "value": "🧹 Память очищена. Начинаем заново."
+         }
+        ]
+       },
+       "metadata": {
+        "designer": {
+         "x": 1200,
+         "y": 300
+        }
+       },
+       "onerror": [
+        {
+         "id": 521,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         },
+         "mapper": null
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 30,
+       "module": "telegram:UniversalAPICall",
+       "version": 1,
+       "parameters": {
+        "__IMTCONN__": 0
+       },
+       "mapper": {
+        "method": "POST",
+        "bodyType": "assembled_body",
+        "urlMethod": "sendMessage",
+        "body_spec": [
+         {
+          "key": "chat_id",
+          "value": "{{3.chat}}"
+         },
+         {
+          "key": "text",
+          "value": "📊 RAIV Director\nСегодня ответов AI: {{3.cnt}} из 30\nПамять: {{length(ifempty(2.ai_history; \"\"))}} из 6000 знаков\nМодель: Claude Sonnet, ответ до 2000 токенов\nПроект: магазин RAIV FISH, Lead Hunter, Bau Hunter, контент-система (план). Сценарии Make — на паузе владельца с 07.10."
+         }
+        ]
+       },
+       "metadata": {
+        "designer": {
+         "x": 900,
+         "y": 600
+        }
+       },
+       "filter": {
+        "name": "/status",
+        "conditions": [
+         [
+          {
+           "a": "{{3.cmd}}",
+           "o": "text:equal",
+           "b": "/status"
+          }
+         ]
+        ]
+       },
+       "onerror": [
+        {
+         "id": 530,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         },
+         "mapper": null
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 40,
+       "module": "telegram:UniversalAPICall",
+       "version": 1,
+       "parameters": {
+        "__IMTCONN__": 0
+       },
+       "mapper": {
+        "method": "POST",
+        "bodyType": "assembled_body",
+        "urlMethod": "sendMessage",
+        "body_spec": [
+         {
+          "key": "chat_id",
+          "value": "{{3.chat}}"
+         },
+         {
+          "key": "text",
+          "value": "⏳ Лимит на сегодня исчерпан (30 ответов). Завтра продолжим."
+         }
+        ]
+       },
+       "metadata": {
+        "designer": {
+         "x": 900,
+         "y": 900
+        }
+       },
+       "filter": {
+        "name": "Лимит исчерпан",
+        "conditions": [
+         [
+          {
+           "a": "{{3.cmd}}",
+           "o": "text:notequal",
+           "b": "/start"
+          },
+          {
+           "a": "{{3.cmd}}",
+           "o": "text:notequal",
+           "b": "/new"
+          },
+          {
+           "a": "{{3.cmd}}",
+           "o": "text:notequal",
+           "b": "/status"
+          },
+          {
+           "a": "{{3.cnt}}",
+           "o": "number:greaterorequal",
+           "b": "30"
+          }
+         ]
+        ]
+       },
+       "onerror": [
+        {
+         "id": 540,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         },
+         "mapper": null
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 50,
+       "module": "datastore:UpdateRecord",
+       "version": 1,
+       "parameters": {
+        "datastore": 207951
+       },
+       "mapper": {
+        "key": "ai_chat_owner",
+        "upsert": false,
+        "overwriteArrays": false,
+        "data": {
+         "day": "{{3.today}}",
+         "ai_count": "{{3.cnt + 1}}"
+        }
+       },
+       "metadata": {
+        "designer": {
+         "x": 900,
+         "y": 1200
+        }
+       },
+       "filter": {
+        "name": "Сообщение → Claude",
+        "conditions": [
+         [
+          {
+           "a": "{{3.cmd}}",
+           "o": "text:notequal",
+           "b": "/start"
+          },
+          {
+           "a": "{{3.cmd}}",
+           "o": "text:notequal",
+           "b": "/new"
+          },
+          {
+           "a": "{{3.cmd}}",
+           "o": "text:notequal",
+           "b": "/status"
+          },
+          {
+           "a": "{{3.cnt}}",
+           "o": "number:less",
+           "b": "30"
+          }
+         ]
+        ]
+       }
+      },
+      {
+       "id": 51,
+       "module": "anthropic-claude:simpleTextPrompt",
+       "version": 1,
+       "parameters": {},
+       "mapper": {
+        "model": "claude-sonnet-5-5",
+        "textPrompt": "ТЫ — «Директор RAIV FISH», AI-помощник владельца. Пишешь только владельцу, по-русски, коротко и по делу (до ~1500 знаков, если не просят больше).\nМожно: отвечать на вопросы о проекте, советовать, готовить черновики текстов, постов, рассылок, коммерческих предложений, планы и чек-листы.\nНельзя (и ты технически не можешь): менять сценарии Make, цены, скидки, промокоды, наличие, данные клиентов; писать клиентам; публиковать. Если владелец просит такое — объясни, что это делается через чат Claude («поручение директору») или кнопками в рабочем боте, и предложи готовый текст/план.\nНе выдумывай факты, цифры, цены и статусы: если не знаешь — так и скажи. Не проси и не повторяй токены, пароли, личные данные клиентов.\nБез Markdown-разметки (обычный текст, можно эмодзи и списки с «•»).\n\nО ПРОЕКТЕ (сводка на дату генерации, без секретов):\nRAIV FISH — небольшой магазин вяленой рыбы, икры и снеков к пиву в Шлезвиг-Гольштейне (Германия). Доставка: Эдделак, Марне, Брунсбюттель, Хайде (другие места — по договорённости). Канал t.me/raiv_fish1.\nАссортимент (категории; цены не называй — они в боте и меняются только владельцем):\n🐟 Икра вяленая (100 г): 4 поз. в наличии (напр. Икра толстолоба, Икра кеты, Икра форели, Икра щуки)\n🐠 Рыба вяленая (кг): 14 поз. в наличии (напр. Плотва с икрой, Чищенные тушки плотвы без головы (100% икра), Вобла с икрой (80% икра), Верховодка)\n🍢 Рыбные снеки (100 г): 7 поз. в наличии (напр. Филе горбуши (соломка), Кальмар + лосось (соломка), Корюшка сушеная потрошеная, Соломка леща)\n🦑 Снеки к пиву (кг): 11 поз. в наличии (напр. Пятачки осьминога, Паутинка кальмара «сладкий чили», Кальмар по-шанхайски, Стружка кальмара)\n🥫 Консервы: 2 поз. в наличии (напр. Снеток в томате, Лещ в томате)\nTelegram-бот заказов (Make): каталог, корзина, город, оплата (наличные; онлайн-оплата Stripe в тестовом режиме), бонусы и промокоды, отчёт владельцу 21:00, AI-советы 08:30, напоминания клиентам, агент склада 09:00, витрина Mini App. Языки ru/de/es/uk готовятся.\nLead Hunter — поиск заказов на разработку Telegram-ботов (Freelancer.com и ручная пересылка заявок): оценка AI, ТЗ и КП, пульт владельца в отдельном боте.\nBau Hunter — ежедневная сводка строительных тендеров Германии (TED), план развития ждёт решений владельца.\nКонтент-система (план): ролики о рыбе для TikTok/Instagram → Telegram-бот → заказ; публикации только после одобрения владельца.\nКоманда агентов под руководством Директора; правило: агенты предлагают — владелец решает.\nСейчас ПАУЗА ВЛАДЕЛЬЦА: с 07.10 все сценарии Make выключены владельцем. Кредиты Make ограничены (≈4 000 до 30.10).\nОткрытые вопросы, ждущие владельца:\n- AI-контент-система RAIV FISH: TikTok/Instagram → Telegram → заказ (АРХИТЕКТУРА)\n- Bau-Lead-Hunter: автономный поиск строительных заказов в Германии\n- Загрузка больших сценариев в Make (системное решение)\n- Выкат v9.6 (языки) в рабочий бот\n- Команда работает 24/7\n\nИСТОРИЯ РАЗГОВОРА (последние сообщения):\n{{ifempty(2.ai_history; \"— пусто —\")}}\n\nНОВОЕ СООБЩЕНИЕ ВЛАДЕЛЬЦА:\n{{3.txt}}\n\nОтветь владельцу.",
+        "max_tokens": 2000
+       },
+       "metadata": {
+        "designer": {
+         "x": 1200,
+         "y": 1200
+        }
+       },
+       "onerror": [
+        {
+         "id": 551,
+         "module": "builtin:Resume",
+         "version": 1,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         },
+         "mapper": {
+          "result": "",
+          "stop_reason": "error",
+          "usage": {
+           "input_tokens": 0,
+           "output_tokens": 0
+          }
+         }
+        }
+       ]
+      },
+      {
+       "id": 55,
+       "module": "builtin:BasicRouter",
+       "version": 1,
+       "mapper": null,
+       "metadata": {
+        "designer": {
+         "x": 1500,
+         "y": 1200
+        }
+       },
+       "routes": [
+        {
+         "flow": [
+          {
+           "id": 52,
+           "module": "datastore:UpdateRecord",
+           "version": 1,
+           "parameters": {
+            "datastore": 207951
+           },
+           "mapper": {
+            "key": "ai_chat_owner",
+            "upsert": false,
+            "overwriteArrays": false,
+            "data": {
+             "ai_history": "{{substring(ifempty(2.ai_history; \"\") + \"\n\nВладелец: \" + substring(3.txt; 0; 1500) + \"\nДиректор: \" + substring(trim(ifempty(51.result; \"\")); 0; 2500); max(0; length(ifempty(2.ai_history; \"\") + \"\n\nВладелец: \" + substring(3.txt; 0; 1500) + \"\nДиректор: \" + substring(trim(ifempty(51.result; \"\")); 0; 2500)) - 6000); 12000)}}"
+            }
+           },
+           "metadata": {
+            "designer": {
+             "x": 1800,
+             "y": 1200
+            }
+           },
+           "filter": {
+            "name": "Ответ получен",
+            "conditions": [
+             [
+              {
+               "a": "{{51.stop_reason}}",
+               "o": "text:notequal",
+               "b": "error"
+              },
+              {
+               "a": "{{trim(ifempty(51.result; \"\"))}}",
+               "o": "exist"
+              }
+             ]
+            ]
+           }
+          },
+          {
+           "id": 53,
+           "module": "telegram:UniversalAPICall",
+           "version": 1,
+           "parameters": {
+            "__IMTCONN__": 0
+           },
+           "mapper": {
+            "method": "POST",
+            "bodyType": "assembled_body",
+            "urlMethod": "sendMessage",
+            "body_spec": [
+             {
+              "key": "chat_id",
+              "value": "{{3.chat}}"
+             },
+             {
+              "key": "text",
+              "value": "{{substring(trim(ifempty(51.result; \"\")); 0; 4000)}}"
+             }
+            ]
+           },
+           "metadata": {
+            "designer": {
+             "x": 2100,
+             "y": 1200
+            }
+           },
+           "onerror": [
+            {
+             "id": 553,
+             "module": "builtin:Resume",
+             "version": 1,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             },
+             "mapper": {
+              "statusCode": 0
+             }
+            }
+           ]
+          },
+          {
+           "id": 54,
+           "module": "telegram:UniversalAPICall",
+           "version": 1,
+           "parameters": {
+            "__IMTCONN__": 0
+           },
+           "mapper": {
+            "method": "POST",
+            "bodyType": "assembled_body",
+            "urlMethod": "sendMessage",
+            "body_spec": [
+             {
+              "key": "chat_id",
+              "value": "{{3.chat}}"
+             },
+             {
+              "key": "text",
+              "value": "{{substring(trim(ifempty(51.result; \"\")); 4000; 8000)}}"
+             }
+            ]
+           },
+           "metadata": {
+            "designer": {
+             "x": 2400,
+             "y": 1200
+            }
+           },
+           "filter": {
+            "name": "Длинный ответ: часть 2",
+            "conditions": [
+             [
+              {
+               "a": "{{length(trim(ifempty(51.result; \"\")))}}",
+               "o": "number:greater",
+               "b": "4000"
+              }
+             ]
+            ]
+           },
+           "onerror": [
+            {
+             "id": 554,
+             "module": "builtin:Ignore",
+             "version": 1,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             },
+             "mapper": null
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "flow": [
+          {
+           "id": 56,
+           "module": "telegram:UniversalAPICall",
+           "version": 1,
+           "parameters": {
+            "__IMTCONN__": 0
+           },
+           "mapper": {
+            "method": "POST",
+            "bodyType": "assembled_body",
+            "urlMethod": "sendMessage",
+            "body_spec": [
+             {
+              "key": "chat_id",
+              "value": "{{3.chat}}"
+             },
+             {
+              "key": "text",
+              "value": "⚠️ AI сейчас недоступен, попробуйте позже."
+             }
+            ]
+           },
+           "metadata": {
+            "designer": {
+             "x": 1800,
+             "y": 1500
+            }
+           },
+           "filter": {
+            "name": "Ошибка Claude",
+            "conditions": [
+             [
+              {
+               "a": "{{51.stop_reason}}",
+               "o": "text:equal",
+               "b": "error"
+              }
+             ],
+             [
+              {
+               "a": "{{trim(ifempty(51.result; \"\"))}}",
+               "o": "notexist"
+              }
+             ]
+            ]
+           },
+           "onerror": [
+            {
+             "id": 556,
+             "module": "builtin:Ignore",
+             "version": 1,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             },
+             "mapper": null
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "metadata": {
+  "version": 1,
+  "instant": true,
+  "scenario": {
+   "roundtrips": 1,
+   "maxErrors": 3,
+   "autoCommit": true,
+   "autoCommitTriggerLast": true,
+   "sequential": true,
+   "confidential": false,
+   "dataloss": false,
+   "dlq": false,
+   "freshVariables": false
+  }
+ }
+}
