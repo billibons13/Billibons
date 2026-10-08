@@ -22,7 +22,7 @@ CONN = int(os.environ.get("AI01_CONN", "0"))   # Telegram Bot подключен
 HOOK = int(os.environ.get("AI01_HOOK", "0"))   # вебхук telegram (WatchUpdates) на этом подключении
 assert CONN not in (11456488, 11456487, 9480305, 9480304, 11276087), "это чужой бот — нужен новый «RAIV Director»"
 MODEL, MAX_TOKENS = "claude-sonnet-5-5", 2000
-DAILY_LIMIT = 30
+DAILY_LIMIT = 10  # решение директора 08.10: кредиты Make на исходе; владелец может поднять
 HIST_MAX = 6000
 TG_MAX = 4000
 TZ = "Europe/Berlin"
@@ -170,7 +170,7 @@ def check(bp):
     walk(bp["flow"])
     assert len(ids) == len(set(ids)), "дубли id"
     s = json.dumps(bp, ensure_ascii=False)
-    assert "6883357001" not in s and "bot_token" not in s.lower() and "sk-ant" not in s, "секрет в blueprint"
+    assert (not os.environ.get("LH_OWNER_CHAT_ID") or os.environ["LH_OWNER_CHAT_ID"] not in s) and "bot_token" not in s.lower() and "sk-ant" not in s, "секрет в blueprint"
     assert not re.search(r"\b\d{9,10}:[A-Za-z0-9_-]{30,}", s), "похоже на токен бота"
     assert len(s.encode()) < 45_000, len(s.encode())
     return len(ids), len(s.encode())
