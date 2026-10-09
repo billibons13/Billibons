@@ -364,7 +364,7 @@
          },
          {
           "key": "text",
-          "value": "🧭 Lead Hunter — пульт\nСтатус: {{if(2.paused; \"⏸ пауза\"; \"▶️ работает\")}}{{if(2.paused; \" (\" + ifempty(2.paused_reason; \"владелец\") + \")\"; \"\")}}\n📥 В очереди (NEW): {{length(map(21.array; \"lead_id\"; \"status\"; \"NEW\"))}}\n🆕 Без решения: {{length(map(21.array; \"lead_id\"; \"status\"; \"SENT_TO_TELEGRAM\"))}} · 🔥 HOT: {{length(map(21.array; \"lead_id\"; \"grade\"; \"HOT\"))}}\n💵 Claude сегодня: ${{formatNumber(ifempty(23.cost_usd; 0); 4; \".\"; \"\")}} из ${{2.daily_budget_usd}}\n📡 Источники: ✅ ручной ввод · ⏸ автоисточники выключены (этап 2)\n\nПерешлите заявку (текст + ссылка) — пришлю карточку с оценкой.\n/new /today /stats /pause /resume /settings /help"
+          "value": "🧭 Lead Hunter — пульт\nСтатус: {{if(2.paused; \"⏸ пауза\"; \"▶️ работает\")}}{{if(2.paused; \" (\" + ifempty(2.paused_reason; \"владелец\") + \")\"; \"\")}}\n📥 В очереди (NEW): {{length(map(21.array; \"lead_id\"; \"status\"; \"NEW\"))}}\n🆕 Без решения: {{length(map(21.array; \"lead_id\"; \"status\"; \"SENT_TO_TELEGRAM\"))}} · 🔥 HOT: {{length(map(21.array; \"lead_id\"; \"grade\"; \"HOT\"))}}\n💵 Claude сегодня: ${{formatNumber(ifempty(23.cost_usd; 0); 4; \".\"; \"\")}} из ${{2.daily_budget_usd}}\n📡 Источники: ✅ ручной ввод · ⏸ автоисточники выключены (этап 2)\n\nПерешлите заявку (текст + ссылка) — пришлю карточку с оценкой.\n/new /today /stats /pause /resume /settings /help\n🤖 /ai — чат с AI-директором{{if(2.ai_mode; \" (включён, /ai off — выключить)\"; \"\")}}"
          }
         ],
         "urlMethod": "sendMessage"
@@ -411,7 +411,7 @@
          },
          {
           "key": "text",
-          "value": "ℹ️ Lead Hunter — пульт владельца\n\n1. Перешлите сюда заявку: текст, текст + ссылка или пост из канала.\n2. Через ~1 мин придёт карточка: оценка 0–100, HOT/WARM/COLD/REJECT, причины.\n3. ✅ Approve — Architect + Sales готовят ТЗ и КП (~1–3 мин), придёт коммерческая карточка; ❌ Reject — с причиной.\n4. На карточке: 📋 Full ТЗ (+ файл .md), 💰 Offer, 💬 Client Message, ❓ Questions, 🔍 More Analysis (1 раз), 📞 Contacted, 🏆 Won, ❌ Lost, 📦 Archive.\nКлиенту бот ничего не отправляет — только вы вручную.\n\n/new — новые HOT/WARM без решения (до 5)\n/today — итоги дня\n/stats — 7 и 30 дней\n/won LEAD сумма — исправить сумму сделки\n/pause — пауза AI (заявки копятся в очереди)\n/resume — продолжить и разобрать очередь\n/settings — настройки\n\nСкриншоты и файлы пока не разбираются — пришлите текст и ссылку."
+          "value": "ℹ️ Lead Hunter — пульт владельца\n\n1. Перешлите сюда заявку: текст, текст + ссылка или пост из канала.\n2. Через ~1 мин придёт карточка: оценка 0–100, HOT/WARM/COLD/REJECT, причины.\n3. ✅ Approve — Architect + Sales готовят ТЗ и КП (~1–3 мин), придёт коммерческая карточка; ❌ Reject — с причиной.\n4. На карточке: 📋 Full ТЗ (+ файл .md), 💰 Offer, 💬 Client Message, ❓ Questions, 🔍 More Analysis (1 раз), 📞 Contacted, 🏆 Won, ❌ Lost, 📦 Archive.\nКлиенту бот ничего не отправляет — только вы вручную.\n\n/new — новые HOT/WARM без решения (до 5)\n/today — итоги дня\n/stats — 7 и 30 дней\n/won LEAD сумма — исправить сумму сделки\n/pause — пауза AI (заявки копятся в очереди)\n/resume — продолжить и разобрать очередь\n/settings — настройки\n\n🤖 /ai — чат с AI-директором: /ai — включить (обычный текст идёт AI, пересланное и ссылки — заявки), /ai вопрос — разовый вопрос, /ai off или /stop — выключить, /ai new — очистить память, /ai status — счётчик (лимит 10 ответов в день).\n\nСкриншоты и файлы пока не разбираются — пришлите текст и ссылку."
          }
         ],
         "urlMethod": "sendMessage"
@@ -1678,6 +1678,70 @@
            "a": "{{3.txt}}",
            "o": "text:notpattern",
            "b": "^/"
+          },
+          {
+           "a": "{{if(2.ai_mode; \"on\"; \"off\")}}",
+           "o": "text:equal",
+           "b": "off"
+          }
+         ],
+         [
+          {
+           "a": "{{3.secret}}",
+           "o": "text:equal",
+           "b": "{{2.webhook_secret}}"
+          },
+          {
+           "a": "{{3.from}}",
+           "o": "text:equal",
+           "b": "{{2.owner_chat_id}}"
+          },
+          {
+           "a": "{{1.message.message_id}}",
+           "o": "exist"
+          },
+          {
+           "a": "{{3.txt}}",
+           "o": "exist"
+          },
+          {
+           "a": "{{3.txt}}",
+           "o": "text:notpattern",
+           "b": "^/"
+          },
+          {
+           "a": "{{1.message.forward_origin.type}}{{1.message.forward_date}}",
+           "o": "exist"
+          }
+         ],
+         [
+          {
+           "a": "{{3.secret}}",
+           "o": "text:equal",
+           "b": "{{2.webhook_secret}}"
+          },
+          {
+           "a": "{{3.from}}",
+           "o": "text:equal",
+           "b": "{{2.owner_chat_id}}"
+          },
+          {
+           "a": "{{1.message.message_id}}",
+           "o": "exist"
+          },
+          {
+           "a": "{{3.txt}}",
+           "o": "exist"
+          },
+          {
+           "a": "{{3.txt}}",
+           "o": "text:notpattern",
+           "b": "^/"
+          },
+          {
+           "a": "{{lower(3.txt)}} {{join(map(ifempty(1.message.entities; 1.message.caption_entities); \"type\"); \" \")}}",
+           "o": "text:pattern",
+           "b": "t\\.me/|https?://|text_link"
           }
          ]
         ]
@@ -1728,6 +1792,616 @@
        "onerror": [
         {
          "id": 581,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "mapper": null,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 261,
+       "module": "util:SetVariables",
+       "version": 1,
+       "mapper": {
+        "variables": [
+         {
+          "name": "arg",
+          "value": "{{trim(substring(3.txt; length(first(split(3.txt; \" \"))); 4000))}}"
+         },
+         {
+          "name": "sub",
+          "value": "{{lower(trim(substring(3.txt; length(first(split(3.txt; \" \"))); 4000)))}}"
+         }
+        ],
+        "scope": "roundtrip"
+       },
+       "parameters": {},
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "filter": {
+        "name": "/ai",
+        "conditions": [
+         [
+          {
+           "a": "{{3.secret}}",
+           "o": "text:equal",
+           "b": "{{2.webhook_secret}}"
+          },
+          {
+           "a": "{{3.from}}",
+           "o": "text:equal",
+           "b": "{{2.owner_chat_id}}"
+          },
+          {
+           "a": "{{1.message.message_id}}",
+           "o": "exist"
+          },
+          {
+           "a": "{{3.cmd}}",
+           "o": "text:equal",
+           "b": "/ai"
+          }
+         ]
+        ]
+       }
+      },
+      {
+       "id": 262,
+       "module": "builtin:BasicRouter",
+       "version": 1,
+       "mapper": null,
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "routes": [
+        {
+         "flow": [
+          {
+           "id": 263,
+           "module": "datastore:UpdateRecord",
+           "version": 1,
+           "mapper": {
+            "key": "main",
+            "upsert": true,
+            "overwriteArrays": false,
+            "data": {
+             "ai_mode": true,
+             "updated_at": "{{now}}"
+            }
+           },
+           "parameters": {
+            "datastore": 207951
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "filter": {
+            "name": "/ai → включить",
+            "conditions": [
+             [
+              {
+               "a": "{{261.arg}}",
+               "o": "notexist"
+              }
+             ]
+            ]
+           }
+          },
+          {
+           "id": 264,
+           "module": "telegram:UniversalAPICall",
+           "version": 1,
+           "mapper": {
+            "method": "POST",
+            "bodyType": "assembled_body",
+            "body_spec": [
+             {
+              "key": "chat_id",
+              "value": "{{2.owner_chat_id}}"
+             },
+             {
+              "key": "text",
+              "value": "🤖 AI-чат включён. Пишите обычным текстом — отвечает AI-директор RAIV FISH (совет, план, черновик поста или КП).\nПересланные сообщения и ссылки по-прежнему идут как заявки.\n/ai off или /stop — выключить · /ai new — очистить память · /ai status — счётчик. Лимит 10 ответов в день."
+             }
+            ],
+            "urlMethod": "sendMessage"
+           },
+           "parameters": {
+            "__IMTCONN__": 9480305
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "onerror": [
+            {
+             "id": 764,
+             "module": "builtin:Ignore",
+             "version": 1,
+             "mapper": null,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             }
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "flow": [
+          {
+           "id": 265,
+           "module": "datastore:UpdateRecord",
+           "version": 1,
+           "mapper": {
+            "key": "main",
+            "upsert": true,
+            "overwriteArrays": false,
+            "data": {
+             "ai_mode": false,
+             "updated_at": "{{now}}"
+            }
+           },
+           "parameters": {
+            "datastore": 207951
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "filter": {
+            "name": "/ai off → выключить",
+            "conditions": [
+             [
+              {
+               "a": "{{261.sub}}",
+               "o": "text:equal",
+               "b": "off"
+              }
+             ]
+            ]
+           }
+          },
+          {
+           "id": 266,
+           "module": "telegram:UniversalAPICall",
+           "version": 1,
+           "mapper": {
+            "method": "POST",
+            "bodyType": "assembled_body",
+            "body_spec": [
+             {
+              "key": "chat_id",
+              "value": "{{2.owner_chat_id}}"
+             },
+             {
+              "key": "text",
+              "value": "💤 AI-чат выключен. Пересланное и текст снова идут как заявки. /ai — включить."
+             }
+            ],
+            "urlMethod": "sendMessage"
+           },
+           "parameters": {
+            "__IMTCONN__": 9480305
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "onerror": [
+            {
+             "id": 766,
+             "module": "builtin:Ignore",
+             "version": 1,
+             "mapper": null,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             }
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "flow": [
+          {
+           "id": 267,
+           "module": "http:ActionSendData",
+           "version": 3,
+           "mapper": {
+            "url": "{{ifempty(2.ai01_url; \"https://hook.eu1.make.com/k4psdiuhxt026uqf739x27xh5nyq4j0o\")}}",
+            "method": "post",
+            "headers": [],
+            "qs": [],
+            "bodyType": "x_www_form_urlencoded",
+            "formFields": [
+             {
+              "key": "token",
+              "value": "{{2.internal_token}}"
+             },
+             {
+              "key": "chat_id",
+              "value": "{{3.from}}"
+             },
+             {
+              "key": "text",
+              "value": "/{{261.sub}}"
+             }
+            ],
+            "parseResponse": false,
+            "serializeUrl": false,
+            "shareCookies": false,
+            "rejectUnauthorized": true,
+            "followRedirect": true,
+            "followAllRedirects": false,
+            "useQuerystring": false,
+            "gzip": true,
+            "useMtls": false
+           },
+           "parameters": {
+            "handleErrors": true,
+            "useNewZLibDeCompress": true
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "filter": {
+            "name": "/ai new | /ai status → AI-01",
+            "conditions": [
+             [
+              {
+               "a": "{{261.sub}}",
+               "o": "text:equal",
+               "b": "new"
+              }
+             ],
+             [
+              {
+               "a": "{{261.sub}}",
+               "o": "text:equal",
+               "b": "status"
+              }
+             ]
+            ]
+           },
+           "onerror": [
+            {
+             "id": 767,
+             "module": "builtin:Ignore",
+             "version": 1,
+             "mapper": null,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             }
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "flow": [
+          {
+           "id": 268,
+           "module": "http:ActionSendData",
+           "version": 3,
+           "mapper": {
+            "url": "{{ifempty(2.ai01_url; \"https://hook.eu1.make.com/k4psdiuhxt026uqf739x27xh5nyq4j0o\")}}",
+            "method": "post",
+            "headers": [],
+            "qs": [],
+            "bodyType": "x_www_form_urlencoded",
+            "formFields": [
+             {
+              "key": "token",
+              "value": "{{2.internal_token}}"
+             },
+             {
+              "key": "chat_id",
+              "value": "{{3.from}}"
+             },
+             {
+              "key": "text",
+              "value": "{{261.arg}}"
+             }
+            ],
+            "parseResponse": false,
+            "serializeUrl": false,
+            "shareCookies": false,
+            "rejectUnauthorized": true,
+            "followRedirect": true,
+            "followAllRedirects": false,
+            "useQuerystring": false,
+            "gzip": true,
+            "useMtls": false
+           },
+           "parameters": {
+            "handleErrors": true,
+            "useNewZLibDeCompress": true
+           },
+           "metadata": {
+            "designer": {
+             "x": 0,
+             "y": 0
+            }
+           },
+           "filter": {
+            "name": "/ai вопрос → AI-01 (разово)",
+            "conditions": [
+             [
+              {
+               "a": "{{261.arg}}",
+               "o": "exist"
+              },
+              {
+               "a": "{{261.sub}}",
+               "o": "text:notequal",
+               "b": "off"
+              },
+              {
+               "a": "{{261.sub}}",
+               "o": "text:notequal",
+               "b": "new"
+              },
+              {
+               "a": "{{261.sub}}",
+               "o": "text:notequal",
+               "b": "status"
+              }
+             ]
+            ]
+           },
+           "onerror": [
+            {
+             "id": 768,
+             "module": "builtin:Ignore",
+             "version": 1,
+             "mapper": null,
+             "metadata": {
+              "designer": {
+               "x": 0,
+               "y": 0
+              }
+             }
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 269,
+       "module": "datastore:UpdateRecord",
+       "version": 1,
+       "mapper": {
+        "key": "main",
+        "upsert": true,
+        "overwriteArrays": false,
+        "data": {
+         "ai_mode": false,
+         "updated_at": "{{now}}"
+        }
+       },
+       "parameters": {
+        "datastore": 207951
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "filter": {
+        "name": "/stop → AI-чат выкл",
+        "conditions": [
+         [
+          {
+           "a": "{{3.secret}}",
+           "o": "text:equal",
+           "b": "{{2.webhook_secret}}"
+          },
+          {
+           "a": "{{3.from}}",
+           "o": "text:equal",
+           "b": "{{2.owner_chat_id}}"
+          },
+          {
+           "a": "{{1.message.message_id}}",
+           "o": "exist"
+          },
+          {
+           "a": "{{3.cmd}}",
+           "o": "text:equal",
+           "b": "/stop"
+          }
+         ]
+        ]
+       }
+      },
+      {
+       "id": 270,
+       "module": "telegram:UniversalAPICall",
+       "version": 1,
+       "mapper": {
+        "method": "POST",
+        "bodyType": "assembled_body",
+        "body_spec": [
+         {
+          "key": "chat_id",
+          "value": "{{2.owner_chat_id}}"
+         },
+         {
+          "key": "text",
+          "value": "💤 AI-чат выключен. Пересланное и текст снова идут как заявки. /ai — включить."
+         }
+        ],
+        "urlMethod": "sendMessage"
+       },
+       "parameters": {
+        "__IMTCONN__": 9480305
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "onerror": [
+        {
+         "id": 770,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "mapper": null,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 260,
+       "module": "http:ActionSendData",
+       "version": 3,
+       "mapper": {
+        "url": "{{ifempty(2.ai01_url; \"https://hook.eu1.make.com/k4psdiuhxt026uqf739x27xh5nyq4j0o\")}}",
+        "method": "post",
+        "headers": [],
+        "qs": [],
+        "bodyType": "x_www_form_urlencoded",
+        "formFields": [
+         {
+          "key": "token",
+          "value": "{{2.internal_token}}"
+         },
+         {
+          "key": "chat_id",
+          "value": "{{3.from}}"
+         },
+         {
+          "key": "text",
+          "value": "{{3.txt}}"
+         }
+        ],
+        "parseResponse": false,
+        "serializeUrl": false,
+        "shareCookies": false,
+        "rejectUnauthorized": true,
+        "followRedirect": true,
+        "followAllRedirects": false,
+        "useQuerystring": false,
+        "gzip": true,
+        "useMtls": false
+       },
+       "parameters": {
+        "handleErrors": true,
+        "useNewZLibDeCompress": true
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "filter": {
+        "name": "AI-режим: обычный текст → AI-01",
+        "conditions": [
+         [
+          {
+           "a": "{{3.secret}}",
+           "o": "text:equal",
+           "b": "{{2.webhook_secret}}"
+          },
+          {
+           "a": "{{3.from}}",
+           "o": "text:equal",
+           "b": "{{2.owner_chat_id}}"
+          },
+          {
+           "a": "{{1.message.message_id}}",
+           "o": "exist"
+          },
+          {
+           "a": "{{3.txt}}",
+           "o": "exist"
+          },
+          {
+           "a": "{{3.txt}}",
+           "o": "text:notpattern",
+           "b": "^/"
+          },
+          {
+           "a": "{{if(2.ai_mode; \"on\"; \"off\")}}",
+           "o": "text:equal",
+           "b": "on"
+          },
+          {
+           "a": "{{1.message.forward_origin.type}}",
+           "o": "notexist"
+          },
+          {
+           "a": "{{1.message.forward_date}}",
+           "o": "notexist"
+          },
+          {
+           "a": "{{lower(3.txt)}} {{join(map(ifempty(1.message.entities; 1.message.caption_entities); \"type\"); \" \")}}",
+           "o": "text:notpattern",
+           "b": "t\\.me/|https?://|text_link"
+          }
+         ]
+        ]
+       },
+       "onerror": [
+        {
+         "id": 760,
          "module": "builtin:Ignore",
          "version": 1,
          "mapper": null,

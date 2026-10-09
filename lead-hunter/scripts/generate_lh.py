@@ -16,6 +16,7 @@ DS_ARCH, DS_SALES = 620802, 620803   # data structures ответов Architect 
 URL20 = "https://hook.eu1.make.com/69syfagsko64kd9oelsekoz11e3k341q"
 URL03 = "https://hook.eu1.make.com/i7nnyj1mxyeez4mgznqk6x58oqhinbdr"
 URL10 = "https://hook.eu1.make.com/2g6fjqg256vhydy4s3swxukppc486udl"
+URL_AI01 = "https://hook.eu1.make.com/k4psdiuhxt026uqf739x27xh5nyq4j0o"  # AI-01 7852575 (хук 3868349); приоритет — lh_settings.main.ai01_url
 OWNER_CHAT_ID = os.environ.get("LH_OWNER_CHAT_ID", "")  # только из окружения; в репозиторий не попадает, пишется в lh_settings через LH-99
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -188,7 +189,8 @@ def lh20():
              " · 🔥 HOT: {{length(map(21.array; \"lead_id\"; \"grade\"; \"HOT\"))}}\n"
              "💵 Claude сегодня: ${{formatNumber(ifempty(23.cost_usd; 0); 4; \".\"; \"\")}} из ${{2.daily_budget_usd}}\n"
              "📡 Источники: ✅ ручной ввод · ⏸ автоисточники выключены (этап 2)\n\n"
-             "Перешлите заявку (текст + ссылка) — пришлю карточку с оценкой.\n/new /today /stats /pause /resume /settings /help")
+             "Перешлите заявку (текст + ссылка) — пришлю карточку с оценкой.\n/new /today /stats /pause /resume /settings /help\n"
+             "🤖 /ai — чат с AI-директором{{if(2.ai_mode; \" (включён, /ai off — выключить)\"; \"\")}}")
     routes.append([LS, A, day_touch(22), day_get(23), tg(24, "sendMessage", [("chat_id", OWNER), ("text", START)])])
     # --- /help
     HELP = ("ℹ️ Lead Hunter — пульт владельца\n\n"
@@ -199,6 +201,8 @@ def lh20():
             "Клиенту бот ничего не отправляет — только вы вручную.\n\n"
             "/new — новые HOT/WARM без решения (до 5)\n/today — итоги дня\n/stats — 7 и 30 дней\n"
             "/won LEAD сумма — исправить сумму сделки\n/pause — пауза AI (заявки копятся в очереди)\n/resume — продолжить и разобрать очередь\n/settings — настройки\n\n"
+            "🤖 /ai — чат с AI-директором: /ai — включить (обычный текст идёт AI, пересланное и ссылки — заявки), "
+            "/ai вопрос — разовый вопрос, /ai off или /stop — выключить, /ai new — очистить память, /ai status — счётчик (лимит 10 ответов в день).\n\n"
             "Скриншоты и файлы пока не разбираются — пришлите текст и ссылку.")
     routes.append([tg(30, "sendMessage", [("chat_id", OWNER), ("text", HELP)], name="/help", conds=[cmd("/help")])])
     # --- /settings
@@ -279,6 +283,16 @@ def lh20():
     routes.append(w7 + w30 + [tg(78, "sendMessage", [("chat_id", OWNER), ("text", STATS)])])
     # --- приём заявки → LH-03
     fo = "1.message.forward_origin"
+    LEADBASE = MSG + [c("{{3.txt}}", "exist"), c("{{3.txt}}", "text:notpattern", "^/")]
+    AI_ON = c('{{if(2.ai_mode; "on"; "off")}}', "text:equal", "on")
+    AI_OFF = c('{{if(2.ai_mode; "on"; "off")}}', "text:equal", "off")
+    FWD = c("{{1.message.forward_origin.type}}{{1.message.forward_date}}", "exist")
+    NOT_FWD = c("{{1.message.forward_origin.type}}", "notexist")
+    NOT_FWD_OLD = c("{{1.message.forward_date}}", "notexist")
+    LINK_RE = "t\\.me/|https?://|text_link"
+    LINKSRC = '{{lower(3.txt)}} {{join(map(ifempty(1.message.entities; 1.message.caption_entities); "type"); " ")}}'
+    LINK = c(LINKSRC, "text:pattern", LINK_RE)
+    NOT_LINK = c(LINKSRC, "text:notpattern", LINK_RE)
     routes.append([http_form(80, URL03, [
         ("token", "{{2.internal_token}}"), ("text", "{{3.txt}}"), ("message_id", "{{1.message.message_id}}"),
         ("text_links", '{{join(map(ifempty(1.message.entities; 1.message.caption_entities); "url"; "type"; "text_link"); " ")}}'),
@@ -287,8 +301,35 @@ def lh20():
         ("fwd_user_username", "{{" + fo + ".sender_user.username}}"),
         ("fwd_user_name", "{{" + fo + ".sender_user.first_name}}{{" + fo + ".sender_user_name}}"),
         ("fwd_date", "{{" + fo + ".date}}")],
-        name="Пересланная заявка", conds=[MSG + [c("{{3.txt}}", "exist"), c("{{3.txt}}", "text:notpattern", "^/")]]),
+        name="Пересланная заявка", conds=[LEADBASE + [AI_OFF], LEADBASE + [FWD], LEADBASE + [LINK]]),
         tg(81, "sendMessage", [("chat_id", OWNER), ("text", "⏳ Принял, сохраняю…")])])
+    # --- AI-чат владельца (T-20261008-0034): LH-20 → AI-01 (7852575) POST {token, chat_id, text}; ответ шлёт AI-01 через тот же бот.
+    # /ai — включить режим; /ai off, /stop — выключить; /ai new|status → /new|/status AI-01; /ai <вопрос> — разовый вопрос.
+    # В AI-режиме обычный текст (не команда, не пересланный, без t.me/http-ссылки) идёт в AI-01; пересланное и ссылки — всегда заявки.
+    AIURL = '{{ifempty(2.ai01_url; "' + URL_AI01 + '")}}'
+    to_ai = lambda mid, text, **kw: http_form(mid, AIURL, [("token", "{{2.internal_token}}"), ("chat_id", "{{3.from}}"), ("text", text)], **kw)
+    AI_HINT = ("🤖 AI-чат включён. Пишите обычным текстом — отвечает AI-директор RAIV FISH (совет, план, черновик поста или КП).\n"
+               "Пересланные сообщения и ссылки по-прежнему идут как заявки.\n"
+               "/ai off или /stop — выключить · /ai new — очистить память · /ai status — счётчик. Лимит 10 ответов в день.")
+    AI_OFF_TXT = "💤 AI-чат выключен. Пересланное и текст снова идут как заявки. /ai — включить."
+    ARG = 'lower(trim(substring(3.txt; length(first(split(3.txt; " "))); 4000)))'
+    routes.append([setvars(261, [("arg", '{{trim(substring(3.txt; length(first(split(3.txt; " "))); 4000))}}'),
+                                ("sub", "{{" + ARG + "}}")], name="/ai", conds=[cmd("/ai")]),
+                   router(262, [
+                       [ds_upd(263, S_SET, "main", {"ai_mode": True, "updated_at": "{{now}}"}, name="/ai → включить",
+                               conds=[[c("{{261.arg}}", "notexist")]]),
+                        tg(264, "sendMessage", [("chat_id", OWNER), ("text", AI_HINT)])],
+                       [ds_upd(265, S_SET, "main", {"ai_mode": False, "updated_at": "{{now}}"}, name="/ai off → выключить",
+                               conds=[[c("{{261.sub}}", "text:equal", "off")]]),
+                        tg(266, "sendMessage", [("chat_id", OWNER), ("text", AI_OFF_TXT)])],
+                       [to_ai(267, "/{{261.sub}}", name="/ai new | /ai status → AI-01",
+                              conds=[[c("{{261.sub}}", "text:equal", "new")], [c("{{261.sub}}", "text:equal", "status")]])],
+                       [to_ai(268, "{{261.arg}}", name="/ai вопрос → AI-01 (разово)",
+                              conds=[[c("{{261.arg}}", "exist")] + [c("{{261.sub}}", "text:notequal", x) for x in ("off", "new", "status")]])]])])
+    routes.append([ds_upd(269, S_SET, "main", {"ai_mode": False, "updated_at": "{{now}}"}, name="/stop → AI-чат выкл", conds=[cmd("/stop")]),
+                   tg(270, "sendMessage", [("chat_id", OWNER), ("text", AI_OFF_TXT)])])
+    routes.append([to_ai(260, "{{3.txt}}", name="AI-режим: обычный текст → AI-01",
+                         conds=[LEADBASE + [AI_ON, NOT_FWD, NOT_FWD_OLD, NOT_LINK]])])
     routes.append([tg(82, "sendMessage", [("chat_id", OWNER), ("text", "🖼 Скриншоты и файлы без текста пока не разбираю (этап 2). Пришлите текст заявки и ссылку.")],
                       name="Медиа без текста", conds=[MSG + [c("{{3.txt}}", "notexist")]])])
     # --- кнопки
