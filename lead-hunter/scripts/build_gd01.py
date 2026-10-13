@@ -12,7 +12,13 @@ TZ = 'ifempty(1.timezone; "Europe/Berlin")'
 TODAY = '{{formatDate(now; "YYYY-MM-DD"; ' + TZ + ')}}'
 OWNER = "{{1.owner_chat_id}}"
 
+LH20_HOOK = "69syfagsko64kd9oelsekoz11e3k341q"   # udid вебхука LH-20 (бот должен смотреть сюда)
+IDS = lambda a: 'remove(split(join(map(' + a + '; "id"); ","); ","); "")'   # пустой поиск даёт 1 бандл с null — join/split/remove убирает и null, и ""
+
 def build():
+    """v2 (13.10, исправлены дефекты тренера): состояние = набор кодов тревог (не текст) → нет повторов при новых id;
+    ERROR — по status_at за 24 ч; проверка «карточка не доставлена»; webhook → LH-20; пустой поиск не считается лидом.
+    Поля guardian_state — из существующей структуры lh_settings: hb_note = коды, day = дата последнего «всё в порядке»."""
     F = []
     F.append(ds_get(1, S_SET, "main"))
     F.append(ds_get(2, S_SET, "hb_lh01"))
@@ -20,44 +26,47 @@ def build():
     F.append(ds_get(4, S_SET, "guardian_state"))
     F.append(ds_get(5, S_SET, "day_" + TODAY))
     F.append(tg(6, "getWebhookInfo", [], onerror=True))
-    # зависшие NEW (> 2 ч) и APPROVED без ТЗ (> 1 ч)
     F.append(ds_search(7, S_LEADS, [[c("status", "text:equal", "NEW"), c("created_at", "date:less", "{{addHours(now; -2)}}")]], limit=10))
     F.append(agg(8, 7, {"id": "{{7.lead_id}}"}))
     F.append(ds_search(9, S_LEADS, [[c("status", "text:equal", "APPROVED"), c("approved_at", "date:less", "{{addHours(now; -1)}}"),
                                        c("architect_json", "notexist")]], limit=10))
     F.append(agg(10, 9, {"id": "{{9.lead_id}}"}))
-    F.append(ds_search(11, S_LEADS, [[c("status", "text:equal", "ERROR"), c("day", "text:equal", TODAY)]], limit=10))
+    F.append(ds_search(11, S_LEADS, [[c("status", "text:equal", "ERROR"), c("status_at", "date:greater", "{{addHours(now; -24)}}")]], limit=10))
     F.append(agg(12, 11, {"id": "{{11.lead_id}}", "code": "{{11.error_code}}"}))
+    F.append(ds_search(21, S_LEADS, [[c("status", "text:equal", "SENT_TO_TELEGRAM"), c("tg_message_id", "notexist")]], limit=10))
+    F.append(agg(22, 21, {"id": "{{21.lead_id}}"}))
     WH = "6.body.result"
-    alarms = (
-        '{{if(ifempty(2.hb_at; "") = ""; "🔭 Scout ещё ни разу не отметился\\n"; '
-        'if(2.hb_at < addHours(now; 0 - ifempty(3.window_hours; 12) - 1); "🔭 Scout не запускался с " + formatDate(2.hb_at; "DD.MM HH:mm"; ' + TZ + ') + "\\n"; ""))}}'
-        '{{if(ifempty(' + WH + '.pending_update_count; 0) > 5; "📨 Telegram: в очереди " + ' + WH + '.pending_update_count + " обновлений\\n"; "")}}'
-        '{{if(ifempty(' + WH + '.last_error_date; 0) > formatDate(addHours(now; -1); "X"); "📨 Telegram webhook: " + ' + WH + '.last_error_message + "\\n"; "")}}'
-        '{{if(ifempty(' + WH + '.url; "") = ""; "📨 Telegram webhook не установлен\\n"; "")}}'
-        '{{if(length(8.array) > 0 & 1.paused != true; "⏳ Зависли NEW > 2 ч: " + join(map(8.array; "id"); ", ") + "\\n"; "")}}'
-        '{{if(length(10.array) > 0; "⏳ Одобрены, но нет ТЗ > 1 ч: " + join(map(10.array; "id"); ", ") + "\\n"; "")}}'
-        '{{if(length(12.array) >= 2; "❌ Ошибок за сутки: " + length(12.array) + " (" + join(map(12.array; "code"); ", ") + ")\\n"; "")}}'
-        '{{if(ifempty(5.cost_usd; 0) >= 0.8 * ifempty(1.daily_budget_usd; 1); "💸 Расход AI " + formatNumber(5.cost_usd; 2) + " $ из " + 1.daily_budget_usd + " $\\n"; "")}}'
-        '{{if(1.paused = true & ifempty(1.updated_at; now) < addHours(now; -24); "⏸ Пауза дольше суток: " + ifempty(1.paused_reason; "") + "\\n"; "")}}')
-    F.append(setvars(13, [("alarms", alarms), ("hash", "{{md5(13.alarms)}}")]))
-    # hash считаем вторым SetVariables, т.к. в одном модуле нельзя ссылаться на соседнюю переменную
-    F[-1] = setvars(13, [("alarms", alarms)])
-    F.append(setvars(14, [("hash", "{{md5(13.alarms)}}"), ("ok_day", TODAY)]))
-    changed = [c("{{14.hash}}", "text:notequal", "{{ifempty(4.hash; \"\")}}")]
-    daily_ok = [c("{{13.alarms}}", "text:equal", ""), c("{{ifempty(4.ok_day; \"\")}}", "text:notequal", "{{14.ok_day}}"),
+    HB_OLD = 'if(ifempty(2.hb_at; "") = ""; true; 2.hb_at < addHours(now; 0 - ifempty(3.window_hours; 12) - 1))'
+    checks = [  # (код, условие IML, текст тревоги IML)
+        ("SCOUT_STALE", HB_OLD, '"🔭 Scout не отмечался дольше окна поиска (последний: " + ifempty(formatDate(2.hb_at; "DD.MM HH:mm"; ' + TZ + '); "никогда") + ")"'),
+        ("TG_PENDING", 'ifempty(' + WH + '.pending_update_count; 0) > 5', '"📨 Telegram: в очереди " + ' + WH + '.pending_update_count + " обновлений"'),
+        ("TG_ERROR", 'ifempty(' + WH + '.last_error_date; 0) > parseNumber(formatDate(addHours(now; -1); "X"))', '"📨 Ошибка webhook Telegram: " + ifempty(' + WH + '.last_error_message; "")'),
+        ("TG_URL", 'contains(ifempty(' + WH + '.url; ""); "' + LH20_HOOK + '") = false', '"📨 Webhook бота не указывает на LH-20 — нужна кнопка восстановления (владелец)"'),
+        ("STUCK_NEW", 'length(' + IDS("8.array") + ') > 0 & 1.paused != true', '"⏳ NEW > 2 ч: " + join(' + IDS("8.array") + '; ", ")'),
+        ("STUCK_APPROVED", 'length(' + IDS("10.array") + ') > 0', '"⏳ Одобрены, ТЗ нет > 1 ч: " + join(' + IDS("10.array") + '; ", ")'),
+        ("ERRORS", 'length(' + IDS("12.array") + ') >= 2', '"❌ Ошибок за 24 ч: " + length(' + IDS("12.array") + ') + " (" + join(remove(split(join(map(12.array; "code"); ","); ","); ""); ", ") + ")"'),
+        ("NO_CARD", 'length(' + IDS("22.array") + ') > 0', '"📭 Карточка не доставлена: " + join(' + IDS("22.array") + '; ", ")'),
+        ("BUDGET80", 'ifempty(5.cost_usd; 0) >= 0.8 * ifempty(1.daily_budget_usd; 1)', '"💸 Расход AI " + formatNumber(ifempty(5.cost_usd; 0); 2) + " $ из " + 1.daily_budget_usd + " $"'),
+        ("PAUSE24", '1.paused = true & ifempty(1.updated_at; now) < addHours(now; -24)', '"⏸ Пауза дольше суток: " + ifempty(1.paused_reason; "")'),
+    ]
+    codes = "".join('{{if(' + cond + '; "' + code + ' "; "")}}' for code, cond, _ in checks)
+    text = "".join('{{if(' + cond + '; "• " + ' + msg + ' + newline; "")}}' for _, cond, msg in checks)
+    F.append(setvars(13, [("codes", codes), ("text", text)]))
+    changed = [c("{{trim(13.codes)}}", "text:notequal", "{{trim(ifempty(4.hb_note; \"\"))}}")]
+    daily_ok = [c("{{trim(13.codes)}}", "text:equal", ""), c("{{ifempty(4.day; \"\")}}", "text:notequal", TODAY),
                 c("{{formatDate(now; \"H\"; " + TZ + ")}}", "number:greaterorequal", "8")]
     F.append(router(15, [
         [tg(16, "sendMessage", [("chat_id", OWNER), ("text",
-            "{{if(13.alarms = \"\"; \"🛡 Guardian: ✅ восстановлено, всё в порядке\"; \"🛡 Guardian: ⚠️ проблема\\n\" + 13.alarms)}}")],
-            name="Состояние изменилось", conds=[changed]),
-         ds_upd(17, S_SET, "guardian_state", {"hash": "{{14.hash}}", "hb_note": "{{13.alarms}}", "hb_at": "{{now}}"})],
+            "{{if(trim(13.codes) = \"\"; \"🛡 Guardian: ✅ восстановлено, всё в порядке\"; \"🛡 Guardian: ⚠️ проблема\" + newline + 13.text)}}")],
+            name="Состояние изменилось (по кодам)", conds=[changed]),
+         ds_upd(17, S_SET, "guardian_state", {"hb_note": "{{trim(13.codes)}}", "hb_at": "{{now}}"})],
         [tg(18, "sendMessage", [("chat_id", OWNER), ("text",
             "🛡 Guardian: всё в порядке · Scout {{formatDate(2.hb_at; \"DD.MM HH:mm\"; " + TZ + ")}} · расход AI сегодня "
             "{{formatNumber(ifempty(5.cost_usd; 0); 2)}} $ из {{1.daily_budget_usd}} $")],
             name="Раз в сутки: всё в порядке", conds=[daily_ok]),
-         ds_upd(19, S_SET, "guardian_state", {"ok_day": "{{14.ok_day}}"})],
-        [ds_upd(20, S_SET, "hb_gd01", {"hb_at": "{{now}}", "hb_status": "{{if(13.alarms = \"\"; \"ok\"; \"alarm\")}}"}, name="heartbeat")],
+         ds_upd(19, S_SET, "guardian_state", {"day": TODAY})],
+        [ds_upd(20, S_SET, "hb_gd01", {"hb_at": "{{now}}", "hb_status": "{{if(trim(13.codes) = \"\"; \"ok\"; \"alarm\")}}",
+                                        "hb_note": "{{trim(13.codes)}}"}, name="heartbeat")],
     ], 1800, 0))
     return {"name": "GD-01 SYSTEM GUARDIAN — пульс Lead Hunter", "metadata": {"version": 1}, "flow": F}
 

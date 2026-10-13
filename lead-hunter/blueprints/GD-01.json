@@ -245,9 +245,9 @@
        "b": "ERROR"
       },
       {
-       "a": "day",
-       "o": "text:equal",
-       "b": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(1.timezone; \"Europe/Berlin\"))}}"
+       "a": "status_at",
+       "o": "date:greater",
+       "b": "{{addHours(now; -24)}}"
       }
      ]
     ],
@@ -284,19 +284,30 @@
    }
   },
   {
-   "id": 13,
-   "module": "util:SetVariables",
+   "id": 21,
+   "module": "datastore:SearchRecord",
    "version": 1,
    "mapper": {
-    "variables": [
-     {
-      "name": "alarms",
-      "value": "{{if(ifempty(2.hb_at; \"\") = \"\"; \"🔭 Scout ещё ни разу не отметился\\n\"; if(2.hb_at < addHours(now; 0 - ifempty(3.window_hours; 12) - 1); \"🔭 Scout не запускался с \" + formatDate(2.hb_at; \"DD.MM HH:mm\"; ifempty(1.timezone; \"Europe/Berlin\")) + \"\\n\"; \"\"))}}{{if(ifempty(6.body.result.pending_update_count; 0) > 5; \"📨 Telegram: в очереди \" + 6.body.result.pending_update_count + \" обновлений\\n\"; \"\")}}{{if(ifempty(6.body.result.last_error_date; 0) > formatDate(addHours(now; -1); \"X\"); \"📨 Telegram webhook: \" + 6.body.result.last_error_message + \"\\n\"; \"\")}}{{if(ifempty(6.body.result.url; \"\") = \"\"; \"📨 Telegram webhook не установлен\\n\"; \"\")}}{{if(length(8.array) > 0 & 1.paused != true; \"⏳ Зависли NEW > 2 ч: \" + join(map(8.array; \"id\"); \", \") + \"\\n\"; \"\")}}{{if(length(10.array) > 0; \"⏳ Одобрены, но нет ТЗ > 1 ч: \" + join(map(10.array; \"id\"); \", \") + \"\\n\"; \"\")}}{{if(length(12.array) >= 2; \"❌ Ошибок за сутки: \" + length(12.array) + \" (\" + join(map(12.array; \"code\"); \", \") + \")\\n\"; \"\")}}{{if(ifempty(5.cost_usd; 0) >= 0.8 * ifempty(1.daily_budget_usd; 1); \"💸 Расход AI \" + formatNumber(5.cost_usd; 2) + \" $ из \" + 1.daily_budget_usd + \" $\\n\"; \"\")}}{{if(1.paused = true & ifempty(1.updated_at; now) < addHours(now; -24); \"⏸ Пауза дольше суток: \" + ifempty(1.paused_reason; \"\") + \"\\n\"; \"\")}}"
-     }
+    "filter": [
+     [
+      {
+       "a": "status",
+       "o": "text:equal",
+       "b": "SENT_TO_TELEGRAM"
+      },
+      {
+       "a": "tg_message_id",
+       "o": "notexist"
+      }
+     ]
     ],
-    "scope": "roundtrip"
+    "sort": []
    },
-   "parameters": {},
+   "parameters": {
+    "datastore": 207950,
+    "continueWhenNoRes": true,
+    "limit": 10
+   },
    "metadata": {
     "designer": {
      "x": 0,
@@ -305,18 +316,35 @@
    }
   },
   {
-   "id": 14,
+   "id": 22,
+   "module": "builtin:BasicAggregator",
+   "version": 1,
+   "mapper": {
+    "id": "{{21.lead_id}}"
+   },
+   "parameters": {
+    "feeder": 21
+   },
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   }
+  },
+  {
+   "id": 13,
    "module": "util:SetVariables",
    "version": 1,
    "mapper": {
     "variables": [
      {
-      "name": "hash",
-      "value": "{{md5(13.alarms)}}"
+      "name": "codes",
+      "value": "{{if(if(ifempty(2.hb_at; \"\") = \"\"; true; 2.hb_at < addHours(now; 0 - ifempty(3.window_hours; 12) - 1)); \"SCOUT_STALE \"; \"\")}}{{if(ifempty(6.body.result.pending_update_count; 0) > 5; \"TG_PENDING \"; \"\")}}{{if(ifempty(6.body.result.last_error_date; 0) > parseNumber(formatDate(addHours(now; -1); \"X\")); \"TG_ERROR \"; \"\")}}{{if(contains(ifempty(6.body.result.url; \"\"); \"69syfagsko64kd9oelsekoz11e3k341q\") = false; \"TG_URL \"; \"\")}}{{if(length(remove(split(join(map(8.array; \"id\"); \",\"); \",\"); \"\")) > 0 & 1.paused != true; \"STUCK_NEW \"; \"\")}}{{if(length(remove(split(join(map(10.array; \"id\"); \",\"); \",\"); \"\")) > 0; \"STUCK_APPROVED \"; \"\")}}{{if(length(remove(split(join(map(12.array; \"id\"); \",\"); \",\"); \"\")) >= 2; \"ERRORS \"; \"\")}}{{if(length(remove(split(join(map(22.array; \"id\"); \",\"); \",\"); \"\")) > 0; \"NO_CARD \"; \"\")}}{{if(ifempty(5.cost_usd; 0) >= 0.8 * ifempty(1.daily_budget_usd; 1); \"BUDGET80 \"; \"\")}}{{if(1.paused = true & ifempty(1.updated_at; now) < addHours(now; -24); \"PAUSE24 \"; \"\")}}"
      },
      {
-      "name": "ok_day",
-      "value": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(1.timezone; \"Europe/Berlin\"))}}"
+      "name": "text",
+      "value": "{{if(if(ifempty(2.hb_at; \"\") = \"\"; true; 2.hb_at < addHours(now; 0 - ifempty(3.window_hours; 12) - 1)); \"• \" + \"🔭 Scout не отмечался дольше окна поиска (последний: \" + ifempty(formatDate(2.hb_at; \"DD.MM HH:mm\"; ifempty(1.timezone; \"Europe/Berlin\")); \"никогда\") + \")\" + newline; \"\")}}{{if(ifempty(6.body.result.pending_update_count; 0) > 5; \"• \" + \"📨 Telegram: в очереди \" + 6.body.result.pending_update_count + \" обновлений\" + newline; \"\")}}{{if(ifempty(6.body.result.last_error_date; 0) > parseNumber(formatDate(addHours(now; -1); \"X\")); \"• \" + \"📨 Ошибка webhook Telegram: \" + ifempty(6.body.result.last_error_message; \"\") + newline; \"\")}}{{if(contains(ifempty(6.body.result.url; \"\"); \"69syfagsko64kd9oelsekoz11e3k341q\") = false; \"• \" + \"📨 Webhook бота не указывает на LH-20 — нужна кнопка восстановления (владелец)\" + newline; \"\")}}{{if(length(remove(split(join(map(8.array; \"id\"); \",\"); \",\"); \"\")) > 0 & 1.paused != true; \"• \" + \"⏳ NEW > 2 ч: \" + join(remove(split(join(map(8.array; \"id\"); \",\"); \",\"); \"\"); \", \") + newline; \"\")}}{{if(length(remove(split(join(map(10.array; \"id\"); \",\"); \",\"); \"\")) > 0; \"• \" + \"⏳ Одобрены, ТЗ нет > 1 ч: \" + join(remove(split(join(map(10.array; \"id\"); \",\"); \",\"); \"\"); \", \") + newline; \"\")}}{{if(length(remove(split(join(map(12.array; \"id\"); \",\"); \",\"); \"\")) >= 2; \"• \" + \"❌ Ошибок за 24 ч: \" + length(remove(split(join(map(12.array; \"id\"); \",\"); \",\"); \"\")) + \" (\" + join(remove(split(join(map(12.array; \"code\"); \",\"); \",\"); \"\"); \", \") + \")\" + newline; \"\")}}{{if(length(remove(split(join(map(22.array; \"id\"); \",\"); \",\"); \"\")) > 0; \"• \" + \"📭 Карточка не доставлена: \" + join(remove(split(join(map(22.array; \"id\"); \",\"); \",\"); \"\"); \", \") + newline; \"\")}}{{if(ifempty(5.cost_usd; 0) >= 0.8 * ifempty(1.daily_budget_usd; 1); \"• \" + \"💸 Расход AI \" + formatNumber(ifempty(5.cost_usd; 0); 2) + \" $ из \" + 1.daily_budget_usd + \" $\" + newline; \"\")}}{{if(1.paused = true & ifempty(1.updated_at; now) < addHours(now; -24); \"• \" + \"⏸ Пауза дольше суток: \" + ifempty(1.paused_reason; \"\") + newline; \"\")}}"
      }
     ],
     "scope": "roundtrip"
@@ -357,7 +385,7 @@
          },
          {
           "key": "text",
-          "value": "{{if(13.alarms = \"\"; \"🛡 Guardian: ✅ восстановлено, всё в порядке\"; \"🛡 Guardian: ⚠️ проблема\\n\" + 13.alarms)}}"
+          "value": "{{if(trim(13.codes) = \"\"; \"🛡 Guardian: ✅ восстановлено, всё в порядке\"; \"🛡 Guardian: ⚠️ проблема\" + newline + 13.text)}}"
          }
         ],
         "urlMethod": "sendMessage"
@@ -372,13 +400,13 @@
         }
        },
        "filter": {
-        "name": "Состояние изменилось",
+        "name": "Состояние изменилось (по кодам)",
         "conditions": [
          [
           {
-           "a": "{{14.hash}}",
+           "a": "{{trim(13.codes)}}",
            "o": "text:notequal",
-           "b": "{{ifempty(4.hash; \"\")}}"
+           "b": "{{trim(ifempty(4.hb_note; \"\"))}}"
           }
          ]
         ]
@@ -407,8 +435,7 @@
         "upsert": true,
         "overwriteArrays": false,
         "data": {
-         "hash": "{{14.hash}}",
-         "hb_note": "{{13.alarms}}",
+         "hb_note": "{{trim(13.codes)}}",
          "hb_at": "{{now}}"
         }
        },
@@ -459,14 +486,14 @@
         "conditions": [
          [
           {
-           "a": "{{13.alarms}}",
+           "a": "{{trim(13.codes)}}",
            "o": "text:equal",
            "b": ""
           },
           {
-           "a": "{{ifempty(4.ok_day; \"\")}}",
+           "a": "{{ifempty(4.day; \"\")}}",
            "o": "text:notequal",
-           "b": "{{14.ok_day}}"
+           "b": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(1.timezone; \"Europe/Berlin\"))}}"
           },
           {
            "a": "{{formatDate(now; \"H\"; ifempty(1.timezone; \"Europe/Berlin\"))}}",
@@ -500,7 +527,7 @@
         "upsert": true,
         "overwriteArrays": false,
         "data": {
-         "ok_day": "{{14.ok_day}}"
+         "day": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(1.timezone; \"Europe/Berlin\"))}}"
         }
        },
        "parameters": {
@@ -527,7 +554,8 @@
         "overwriteArrays": false,
         "data": {
          "hb_at": "{{now}}",
-         "hb_status": "{{if(13.alarms = \"\"; \"ok\"; \"alarm\")}}"
+         "hb_status": "{{if(trim(13.codes) = \"\"; \"ok\"; \"alarm\")}}",
+         "hb_note": "{{trim(13.codes)}}"
         }
        },
        "parameters": {
