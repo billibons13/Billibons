@@ -71,6 +71,6 @@ if __name__ == "__main__":
     walk(bp["flow"])
     assert len(ids) == len(set(ids)), sorted(ids)
     s = json.dumps(bp, ensure_ascii=False)
-    assert "sk-ant" not in s and "bot_token" not in s.lower() and "6883357001" not in s
+    assert "sk-ant" not in s and "bot_token" not in s.lower() and (not os.environ.get("LH_OWNER_CHAT_ID") or os.environ["LH_OWNER_CHAT_ID"] not in s)
     json.dump(bp, open(os.path.join(ROOT, "blueprints", "GD-01.json"), "w"), ensure_ascii=False, indent=1)
     print("GD-01 modules", len(ids), "bytes", len(s.encode()))
