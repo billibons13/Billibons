@@ -1,0 +1,398 @@
+{
+ "name": "LH-01 Scout + Gatekeeper (Freelancer.com → LH-03)",
+ "metadata": {
+  "instant": false,
+  "version": 1,
+  "scenario": {
+   "dlq": false,
+   "dataloss": false,
+   "maxErrors": 3,
+   "autoCommit": true,
+   "roundtrips": 1,
+   "sequential": true,
+   "confidential": false,
+   "autoCommitTriggerLast": true
+  }
+ },
+ "flow": [
+  {
+   "id": 20,
+   "module": "datastore:GetRecord",
+   "version": 1,
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   },
+   "mapper": {
+    "key": "search",
+    "returnWrapped": false
+   },
+   "parameters": {
+    "datastore": 207951
+   }
+  },
+  {
+   "id": 21,
+   "module": "datastore:UpdateRecord",
+   "version": 1,
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   },
+   "mapper": {
+    "key": "hb_lh01",
+    "upsert": true,
+    "overwriteArrays": false,
+    "data": {
+     "hb_at": "{{now}}",
+     "hb_status": "ok",
+     "hb_note": "scout run, search v{{20.version}}"
+    }
+   },
+   "parameters": {
+    "datastore": 207951
+   }
+  },
+  {
+   "id": 1,
+   "module": "http:ActionSendData",
+   "version": 3,
+   "parameters": {
+    "handleErrors": false,
+    "useNewZLibDeCompress": true
+   },
+   "mapper": {
+    "qs": [
+     {
+      "name": "currency_codes[]",
+      "value": "EUR"
+     }
+    ],
+    "url": "https://www.freelancer.com/api/projects/0.1/currencies/",
+    "gzip": true,
+    "method": "get",
+    "headers": [
+     {
+      "name": "User-Agent",
+      "value": "TGLeadsDE/1.0 (Make.com; contact: owner)"
+     }
+    ],
+    "useMtls": false,
+    "serializeUrl": false,
+    "shareCookies": false,
+    "parseResponse": true,
+    "followRedirect": true,
+    "useQuerystring": false,
+    "followAllRedirects": false,
+    "rejectUnauthorized": true
+   },
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   }
+  },
+  {
+   "id": 2,
+   "module": "http:ActionSendData",
+   "version": 3,
+   "parameters": {
+    "handleErrors": false,
+    "useNewZLibDeCompress": true
+   },
+   "mapper": {
+    "qs": [],
+    "url": "https://www.freelancer.com/api/projects/0.1/projects/active/?jobs[]={{join(split(20.jobs_csv; \",\"); \"&jobs[]=\")}}&project_types[]=fixed&project_types[]=hourly&limit=50&full_description=true&compact=true&from_time={{formatDate(addHours(now; 0 - 20.window_hours); \"X\")}}",
+    "gzip": true,
+    "method": "get",
+    "headers": [
+     {
+      "name": "User-Agent",
+      "value": "TGLeadsDE/1.0 (Make.com; contact: owner)"
+     }
+    ],
+    "useMtls": false,
+    "serializeUrl": false,
+    "shareCookies": false,
+    "parseResponse": true,
+    "followRedirect": true,
+    "useQuerystring": false,
+    "followAllRedirects": false,
+    "rejectUnauthorized": true
+   },
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   }
+  },
+  {
+   "id": 3,
+   "module": "builtin:BasicFeeder",
+   "version": 1,
+   "mapper": {
+    "array": "{{2.data.result.projects}}"
+   },
+   "parameters": {},
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   }
+  },
+  {
+   "id": 6,
+   "module": "datastore:GetRecord",
+   "version": 1,
+   "mapper": {
+    "key": "fl-{{3.id}}",
+    "returnWrapped": false
+   },
+   "parameters": {
+    "datastore": 205357
+   },
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   },
+   "filter": {
+    "name": "Gatekeeper: язык, тема (regex), не мусор, бюджет, ставки — из /search_settings",
+    "conditions": [
+     [
+      {
+       "a": "{{3.type}}",
+       "o": "text:equal",
+       "b": "fixed"
+      },
+      {
+       "a": "{{round(3.budget.maximum * 3.currency.exchange_rate / first(map(1.data.result.currencies; \"exchange_rate\")))}}",
+       "o": "number:greaterorequal",
+       "b": "{{20.budget_fixed_min_eur}}"
+      },
+      {
+       "a": "{{if(contains(split(20.languages_csv; \",\"); 3.language); \"yes\"; \"no\")}}",
+       "o": "text:equal",
+       "b": "yes"
+      },
+      {
+       "a": "{{lower(3.title)}} {{lower(substring(ifempty(3.description; \"\"); 0; 2000))}}",
+       "o": "text:pattern",
+       "b": "{{20.include_regex}}"
+      },
+      {
+       "a": "{{lower(3.title)}} {{lower(substring(ifempty(3.description; \"\"); 0; 2000))}}",
+       "o": "text:notpattern",
+       "b": "{{20.exclude_regex}}"
+      },
+      {
+       "a": "{{ifempty(3.bid_stats.bid_count; 0)}}",
+       "o": "number:lessorequal",
+       "b": "{{20.max_bids}}"
+      }
+     ],
+     [
+      {
+       "a": "{{3.type}}",
+       "o": "text:equal",
+       "b": "hourly"
+      },
+      {
+       "a": "{{round(3.budget.maximum * 3.currency.exchange_rate / first(map(1.data.result.currencies; \"exchange_rate\")))}}",
+       "o": "number:greaterorequal",
+       "b": "{{20.budget_hourly_min_eur}}"
+      },
+      {
+       "a": "{{if(contains(split(20.languages_csv; \",\"); 3.language); \"yes\"; \"no\")}}",
+       "o": "text:equal",
+       "b": "yes"
+      },
+      {
+       "a": "{{lower(3.title)}} {{lower(substring(ifempty(3.description; \"\"); 0; 2000))}}",
+       "o": "text:pattern",
+       "b": "{{20.include_regex}}"
+      },
+      {
+       "a": "{{lower(3.title)}} {{lower(substring(ifempty(3.description; \"\"); 0; 2000))}}",
+       "o": "text:notpattern",
+       "b": "{{20.exclude_regex}}"
+      },
+      {
+       "a": "{{ifempty(3.bid_stats.bid_count; 0)}}",
+       "o": "number:lessorequal",
+       "b": "{{20.max_bids}}"
+      }
+     ]
+    ]
+   }
+  },
+  {
+   "id": 7,
+   "module": "util:FunctionIncrement",
+   "version": 1,
+   "mapper": {},
+   "parameters": {
+    "reset": "execution"
+   },
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   },
+   "filter": {
+    "name": "Новый (нет в базе)",
+    "conditions": [
+     [
+      {
+       "a": "{{6.source}}",
+       "o": "notexist"
+      }
+     ]
+    ]
+   }
+  },
+  {
+   "id": 9,
+   "module": "datastore:GetRecord",
+   "version": 1,
+   "mapper": {
+    "key": "main",
+    "returnWrapped": false
+   },
+   "parameters": {
+    "datastore": 207951
+   },
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   },
+   "filter": {
+    "name": "Не больше max_per_run за запуск",
+    "conditions": [
+     [
+      {
+       "a": "{{7.i}}",
+       "o": "number:lessorequal",
+       "b": "{{20.max_per_run}}"
+      }
+     ]
+    ]
+   }
+  },
+  {
+   "id": 10,
+   "module": "http:ActionSendData",
+   "version": 3,
+   "mapper": {
+    "url": "https://hook.eu1.make.com/i7nnyj1mxyeez4mgznqk6x58oqhinbdr",
+    "method": "post",
+    "headers": [],
+    "qs": [],
+    "bodyType": "x_www_form_urlencoded",
+    "formFields": [
+     {
+      "key": "token",
+      "value": "{{9.internal_token}}"
+     },
+     {
+      "key": "source",
+      "value": "freelancer"
+     },
+     {
+      "key": "source_url",
+      "value": "https://www.freelancer.com/projects/{{3.seo_url}}"
+     },
+     {
+      "key": "text",
+      "value": "{{3.title}}\nhttps://www.freelancer.com/projects/{{3.seo_url}}\nFreelancer.com · {{if(3.type = \"hourly\"; \"почасовой\"; \"фикс\")}} · бюджет {{3.budget.minimum}}–{{3.budget.maximum}} {{3.currency.code}}{{if(3.type = \"hourly\"; \"/ч\"; \"\")}} (≈ до {{round(3.budget.maximum * 3.currency.exchange_rate / first(map(1.data.result.currencies; \"exchange_rate\")))}} EUR{{if(3.type = \"hourly\"; \"/ч\"; \"\")}}) · ставок: {{ifempty(3.bid_stats.bid_count; 0)}} · язык: {{3.language}}\n\n{{substring(3.description; 0; 3000)}}{{if(length(3.description) > 3000; \"…\"; \"\")}}"
+     },
+     {
+      "key": "text_links",
+      "value": "https://www.freelancer.com/projects/{{3.seo_url}}"
+     }
+    ],
+    "parseResponse": false,
+    "serializeUrl": false,
+    "shareCookies": false,
+    "rejectUnauthorized": true,
+    "followRedirect": true,
+    "followAllRedirects": false,
+    "useQuerystring": false,
+    "gzip": true,
+    "useMtls": false
+   },
+   "parameters": {
+    "handleErrors": true,
+    "useNewZLibDeCompress": true
+   },
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   },
+   "onerror": [
+    {
+     "id": 510,
+     "module": "builtin:Ignore",
+     "version": 1,
+     "mapper": null,
+     "metadata": {
+      "designer": {
+       "x": 0,
+       "y": 0
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": 11,
+   "module": "datastore:AddRecord",
+   "version": 1,
+   "mapper": {
+    "key": "fl-{{3.id}}",
+    "overwrite": false,
+    "data": {
+     "title": "{{3.title}}",
+     "source": "Freelancer.com API",
+     "status": "sent_lh03",
+     "currency": "{{3.currency.code}}",
+     "language": "{{3.language}}",
+     "bid_count": "{{ifempty(3.bid_stats.bid_count; 0)}}",
+     "posted_at": "{{parseDate(3.time_submitted; \"X\")}}",
+     "source_id": "{{3.id}}",
+     "budget_max": "{{3.budget.maximum}}",
+     "budget_min": "{{3.budget.minimum}}",
+     "fetched_at": "{{now}}",
+     "source_url": "https://www.freelancer.com/projects/{{3.seo_url}}",
+     "description": "{{substring(3.description; 0; 4000)}}",
+     "delete_after": "{{addDays(now; 90)}}",
+     "project_type": "{{3.type}}",
+     "verification": "API: status={{3.status}}, nonpublic={{3.nonpublic}}, deleted={{3.deleted}}; Gatekeeper ok (search v{{20.version}}); передан в LH-03",
+     "budget_max_eur": "{{round(3.budget.maximum * 3.currency.exchange_rate / first(map(1.data.result.currencies; \"exchange_rate\")))}}"
+    }
+   },
+   "parameters": {
+    "datastore": 205357
+   },
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   }
+  }
+ ]
+}

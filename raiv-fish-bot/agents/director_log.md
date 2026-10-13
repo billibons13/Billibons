@@ -283,3 +283,8 @@ BH-01: плановый запуск 08.10 ~04:30 UTC не состоялся (�
 Факт: все AI-шаги (LH-10, LH-11, AI-01, ADH) — модуль anthropic-claude:simpleTextPrompt «без подключения» = ключ Make, оплата кредитами по токенам (формула модуля). Подключения anthropic в команде нет.
 Сделано: credential request 83eddfdd (anthropic-claude / createAMessage) — владелец вставляет ключ сам в Make. Ключ в чат/git не берём.
 Дальше: после подключения — инженер меняет модули на createAMessage с подключением владельца, бэкап → тест → замер.
+
+## 13.10.2026 ~14:20 UTC — T-0040 этап 1 развёрнут (Lead Hunter v2)
+Факт: Freelancer API — ID категорий верные (2380 Telegram API, 2068 Chatbot, 2823 Make.com, 2917 AI Chatbot, 2918 Bot Development); фильтр jobs[] работает, но заказчики помечают «Chatbot» копирайтинг/поддержку/SEO; страна в API без авторизации пустая; активных проектов по 5 категориям — 38.
+Сделано: Gatekeeper (scripts/gatekeeper.py + тест 23/23); data structure lh_settings +16 полей (только добавление); запись search v1; сценарий 7744024 обновлён → LH-01 Scout + Gatekeeper (папка Lead Hunter), heartbeat hb_lh01. Бэкап: lead-hunter/backup/7744024_before_2026-10-13.json. Расход: 2 вызова HTTP-инструмента 7707662.
+Не сделано (ждёт владельца): LH-10 (send_grades, track), LH-20 (/search_settings, 🚀), LH-11 (Estimator), GD-01 (собран, не создан), BYOK.

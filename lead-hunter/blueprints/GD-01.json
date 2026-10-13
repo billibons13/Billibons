@@ -1,0 +1,548 @@
+{
+ "name": "GD-01 SYSTEM GUARDIAN — пульс Lead Hunter",
+ "metadata": {
+  "version": 1
+ },
+ "flow": [
+  {
+   "id": 1,
+   "module": "datastore:GetRecord",
+   "version": 1,
+   "mapper": {
+    "key": "main",
+    "returnWrapped": false
+   },
+   "parameters": {
+    "datastore": 207951
+   },
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   }
+  },
+  {
+   "id": 2,
+   "module": "datastore:GetRecord",
+   "version": 1,
+   "mapper": {
+    "key": "hb_lh01",
+    "returnWrapped": false
+   },
+   "parameters": {
+    "datastore": 207951
+   },
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   }
+  },
+  {
+   "id": 3,
+   "module": "datastore:GetRecord",
+   "version": 1,
+   "mapper": {
+    "key": "search",
+    "returnWrapped": false
+   },
+   "parameters": {
+    "datastore": 207951
+   },
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   }
+  },
+  {
+   "id": 4,
+   "module": "datastore:GetRecord",
+   "version": 1,
+   "mapper": {
+    "key": "guardian_state",
+    "returnWrapped": false
+   },
+   "parameters": {
+    "datastore": 207951
+   },
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   }
+  },
+  {
+   "id": 5,
+   "module": "datastore:GetRecord",
+   "version": 1,
+   "mapper": {
+    "key": "day_{{formatDate(now; \"YYYY-MM-DD\"; ifempty(1.timezone; \"Europe/Berlin\"))}}",
+    "returnWrapped": false
+   },
+   "parameters": {
+    "datastore": 207951
+   },
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   }
+  },
+  {
+   "id": 6,
+   "module": "telegram:UniversalAPICall",
+   "version": 1,
+   "mapper": {
+    "method": "POST",
+    "bodyType": "assembled_body",
+    "body_spec": [],
+    "urlMethod": "getWebhookInfo"
+   },
+   "parameters": {
+    "__IMTCONN__": 9480305
+   },
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   },
+   "onerror": [
+    {
+     "id": 506,
+     "module": "builtin:Ignore",
+     "version": 1,
+     "mapper": null,
+     "metadata": {
+      "designer": {
+       "x": 0,
+       "y": 0
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": 7,
+   "module": "datastore:SearchRecord",
+   "version": 1,
+   "mapper": {
+    "filter": [
+     [
+      {
+       "a": "status",
+       "o": "text:equal",
+       "b": "NEW"
+      },
+      {
+       "a": "created_at",
+       "o": "date:less",
+       "b": "{{addHours(now; -2)}}"
+      }
+     ]
+    ],
+    "sort": []
+   },
+   "parameters": {
+    "datastore": 207950,
+    "continueWhenNoRes": true,
+    "limit": 10
+   },
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   }
+  },
+  {
+   "id": 8,
+   "module": "builtin:BasicAggregator",
+   "version": 1,
+   "mapper": {
+    "id": "{{7.lead_id}}"
+   },
+   "parameters": {
+    "feeder": 7
+   },
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   }
+  },
+  {
+   "id": 9,
+   "module": "datastore:SearchRecord",
+   "version": 1,
+   "mapper": {
+    "filter": [
+     [
+      {
+       "a": "status",
+       "o": "text:equal",
+       "b": "APPROVED"
+      },
+      {
+       "a": "approved_at",
+       "o": "date:less",
+       "b": "{{addHours(now; -1)}}"
+      },
+      {
+       "a": "architect_json",
+       "o": "notexist"
+      }
+     ]
+    ],
+    "sort": []
+   },
+   "parameters": {
+    "datastore": 207950,
+    "continueWhenNoRes": true,
+    "limit": 10
+   },
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   }
+  },
+  {
+   "id": 10,
+   "module": "builtin:BasicAggregator",
+   "version": 1,
+   "mapper": {
+    "id": "{{9.lead_id}}"
+   },
+   "parameters": {
+    "feeder": 9
+   },
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   }
+  },
+  {
+   "id": 11,
+   "module": "datastore:SearchRecord",
+   "version": 1,
+   "mapper": {
+    "filter": [
+     [
+      {
+       "a": "status",
+       "o": "text:equal",
+       "b": "ERROR"
+      },
+      {
+       "a": "day",
+       "o": "text:equal",
+       "b": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(1.timezone; \"Europe/Berlin\"))}}"
+      }
+     ]
+    ],
+    "sort": []
+   },
+   "parameters": {
+    "datastore": 207950,
+    "continueWhenNoRes": true,
+    "limit": 10
+   },
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   }
+  },
+  {
+   "id": 12,
+   "module": "builtin:BasicAggregator",
+   "version": 1,
+   "mapper": {
+    "id": "{{11.lead_id}}",
+    "code": "{{11.error_code}}"
+   },
+   "parameters": {
+    "feeder": 11
+   },
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   }
+  },
+  {
+   "id": 13,
+   "module": "util:SetVariables",
+   "version": 1,
+   "mapper": {
+    "variables": [
+     {
+      "name": "alarms",
+      "value": "{{if(ifempty(2.hb_at; \"\") = \"\"; \"🔭 Scout ещё ни разу не отметился\\n\"; if(2.hb_at < addHours(now; 0 - ifempty(3.window_hours; 12) - 1); \"🔭 Scout не запускался с \" + formatDate(2.hb_at; \"DD.MM HH:mm\"; ifempty(1.timezone; \"Europe/Berlin\")) + \"\\n\"; \"\"))}}{{if(ifempty(6.body.result.pending_update_count; 0) > 5; \"📨 Telegram: в очереди \" + 6.body.result.pending_update_count + \" обновлений\\n\"; \"\")}}{{if(ifempty(6.body.result.last_error_date; 0) > formatDate(addHours(now; -1); \"X\"); \"📨 Telegram webhook: \" + 6.body.result.last_error_message + \"\\n\"; \"\")}}{{if(ifempty(6.body.result.url; \"\") = \"\"; \"📨 Telegram webhook не установлен\\n\"; \"\")}}{{if(length(8.array) > 0 & 1.paused != true; \"⏳ Зависли NEW > 2 ч: \" + join(map(8.array; \"id\"); \", \") + \"\\n\"; \"\")}}{{if(length(10.array) > 0; \"⏳ Одобрены, но нет ТЗ > 1 ч: \" + join(map(10.array; \"id\"); \", \") + \"\\n\"; \"\")}}{{if(length(12.array) >= 2; \"❌ Ошибок за сутки: \" + length(12.array) + \" (\" + join(map(12.array; \"code\"); \", \") + \")\\n\"; \"\")}}{{if(ifempty(5.cost_usd; 0) >= 0.8 * ifempty(1.daily_budget_usd; 1); \"💸 Расход AI \" + formatNumber(5.cost_usd; 2) + \" $ из \" + 1.daily_budget_usd + \" $\\n\"; \"\")}}{{if(1.paused = true & ifempty(1.updated_at; now) < addHours(now; -24); \"⏸ Пауза дольше суток: \" + ifempty(1.paused_reason; \"\") + \"\\n\"; \"\")}}"
+     }
+    ],
+    "scope": "roundtrip"
+   },
+   "parameters": {},
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   }
+  },
+  {
+   "id": 14,
+   "module": "util:SetVariables",
+   "version": 1,
+   "mapper": {
+    "variables": [
+     {
+      "name": "hash",
+      "value": "{{md5(13.alarms)}}"
+     },
+     {
+      "name": "ok_day",
+      "value": "{{formatDate(now; \"YYYY-MM-DD\"; ifempty(1.timezone; \"Europe/Berlin\"))}}"
+     }
+    ],
+    "scope": "roundtrip"
+   },
+   "parameters": {},
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   }
+  },
+  {
+   "id": 15,
+   "module": "builtin:BasicRouter",
+   "version": 1,
+   "mapper": null,
+   "metadata": {
+    "designer": {
+     "x": 1800,
+     "y": 0
+    }
+   },
+   "routes": [
+    {
+     "flow": [
+      {
+       "id": 16,
+       "module": "telegram:UniversalAPICall",
+       "version": 1,
+       "mapper": {
+        "method": "POST",
+        "bodyType": "assembled_body",
+        "body_spec": [
+         {
+          "key": "chat_id",
+          "value": "{{1.owner_chat_id}}"
+         },
+         {
+          "key": "text",
+          "value": "{{if(13.alarms = \"\"; \"🛡 Guardian: ✅ восстановлено, всё в порядке\"; \"🛡 Guardian: ⚠️ проблема\\n\" + 13.alarms)}}"
+         }
+        ],
+        "urlMethod": "sendMessage"
+       },
+       "parameters": {
+        "__IMTCONN__": 9480305
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "filter": {
+        "name": "Состояние изменилось",
+        "conditions": [
+         [
+          {
+           "a": "{{14.hash}}",
+           "o": "text:notequal",
+           "b": "{{ifempty(4.hash; \"\")}}"
+          }
+         ]
+        ]
+       },
+       "onerror": [
+        {
+         "id": 516,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "mapper": null,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         }
+        }
+       ]
+      },
+      {
+       "id": 17,
+       "module": "datastore:UpdateRecord",
+       "version": 1,
+       "mapper": {
+        "key": "guardian_state",
+        "upsert": true,
+        "overwriteArrays": false,
+        "data": {
+         "hash": "{{14.hash}}",
+         "hb_note": "{{13.alarms}}",
+         "hb_at": "{{now}}"
+        }
+       },
+       "parameters": {
+        "datastore": 207951
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 18,
+       "module": "telegram:UniversalAPICall",
+       "version": 1,
+       "mapper": {
+        "method": "POST",
+        "bodyType": "assembled_body",
+        "body_spec": [
+         {
+          "key": "chat_id",
+          "value": "{{1.owner_chat_id}}"
+         },
+         {
+          "key": "text",
+          "value": "🛡 Guardian: всё в порядке · Scout {{formatDate(2.hb_at; \"DD.MM HH:mm\"; ifempty(1.timezone; \"Europe/Berlin\"))}} · расход AI сегодня {{formatNumber(ifempty(5.cost_usd; 0); 2)}} $ из {{1.daily_budget_usd}} $"
+         }
+        ],
+        "urlMethod": "sendMessage"
+       },
+       "parameters": {
+        "__IMTCONN__": 9480305
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       },
+       "filter": {
+        "name": "Раз в сутки: всё в порядке",
+        "conditions": [
+         [
+          {
+           "a": "{{13.alarms}}",
+           "o": "text:equal",
+           "b": ""
+          },
+          {
+           "a": "{{ifempty(4.ok_day; \"\")}}",
+           "o": "text:notequal",
+           "b": "{{14.ok_day}}"
+          },
+          {
+           "a": "{{formatDate(now; \"H\"; ifempty(1.timezone; \"Europe/Berlin\"))}}",
+           "o": "number:greaterorequal",
+           "b": "8"
+          }
+         ]
+        ]
+       },
+       "onerror": [
+        {
+         "id": 518,
+         "module": "builtin:Ignore",
+         "version": 1,
+         "mapper": null,
+         "metadata": {
+          "designer": {
+           "x": 0,
+           "y": 0
+          }
+         }
+        }
+       ]
+      },
+      {
+       "id": 19,
+       "module": "datastore:UpdateRecord",
+       "version": 1,
+       "mapper": {
+        "key": "guardian_state",
+        "upsert": true,
+        "overwriteArrays": false,
+        "data": {
+         "ok_day": "{{14.ok_day}}"
+        }
+       },
+       "parameters": {
+        "datastore": 207951
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      }
+     ]
+    },
+    {
+     "flow": [
+      {
+       "id": 20,
+       "module": "datastore:UpdateRecord",
+       "version": 1,
+       "mapper": {
+        "key": "hb_gd01",
+        "upsert": true,
+        "overwriteArrays": false,
+        "data": {
+         "hb_at": "{{now}}",
+         "hb_status": "{{if(13.alarms = \"\"; \"ok\"; \"alarm\")}}"
+        }
+       },
+       "parameters": {
+        "datastore": 207951
+       },
+       "metadata": {
+        "designer": {
+         "x": 0,
+         "y": 0
+        }
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

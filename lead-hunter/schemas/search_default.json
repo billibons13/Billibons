@@ -1,0 +1,14 @@
+{
+ "version": 1,
+ "jobs_csv": "2380,2068,2823,2917,2918",
+ "include_regex": "\\b(telegram|chat ?bots?|bots?|mini ?apps?|make\\.com|integromat|n8n|zapier|webhooks?|automation|automate)\\b",
+ "exclude_regex": "translat|garment|instructor|copywrit|chat admin|virtual assistant|data entry|\\bseo\\b|moodle|vertriebspartner|sales partner|voice (call|assistant)",
+ "languages_csv": "en,de,ru,uk,es",
+ "countries_csv": "",
+ "budget_fixed_min_eur": 300,
+ "budget_hourly_min_eur": 15,
+ "max_bids": 200,
+ "window_hours": 12,
+ "max_per_run": 5,
+ "send_grades_csv": "HOT,WARM,COLD"
+}
