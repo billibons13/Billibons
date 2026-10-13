@@ -36,7 +36,8 @@ def build():
     F.append(ds_search(21, S_LEADS, [[c("status", "text:equal", "SENT_TO_TELEGRAM"), c("tg_message_id", "notexist")]], limit=10))
     F.append(agg(22, 21, {"id": "{{21.lead_id}}"}))
     WH = "6.body.result"
-    HB_OLD = 'if(ifempty(2.hb_at; "") = ""; true; 2.hb_at < addHours(now; 0 - ifempty(3.window_hours; 12) - 1))'
+    # без сравнений с "" (Make вычисляет их ненадёжно): нет отметки → считаем её годичной давности
+    HB_OLD = 'ifempty(2.hb_at; addDays(now; -365)) < addHours(now; 0 - ifempty(3.window_hours; 12) - 1)'
     checks = [  # (код, условие IML, текст тревоги IML)
         ("SCOUT_STALE", HB_OLD, '"🔭 Scout не отмечался дольше окна поиска (последний: " + ifempty(formatDate(2.hb_at; "DD.MM HH:mm"; ' + TZ + '); "никогда") + ")"'),
         ("TG_PENDING", 'ifempty(' + WH + '.pending_update_count; 0) > 5', '"📨 Telegram: в очереди " + ' + WH + '.pending_update_count + " обновлений"'),
@@ -52,21 +53,27 @@ def build():
     codes = "".join('{{if(' + cond + '; "' + code + ' "; "")}}' for code, cond, _ in checks)
     text = "".join('{{if(' + cond + '; "• " + ' + msg + ' + newline; "")}}' for _, cond, msg in checks)
     F.append(setvars(13, [("codes", codes), ("text", text)]))
-    changed = [c("{{trim(13.codes)}}", "text:notequal", "{{trim(ifempty(4.hb_note; \"\"))}}")]
-    daily_ok = [c("{{trim(13.codes)}}", "text:equal", ""), c("{{ifempty(4.day; \"\")}}", "text:notequal", TODAY),
+    # v3: состояние без пустых строк (Make игнорирует условие фильтра с пустым операндом) — «OK» или коды
+    F.append(setvars(14, [("state", '{{ifempty(trim(13.codes); "OK")}}')]))
+    # отладка: сырые значения поиска (служебная запись gd_debug, читается директором; только чтение данных лидов)
+    RAW = lambda a: '" ' + a + ': n=" + length(' + a + '.array) + " ids=[" + join(map(' + a + '.array; "id"); "|") + "]"'
+    F.append(ds_upd(23, S_SET, "gd_debug", {"hb_at": "{{now}}", "hb_note": "{{" + " + ".join(RAW(x) for x in ("8", "10", "12", "22")) + ' + " codes=" + 13.codes + " url=" + ifempty(6.body.result.url; "none")' + "}}",
+                                            "hb_status": "{{14.state}}"}))
+    changed = [c("{{14.state}}", "exist"), c("{{14.state}}", "text:notequal", "{{ifempty(4.hb_note; \"OK\")}}")]
+    daily_ok = [c("{{14.state}}", "text:equal", "OK"), c("{{ifempty(4.day; \"none\")}}", "text:notequal", TODAY),
                 c("{{formatDate(now; \"H\"; " + TZ + ")}}", "number:greaterorequal", "8")]
     F.append(router(15, [
         [tg(16, "sendMessage", [("chat_id", OWNER), ("text",
-            "{{if(trim(13.codes) = \"\"; \"🛡 Guardian: ✅ восстановлено, всё в порядке\"; \"🛡 Guardian: ⚠️ проблема\" + newline + 13.text)}}")],
+            "{{if(14.state = \"OK\"; \"🛡 Guardian: ✅ восстановлено, всё в порядке\"; \"🛡 Guardian: ⚠️ проблема\" + newline + 13.text)}}")],
             name="Состояние изменилось (по кодам)", conds=[changed]),
-         ds_upd(17, S_SET, "guardian_state", {"hb_note": "{{trim(13.codes)}}", "hb_at": "{{now}}"})],
+         ds_upd(17, S_SET, "guardian_state", {"hb_note": "{{14.state}}", "hb_at": "{{now}}"})],
         [tg(18, "sendMessage", [("chat_id", OWNER), ("text",
             "🛡 Guardian: всё в порядке · Scout {{formatDate(2.hb_at; \"DD.MM HH:mm\"; " + TZ + ")}} · расход AI сегодня "
             "{{formatNumber(ifempty(5.cost_usd; 0); 2)}} $ из {{1.daily_budget_usd}} $")],
             name="Раз в сутки: всё в порядке", conds=[daily_ok]),
          ds_upd(19, S_SET, "guardian_state", {"day": TODAY})],
-        [ds_upd(20, S_SET, "hb_gd01", {"hb_at": "{{now}}", "hb_status": "{{if(trim(13.codes) = \"\"; \"ok\"; \"alarm\")}}",
-                                        "hb_note": "{{trim(13.codes)}}"}, name="heartbeat")],
+        [ds_upd(20, S_SET, "hb_gd01", {"hb_at": "{{now}}", "hb_status": "{{if(14.state = \"OK\"; \"ok\"; \"alarm\")}}",
+                                        "hb_note": "{{14.state}}"}, name="heartbeat")],
     ], 1800, 0))
     return {"name": "GD-01 SYSTEM GUARDIAN — пульс Lead Hunter", "metadata": {"version": 1}, "flow": F}
 
