@@ -12,14 +12,20 @@ DEFAULT_SEARCH = {
     "max_bids": 200,
 }
 
+RX = re.ASCII  # как в Make (JS RegExp): \b и \w — только ASCII; иначе Python и Make расходятся на «开发Telegram», «Telegram机器人»
+
 def gate(p, s=DEFAULT_SEARCH):
-    """p: title, description, language, type (fixed|hourly), budget_max_eur, bid_count. → (passed, reason)"""
-    text = (p.get("title", "") + " " + p.get("description", "")[:2000]).lower()
+    """p: title, description, language, type (fixed|hourly), budget_max_eur, bid_count. → (passed, reason)
+    Решение = AND всех условий фильтра LH-01 (модуль 6), как в Make; порядок проверок влияет только на текст причины."""
+    text = ((p.get("title") or "") + " " + (p.get("description") or "")[:2000]).lower()
+    if p.get("type") not in ("fixed", "hourly"):  # в Make две ветки фильтра: fixed и hourly; иное не проходит ни одну
+        return False, "type:" + str(p.get("type"))
     if p.get("language") not in s["languages"]:
         return False, "language:" + str(p.get("language"))
-    if re.search(s["exclude_regex"], text):
-        return False, "exclude:" + re.search(s["exclude_regex"], text).group(0)
-    if not re.search(s["include_regex"], text):
+    x = re.search(s["exclude_regex"], text, RX)
+    if x:
+        return False, "exclude:" + x.group(0)
+    if not re.search(s["include_regex"], text, RX):
         return False, "no_keyword"
     floor = s["budget_fixed_min_eur"] if p.get("type") == "fixed" else s["budget_hourly_min_eur"]
     if (p.get("budget_max_eur") or 0) < floor:

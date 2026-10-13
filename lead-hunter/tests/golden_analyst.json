@@ -1,0 +1,1044 @@
+{
+ "agent": "Analyst",
+ "prompt_version": "ANALYST_v3",
+ "task": "T-20261013-0041",
+ "created": "2026-10-13",
+ "acceptance": {
+  "threshold_pass_rate": 0.85,
+  "json_valid_rate": 1.0,
+  "case_pass_rule": "JSON валиден и содержит все ключи; category ∈ category_alternatives (или == category); kind совпал; каждый score из expected.scores в диапазоне [min,max]; все risk_flags_required присутствуют; ни одного risk_flags_forbidden; capability_fit.value ∈ capability_fit_in (если задано); remote_ok ∈ remote_ok_in (если задано); authenticity_flags_required присутствуют; needs_review совпал (если задано); budget == null при budget_must_be_null."
+ },
+ "notes": [
+  "input.budget/bid_count/language — справочно для проверяющего; в LH-10 Analyst получает их только внутри description_original.",
+  "Кейсы G01–G13 — реальные проекты Freelancer из scripts/test_gatekeeper.py (CASES), описание сокращено до ключевого фрагмента, суммы в EUR как в разметке; source_url заменён на example.com.",
+  "synthetic=true — вымышленные заявки, не реальные заказы."
+ ],
+ "cases": [
+  {
+   "id": "G01",
+   "synthetic": false,
+   "input": {
+    "lead_id": "LH-GOLD-01",
+    "title": "Telegram-Based Production Tracker Upgrade",
+    "source": "freelancer",
+    "source_url": "https://example.com/golden/1",
+    "client_hint": null,
+    "description_original": "Upgrade our Telegram-based production tracking bot (python-telegram-bot, PostgreSQL): new reports, roles, export. Budget EUR 750 fixed. 173 bids.",
+    "language": "en",
+    "budget": {
+     "amount": 750,
+     "currency": "EUR",
+     "type": "fixed"
+    },
+    "bid_count": 173
+   },
+   "expected": {
+    "category": "websites_bots",
+    "kind": "lead",
+    "scores": {
+     "telegram_relevance": [
+      9,
+      10
+     ],
+     "budget": [
+      5,
+      5
+     ],
+     "competition": [
+      0,
+      1
+     ],
+     "fit": [
+      7,
+      10
+     ]
+    },
+    "risk_flags_required": [],
+    "risk_flags_forbidden": [
+     "budget_below_minimum",
+     "test_task_unpaid"
+    ],
+    "capability_fit_in": [
+     "yes"
+    ],
+    "authenticity_flags_required": [
+     "high_competition"
+    ]
+   }
+  },
+  {
+   "id": "G02",
+   "synthetic": false,
+   "input": {
+    "lead_id": "LH-GOLD-02",
+    "title": "Upgrade Moodle & Edwiser",
+    "source": "freelancer",
+    "source_url": "https://example.com/golden/2",
+    "client_hint": null,
+    "description_original": "Perlu upgrade LMS Moodle dan tema Edwiser ke versi terbaru. Anggaran EUR 667. 21 tawaran.",
+    "language": "id",
+    "budget": {
+     "amount": 667,
+     "currency": "EUR",
+     "type": "fixed"
+    },
+    "bid_count": 21
+   },
+   "expected": {
+    "category": "other",
+    "kind": "lead",
+    "scores": {
+     "telegram_relevance": [
+      0,
+      7
+     ],
+     "budget": [
+      5,
+      5
+     ],
+     "competition": [
+      4,
+      6
+     ]
+    },
+    "risk_flags_required": [],
+    "risk_flags_forbidden": [],
+    "capability_fit_in": [
+     "no",
+     "partial"
+    ],
+    "category_alternatives": [
+     "other",
+     "websites_bots"
+    ]
+   },
+   "note": "обновление чужой LMS, не наша категория — other (допустимо websites_bots с telegram_relevance ≤ 7)"
+  },
+  {
+   "id": "G03",
+   "synthetic": false,
+   "input": {
+    "lead_id": "LH-GOLD-03",
+    "title": "Vietnamese to English Translator Required",
+    "source": "freelancer",
+    "source_url": "https://example.com/golden/3",
+    "client_hint": null,
+    "description_original": "Need a translator Vietnamese to English, hourly up to EUR 18/h. 2 bids.",
+    "language": "en",
+    "budget": {
+     "amount": 18,
+     "currency": "EUR",
+     "type": "hourly"
+    },
+    "bid_count": 2
+   },
+   "expected": {
+    "category": "other",
+    "kind": "lead",
+    "scores": {
+     "telegram_relevance": [
+      0,
+      2
+     ],
+     "budget": [
+      2,
+      2
+     ],
+     "fit": [
+      0,
+      2
+     ],
+     "competition": [
+      10,
+      10
+     ]
+    },
+    "risk_flags_required": [],
+    "risk_flags_forbidden": [
+     "budget_below_minimum"
+    ],
+    "capability_fit_in": [
+     "no"
+    ]
+   },
+   "note": "мусор; почасовая ставка — флаг минимума не ставится"
+  },
+  {
+   "id": "G04",
+   "synthetic": false,
+   "input": {
+    "lead_id": "LH-GOLD-04",
+    "title": "Custom Black Cotton Bib Overalls",
+    "source": "freelancer",
+    "source_url": "https://example.com/golden/4",
+    "client_hint": null,
+    "description_original": "Looking for a garment maker to produce custom black cotton bib overalls, sample first then batch. Budget EUR 465. 5 bids.",
+    "language": "en",
+    "budget": {
+     "amount": 465,
+     "currency": "EUR",
+     "type": "fixed"
+    },
+    "bid_count": 5
+   },
+   "expected": {
+    "category": "manufacturing",
+    "kind": "lead",
+    "scores": {
+     "telegram_relevance": [
+      3,
+      5
+     ],
+     "budget": [
+      2,
+      2
+     ],
+     "fit": [
+      2,
+      4
+     ],
+     "competition": [
+      8,
+      8
+     ]
+    },
+    "risk_flags_required": [],
+    "risk_flags_forbidden": [],
+    "capability_fit_in": [
+     "unknown"
+    ],
+    "remote_ok_in": [
+     null,
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "id": "G05",
+   "synthetic": false,
+   "input": {
+    "lead_id": "LH-GOLD-05",
+    "title": "Customizable Live Chat System Development",
+    "source": "freelancer",
+    "source_url": "https://example.com/golden/5",
+    "client_hint": null,
+    "description_original": "Build a live chat system with optional AI chatbot, interface like Telegram, plus Windows desktop app. Budget EUR 345 fixed. 66 bids.",
+    "language": "en",
+    "budget": {
+     "amount": 345,
+     "currency": "EUR",
+     "type": "fixed"
+    },
+    "bid_count": 66
+   },
+   "expected": {
+    "category": "websites_bots",
+    "kind": "lead",
+    "scores": {
+     "telegram_relevance": [
+      6,
+      8
+     ],
+     "budget": [
+      2,
+      2
+     ],
+     "complexity_fit": [
+      0,
+      4
+     ],
+     "competition": [
+      2,
+      2
+     ]
+    },
+    "risk_flags_required": [],
+    "risk_flags_forbidden": [
+     "test_task_unpaid",
+     "budget_below_minimum"
+    ],
+    "capability_fit_in": [
+     "partial"
+    ],
+    "authenticity_flags_required": [
+     "scope_budget_mismatch"
+    ],
+    "category_alternatives": [
+     "websites_bots",
+     "automation_ai"
+    ]
+   },
+   "note": "пограничный"
+  },
+  {
+   "id": "G06",
+   "synthetic": false,
+   "input": {
+    "lead_id": "LH-GOLD-06",
+    "title": "Mobile Subscription Site with Telegram Integration: Irish League Edge",
+    "source": "freelancer",
+    "source_url": "https://example.com/golden/6",
+    "client_hint": null,
+    "description_original": "Mobile-first subscription website; after payment users get automated access to a paid Telegram channel. Budget EUR 916. 132 bids.",
+    "language": "en",
+    "budget": {
+     "amount": 916,
+     "currency": "EUR",
+     "type": "fixed"
+    },
+    "bid_count": 132
+   },
+   "expected": {
+    "category": "websites_bots",
+    "kind": "lead",
+    "scores": {
+     "telegram_relevance": [
+      8,
+      10
+     ],
+     "budget": [
+      5,
+      5
+     ],
+     "competition": [
+      0,
+      0
+     ]
+    },
+    "risk_flags_required": [],
+    "risk_flags_forbidden": [
+     "gambling",
+     "betting"
+    ],
+    "capability_fit_in": [
+     "yes",
+     "partial"
+    ],
+    "authenticity_flags_required": [
+     "high_competition"
+    ]
+   },
+   "note": "спортивная аналитика, не ставки — betting только при явных ставках"
+  },
+  {
+   "id": "G07",
+   "synthetic": false,
+   "input": {
+    "lead_id": "LH-GOLD-07",
+    "title": "End-to-End B2B Quotation Automation",
+    "source": "freelancer",
+    "source_url": "https://example.com/golden/7",
+    "client_hint": null,
+    "description_original": "Make.com & AI Automation Architect: incoming requests from Gmail and WhatsApp, Claude drafts quotations, CRM update. Budget EUR 1339 fixed. 104 bids.",
+    "language": "en",
+    "budget": {
+     "amount": 1339,
+     "currency": "EUR",
+     "type": "fixed"
+    },
+    "bid_count": 104
+   },
+   "expected": {
+    "category": "automation_ai",
+    "kind": "lead",
+    "scores": {
+     "telegram_relevance": [
+      9,
+      10
+     ],
+     "budget": [
+      7,
+      7
+     ],
+     "fit": [
+      8,
+      10
+     ],
+     "competition": [
+      0,
+      0
+     ]
+    },
+    "risk_flags_required": [],
+    "risk_flags_forbidden": [],
+    "capability_fit_in": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "G08",
+   "synthetic": false,
+   "input": {
+    "lead_id": "LH-GOLD-08",
+    "title": "Ai sales booster",
+    "source": "freelancer",
+    "source_url": "https://example.com/golden/8",
+    "client_hint": null,
+    "description_original": "AI Voice Calling SaaS for Shopify COD orders: voice call confirms each order. Budget EUR 346. 43 bids.",
+    "language": "en",
+    "budget": {
+     "amount": 346,
+     "currency": "EUR",
+     "type": "fixed"
+    },
+    "bid_count": 43
+   },
+   "expected": {
+    "category": "automation_ai",
+    "kind": "lead",
+    "scores": {
+     "telegram_relevance": [
+      4,
+      8
+     ],
+     "budget": [
+      2,
+      2
+     ],
+     "competition": [
+      4,
+      4
+     ]
+    },
+    "risk_flags_required": [],
+    "risk_flags_forbidden": [],
+    "capability_fit_in": [
+     "partial",
+     "no",
+     "unknown"
+    ],
+    "category_alternatives": [
+     "automation_ai",
+     "other"
+    ]
+   },
+   "note": "пограничный: AI-решение, но голосовой SaaS вне ядра; Gatekeeper отсеял бы, эталон проверяет категорию"
+  },
+  {
+   "id": "G09",
+   "synthetic": false,
+   "input": {
+    "lead_id": "LH-GOLD-09",
+    "title": "Bot WhatsApp Respuestas Automáticas",
+    "source": "freelancer",
+    "source_url": "https://example.com/golden/9",
+    "client_hint": null,
+    "description_original": "Necesito un asistente virtual / bot de WhatsApp con respuestas automáticas para mi negocio. Tarifa hasta EUR 22/h. 88 propuestas.",
+    "language": "es",
+    "budget": {
+     "amount": 22,
+     "currency": "EUR",
+     "type": "hourly"
+    },
+    "bid_count": 88
+   },
+   "expected": {
+    "category": "websites_bots",
+    "kind": "lead",
+    "scores": {
+     "telegram_relevance": [
+      7,
+      10
+     ],
+     "budget": [
+      2,
+      2
+     ],
+     "competition": [
+      2,
+      2
+     ]
+    },
+    "risk_flags_required": [],
+    "risk_flags_forbidden": [
+     "budget_below_minimum"
+    ],
+    "capability_fit_in": [
+     "yes",
+     "partial"
+    ],
+    "authenticity_flags_required": [
+     "high_competition"
+    ],
+    "category_alternatives": [
+     "websites_bots",
+     "automation_ai"
+    ]
+   },
+   "note": "допустима и automation_ai → в метрике считается websites_bots|automation_ai"
+  },
+  {
+   "id": "G10",
+   "synthetic": false,
+   "input": {
+    "lead_id": "LH-GOLD-10",
+    "title": "Kooperationspartner/Vertriebspartner Software Business Booster",
+    "source": "freelancer",
+    "source_url": "https://example.com/golden/10",
+    "client_hint": null,
+    "description_original": "Wir suchen Vertriebspartner für unsere KI-Software, Provision auf Umsatz. Budget EUR 1501. 18 Gebote.",
+    "language": "de",
+    "budget": {
+     "amount": 1501,
+     "currency": "EUR",
+     "type": "fixed"
+    },
+    "bid_count": 18
+   },
+   "expected": {
+    "category": "other",
+    "kind": "lead",
+    "scores": {
+     "telegram_relevance": [
+      0,
+      2
+     ],
+     "fit": [
+      0,
+      3
+     ]
+    },
+    "risk_flags_required": [],
+    "risk_flags_forbidden": [],
+    "capability_fit_in": [
+     "no"
+    ],
+    "authenticity_flags_required": [
+     "recruitment_not_order"
+    ]
+   },
+   "note": "не заказ, а поиск партнёров"
+  },
+  {
+   "id": "G11",
+   "synthetic": false,
+   "input": {
+    "lead_id": "LH-GOLD-11",
+    "title": "Diseño Web Logístico + SEO/AEO",
+    "source": "freelancer",
+    "source_url": "https://example.com/golden/11",
+    "client_hint": null,
+    "description_original": "Diseño de sitio web para empresa logística con SEO/AEO y chat en vivo. Presupuesto EUR 670. 124 propuestas.",
+    "language": "es",
+    "budget": {
+     "amount": 670,
+     "currency": "EUR",
+     "type": "fixed"
+    },
+    "bid_count": 124
+   },
+   "expected": {
+    "category": "websites_bots",
+    "kind": "lead",
+    "scores": {
+     "telegram_relevance": [
+      8,
+      10
+     ],
+     "budget": [
+      5,
+      5
+     ],
+     "competition": [
+      0,
+      0
+     ]
+    },
+    "risk_flags_required": [],
+    "risk_flags_forbidden": [],
+    "capability_fit_in": [
+     "yes",
+     "partial"
+    ]
+   },
+   "note": "по новым исходным сайты — наша категория (Gatekeeper v1 отсеивал)"
+  },
+  {
+   "id": "G12",
+   "synthetic": false,
+   "input": {
+    "lead_id": "LH-GOLD-12",
+    "title": "SEO-Driven AI Lead Generation",
+    "source": "freelancer",
+    "source_url": "https://example.com/golden/12",
+    "client_hint": null,
+    "description_original": "Need smart, well-structured SEO content for AI lead generation. Budget EUR 131. 59 bids.",
+    "language": "en",
+    "budget": {
+     "amount": 131,
+     "currency": "EUR",
+     "type": "fixed"
+    },
+    "bid_count": 59
+   },
+   "expected": {
+    "category": "other",
+    "kind": "lead",
+    "scores": {
+     "telegram_relevance": [
+      0,
+      3
+     ],
+     "budget": [
+      2,
+      2
+     ],
+     "competition": [
+      2,
+      2
+     ]
+    },
+    "risk_flags_required": [],
+    "risk_flags_forbidden": [
+     "budget_below_minimum"
+    ],
+    "capability_fit_in": [
+     "no",
+     "partial"
+    ]
+   }
+  },
+  {
+   "id": "G13",
+   "synthetic": false,
+   "input": {
+    "lead_id": "LH-GOLD-13",
+    "title": "Claude AI Business Automation Setup",
+    "source": "freelancer",
+    "source_url": "https://example.com/golden/13",
+    "client_hint": null,
+    "description_original": "Step-by-step guidance to set up Claude automation for my business. Hourly EUR 6/h. 163 bids.",
+    "language": "en",
+    "budget": {
+     "amount": 6,
+     "currency": "EUR",
+     "type": "hourly"
+    },
+    "bid_count": 163
+   },
+   "expected": {
+    "category": "automation_ai",
+    "kind": "lead",
+    "scores": {
+     "budget": [
+      2,
+      2
+     ],
+     "competition": [
+      0,
+      0
+     ]
+    },
+    "risk_flags_required": [],
+    "risk_flags_forbidden": [
+     "budget_below_minimum"
+    ],
+    "authenticity_flags_required": [
+     "high_competition"
+    ]
+   },
+   "note": "тема наша, но копеечная ставка и 163 ставки — Make опустит балл"
+  },
+  {
+   "id": "G14",
+   "synthetic": true,
+   "input": {
+    "lead_id": "LH-GOLD-14",
+    "title": "Telegram-Bot für Onlineshop",
+    "source": "freelancer",
+    "source_url": "https://example.com/golden/14",
+    "client_hint": null,
+    "description_original": "Wir suchen einen Entwickler für einen Telegram-Bot für unseren Onlineshop: Katalog, Warenkorb, Stripe-Zahlung, Mini App. Budget 1.200 EUR, Start nächste Woche. Remote.",
+    "language": "de",
+    "budget": {
+     "amount": 1200,
+     "currency": "EUR",
+     "type": "fixed"
+    },
+    "bid_count": null
+   },
+   "expected": {
+    "category": "websites_bots",
+    "kind": "lead",
+    "scores": {
+     "telegram_relevance": [
+      10,
+      10
+     ],
+     "budget": [
+      7,
+      7
+     ],
+     "fit": [
+      9,
+      10
+     ],
+     "competition": [
+      5,
+      5
+     ]
+    },
+    "risk_flags_required": [],
+    "risk_flags_forbidden": [],
+    "capability_fit_in": [
+     "yes"
+    ],
+    "remote_ok_in": [
+     true
+    ]
+   }
+  },
+  {
+   "id": "G15",
+   "synthetic": true,
+   "input": {
+    "lead_id": "LH-GOLD-15",
+    "title": "Сайт-визитка для стоматологии",
+    "source": "freelancer",
+    "source_url": "https://example.com/golden/15",
+    "client_hint": null,
+    "description_original": "Нужен сайт для стоматологической клиники: 5 страниц, онлайн-запись, интеграция с Google Calendar. Бюджет 300 USD. Работа удалённо.",
+    "language": "ru",
+    "budget": {
+     "amount": 300,
+     "currency": "USD",
+     "type": "fixed"
+    },
+    "bid_count": null
+   },
+   "expected": {
+    "category": "websites_bots",
+    "kind": "lead",
+    "scores": {
+     "telegram_relevance": [
+      8,
+      10
+     ],
+     "budget": [
+      2,
+      2
+     ],
+     "urgency": [
+      5,
+      5
+     ]
+    },
+    "risk_flags_required": [],
+    "risk_flags_forbidden": [
+     "budget_below_minimum"
+    ],
+    "capability_fit_in": [
+     "yes"
+    ],
+    "remote_ok_in": [
+     true
+    ]
+   }
+  },
+  {
+   "id": "G16",
+   "synthetic": true,
+   "input": {
+    "lead_id": "LH-GOLD-16",
+    "title": "Impression de 500 sacs en coton avec logo",
+    "source": "freelancer",
+    "source_url": "https://example.com/golden/16",
+    "client_hint": null,
+    "description_original": "Nous cherchons un fabricant pour 500 tote bags en coton imprimés avec notre logo, livraison en France. Budget 2 000 EUR.",
+    "language": "fr",
+    "budget": {
+     "amount": 2000,
+     "currency": "EUR",
+     "type": "fixed"
+    },
+    "bid_count": null
+   },
+   "expected": {
+    "category": "manufacturing",
+    "kind": "lead",
+    "scores": {
+     "telegram_relevance": [
+      3,
+      5
+     ],
+     "budget": [
+      10,
+      10
+     ],
+     "fit": [
+      2,
+      4
+     ]
+    },
+    "risk_flags_required": [],
+    "risk_flags_forbidden": [],
+    "capability_fit_in": [
+     "unknown"
+    ]
+   }
+  },
+  {
+   "id": "G17",
+   "synthetic": true,
+   "input": {
+    "lead_id": "LH-GOLD-17",
+    "title": "Produkcja 200 drewnianych stojaków — odbiór osobisty w Krakowie",
+    "source": "freelancer",
+    "source_url": "https://example.com/golden/17",
+    "client_hint": null,
+    "description_original": "Szukamy wykonawcy 200 drewnianych stojaków na telefony. Odbiór osobisty w Krakowie, praca na miejscu w naszym warsztacie. Budżet 4 000 PLN.",
+    "language": "pl",
+    "budget": {
+     "amount": 4000,
+     "currency": "PLN",
+     "type": "fixed"
+    },
+    "bid_count": null
+   },
+   "expected": {
+    "category": "manufacturing",
+    "kind": "lead",
+    "scores": {
+     "telegram_relevance": [
+      2,
+      5
+     ],
+     "budget": [
+      5,
+      5
+     ],
+     "fit": [
+      0,
+      4
+     ]
+    },
+    "risk_flags_required": [],
+    "risk_flags_forbidden": [],
+    "capability_fit_in": [
+     "unknown",
+     "no"
+    ],
+    "remote_ok_in": [
+     false
+    ],
+    "authenticity_flags_required": [
+     "onsite_required"
+    ]
+   },
+   "note": "на месте в Кракове → remote_ok false; 4000 PLN ≈ 920 € → budget 5"
+  },
+  {
+   "id": "G18",
+   "synthetic": true,
+   "input": {
+    "lead_id": "LH-GOLD-18",
+    "title": "Автоматизація заявок з сайту в CRM",
+    "source": "freelancer",
+    "source_url": "https://example.com/golden/18",
+    "client_hint": null,
+    "description_original": "Потрібно налаштувати автоматизацію: заявки з сайту (форма) → Make → amoCRM + повідомлення менеджеру в Telegram. Бюджет 25 000 UAH, термін 2 тижні.",
+    "language": "uk",
+    "budget": {
+     "amount": 25000,
+     "currency": "UAH",
+     "type": "fixed"
+    },
+    "bid_count": null
+   },
+   "expected": {
+    "category": "automation_ai",
+    "kind": "lead",
+    "scores": {
+     "telegram_relevance": [
+      9,
+      10
+     ],
+     "budget": [
+      5,
+      5
+     ],
+     "fit": [
+      8,
+      10
+     ]
+    },
+    "risk_flags_required": [],
+    "risk_flags_forbidden": [],
+    "capability_fit_in": [
+     "yes"
+    ]
+   }
+  },
+  {
+   "id": "G19",
+   "synthetic": true,
+   "input": {
+    "lead_id": "LH-GOLD-19",
+    "title": "AI-асистент для юридичної фірми",
+    "source": "freelancer",
+    "source_url": "https://example.com/golden/19",
+    "client_hint": null,
+    "description_original": "Потрібен AI-асистент на базі Claude для відповіді на типові питання клієнтів, база знань з наших PDF. Бюджет не вказано.",
+    "language": "uk",
+    "budget": null,
+    "bid_count": null
+   },
+   "expected": {
+    "category": "automation_ai",
+    "kind": "lead",
+    "scores": {
+     "telegram_relevance": [
+      9,
+      10
+     ],
+     "budget": [
+      3,
+      3
+     ],
+     "urgency": [
+      5,
+      5
+     ]
+    },
+    "risk_flags_required": [],
+    "risk_flags_forbidden": [],
+    "capability_fit_in": [
+     "yes",
+     "partial"
+    ],
+    "budget_must_be_null": true
+   }
+  },
+  {
+   "id": "G20",
+   "synthetic": true,
+   "input": {
+    "lead_id": "LH-GOLD-20",
+    "title": "Telegram bot crypto signals — quick job",
+    "source": "freelancer",
+    "source_url": "https://example.com/golden/20",
+    "client_hint": null,
+    "description_original": "Telegram bot for crypto signals and betting. Payment only after unpaid test task. Contact me on WhatsApp +1 555 000 0000, not here. Budget $5000.",
+    "language": "en",
+    "budget": {
+     "amount": 5000,
+     "currency": "USD",
+     "type": "fixed"
+    },
+    "bid_count": null
+   },
+   "expected": {
+    "category": "websites_bots",
+    "kind": "lead",
+    "scores": {
+     "client_credibility": [
+      0,
+      2
+     ]
+    },
+    "risk_flags_required": [
+     "crypto_scheme",
+     "off_platform_payment",
+     "test_task_unpaid"
+    ],
+    "risk_flags_forbidden": [],
+    "authenticity_flags_required": [
+     "contacts_in_text"
+    ],
+    "needs_review": true,
+    "category_alternatives": [
+     "websites_bots",
+     "other"
+    ]
+   },
+   "note": "мусор/мошенничество"
+  },
+  {
+   "id": "G21",
+   "synthetic": true,
+   "input": {
+    "lead_id": "LH-GOLD-21",
+    "title": "Logo for my bakery",
+    "source": "freelancer",
+    "source_url": "https://example.com/golden/21",
+    "client_hint": null,
+    "description_original": "Need a logo for my bakery. Budget 30 EUR.",
+    "language": "en",
+    "budget": {
+     "amount": 30,
+     "currency": "EUR",
+     "type": "fixed"
+    },
+    "bid_count": null
+   },
+   "expected": {
+    "category": "other",
+    "kind": "lead",
+    "scores": {
+     "telegram_relevance": [
+      0,
+      2
+     ],
+     "budget": [
+      0,
+      0
+     ]
+    },
+    "risk_flags_required": [
+     "budget_below_minimum"
+    ],
+    "risk_flags_forbidden": [],
+    "capability_fit_in": [
+     "no"
+    ]
+   },
+   "note": "мусор: другая категория и < 100 €"
+  },
+  {
+   "id": "G22",
+   "synthetic": true,
+   "input": {
+    "lead_id": "LH-GOLD-22",
+    "title": "[TEST] Bot de reservas para peluquería",
+    "source": "freelancer",
+    "source_url": "https://example.com/golden/22",
+    "client_hint": null,
+    "description_original": "[TEST] Bot de Telegram para reservas de citas en una peluquería de Madrid, recordatorios y Google Calendar. Presupuesto 600 EUR. Trabajo remoto. Es una prueba técnica pagada.",
+    "language": "es",
+    "budget": {
+     "amount": 600,
+     "currency": "EUR",
+     "type": "fixed"
+    },
+    "bid_count": null
+   },
+   "expected": {
+    "category": "websites_bots",
+    "kind": "lead",
+    "scores": {
+     "telegram_relevance": [
+      10,
+      10
+     ],
+     "budget": [
+      5,
+      5
+     ]
+    },
+    "risk_flags_required": [],
+    "risk_flags_forbidden": [
+     "test_task_unpaid"
+    ],
+    "capability_fit_in": [
+     "yes"
+    ],
+    "remote_ok_in": [
+     true
+    ]
+   },
+   "note": "[TEST] и «prueba pagada» не дают test_task_unpaid"
+  }
+ ]
+}
