@@ -38,6 +38,7 @@
 - OBJECTIVE: поручение владельца 13.10: полный аудит без изменений; что есть, чего не хватает; логика /search_settings (категории, страны, языки, бюджеты); поэтапный план; инструкция для ChatGPT по сценариям Make.
 - EXPECTED_OUTPUT: lead-hunter/docs/AUDIT_2026-10-13_for_ChatGPT.md
 - STATUS: DONE (13.10) — этап 1 (аудит) сдан: lead-hunter/docs/AUDIT_2026-10-13_for_ChatGPT.md. ЭТАП 2 (аудит + план модернизации, без внедрения) сдан: lead-hunter/docs/AUDIT_T0039_stage2_for_ChatGPT.md; ждёт решений владельца J1–J9. Главное: 0 реальных HOT/WARM (все 11 — [TEST]); источник Freelancer пропускает нерелевантное; направление поиска зашито в 7744024; /search_settings нет. Реализация — после решений владельца.
+- v3 (13.10, вечер): СИСТЕМНЫЙ ОТЧЁТ lead-hunter/docs/SYSTEM_REPORT_T0039_v3.md — 9 ролей (SCOUT, ANALYST, ARCHITECT, FINANCE, BUILDER, QUALITY CONTROL, SALES, DIRECTOR, SYSTEM GUARDIAN) со входами/выходами, таблица связей и сценариев, /search_settings, пакет + рейтинг, карточка из 7 блоков с кнопками по этапам (идемпотентность), план этапов 0–9, 8 решений. Make НЕ менялся. Кредиты Make: 1 946 до 30.10 (≈114/день) — главный риск. STATUS: REVIEW — ждёт решений владельца.
 
 ## T-20261012-0038 · Свой ключ Anthropic (BYOK) в Make — AI-шаги без кредитов Make
 - AGENT: 🛠 Make-инженер (после подключения ключа владельцем)
