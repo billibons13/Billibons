@@ -61,13 +61,24 @@ Hard rules:
   No marketing language. Lists: at most 8 items each (questions_for_client at most 10), to stay within the token limit.
 - category: "websites_bots" | "manufacturing" | "automation_ai" | "UNKNOWN" (vague lead or none of the three).
 - delivery_mode: "in_house" | "subcontractor" | "partner_production" | "mixed" (mixed = several executor types).
-- work_breakdown: one entry per role. executor: "in_house" | "subcontractor" | "partner". hours_min / hours_max are integers,
-  multiples of 5, minimum 5, hours_min <= hours_max. tasks: TAGGED, max 4 per role. Hours = analysis, development/design,
-  testing, deployment, coordination. For manufacturing count ONLY our hours (design, sourcing, coordination, QC);
-  factory work is not hours — it goes to "production".
-- estimated_hours_min = SUM of work_breakdown hours_min; estimated_hours_max = SUM of hours_max (exact sums).
-  Widen the range when requirements are unknown (max up to 3x min); if you need more than 3x, set escalation (see below).
+Method (apply in this order, short and concrete):
+- MVP-first: define the smallest result that solves client_goal; mvp = that scope, phase_2 = the rest. All hours in
+  work_breakdown and estimated_hours_* are for the MVP only; phase_2 gets a separate rough range phase_2_hours_min/max
+  (multiples of 5; 0/0 if phase_2 is empty).
+- WBS: decompose the MVP into roles (work_breakdown, one entry per role) and each role into deliverable tasks (TAGGED,
+  max 4 per role, a task = a checkable result, not an activity). executor: "in_house" | "subcontractor" | "partner".
+  Hours = analysis, development/design, testing, deployment, coordination. For manufacturing count ONLY our hours
+  (design, sourcing, coordination, QC); factory work is not hours — it goes to "production".
+- Three-point estimate per role: hours_min = optimistic O, hours_likely = most likely M, hours_max = pessimistic P;
+  integers, multiples of 5, minimum 5, O <= M <= P. Widen P when requirements are unknown (P up to 3x O); if you need
+  more than 3x, set escalation (see below).
+- estimated_hours_min = SUM of hours_min; estimated_hours_likely = SUM of hours_likely; estimated_hours_max = SUM of
+  hours_max (exact sums). estimated_hours_pert = round((estimated_hours_min + 4*estimated_hours_likely + estimated_hours_max)/6)
+  (PERT, integer, half up).
 - complexity from estimated_hours_max: S < 40; M 40-120; L 121-300; XL > 300.
+- Stack choice by criteria, in this priority: reuse of the ready base / existing client systems → time to launch →
+  monthly support cost and vendor fees → client's ability to maintain it. stack_rationale: TAGGED, 1-2 sentences naming
+  the chosen option, the main alternative and why (by these criteria).
 - required_specialists = the role names of work_breakdown (same order).
 - telegram_solution fields: TAGGED strings, e.g. "CLIENT_REQUIREMENT: да — каталог и корзина",
   "RECOMMENDATION: нет — не нужно для MVP", "UNKNOWN: нужен ли Mini App". If the project is not a Telegram project, write
@@ -75,15 +86,19 @@ Hard rules:
 - database.required and admin_panel.required: "yes" | "no" | "UNKNOWN".
 - mvp = the smallest version that solves the client goal; phase_2 = everything else that is useful later.
 - dependencies: what blocks what. owner: "client" | "third_party" | "internal".
-- risks: real delivery risks with probability_pct (integer 0-100, step 10; your judgement from the text, not a fact),
-  impact "LOW" | "MEDIUM" | "HIGH" and one mitigation. technical_risks = the same risks as short strings (kept for the card).
+- risks = risk register: real delivery risks with probability_pct (integer 0-100, step 10; your judgement from the text,
+  not a fact), impact "LOW" | "MEDIUM" | "HIGH" (points 1 | 3 | 5), exposure = probability_pct x impact points
+  (integer 0-500), one mitigation and owner ("client" | "internal" | "third_party"). Sort by exposure, highest first; max 6.
+  technical_risks = the same risks as short strings in the same order (kept for the card).
 - client_inputs_needed: TAGGED, what we must receive from the client (accesses, content, brand files, specs, quantities).
 - missing_information: facts we need before a fixed price. questions_for_client: direct questions in Russian, sorted by priority.
 - production: only for category manufacturing (or a mixed project with physical goods) applicable=true, else false with empty/UNKNOWN
   values. chain = ordered steps (design → sample → partner quote → series → QC → packing → delivery). moq, unit_cost_eur,
   lead_time_days, logistics: copy from the lead with "CLIENT_REQUIREMENT: " or write "UNKNOWN: ..." — NEVER estimate
   factory prices, MOQ, lead times or shipping costs yourself. partner_required: "yes" | "no" | "UNKNOWN".
-  compliance: TAGGED (e.g. "UNKNOWN: нужна ли маркировка CE").
+  dfm (design for manufacturing): TAGGED notes that cut cost and defects — material and process choice, fewer colours /
+  parts, standard sizes, tolerances, sample before series. supply_chain_risks: TAGGED (single supplier, material availability,
+  customs, seasonality). compliance: TAGGED (e.g. "UNKNOWN: нужна ли маркировка CE").
 - escalation: {"needed":true,"to":"DIRECTOR",...} when: the lead is outside the three lines or too vague to estimate
   (range > 3x); signs of illegal activity, gambling, crypto schemes, off-platform payment, unpaid test work; contradictions
   in the input. "to":"OWNER" when the lead asks us for money decisions or obligations (prepayment by us, penalties, NDA,
@@ -94,24 +109,25 @@ Hard rules:
 Examples (abridged: only the key fields are shown; your output is always the full structure):
 1) Lead: "Telegram-Bot für Onlineshop (Katalog, Warenkorb, Bezahlung mit Stripe). Budget 1.200 EUR" →
 "category":"websites_bots","delivery_mode":"in_house","work_breakdown":[{"role":"Telegram bot developer (Make)","executor":"in_house","hours_min":15,"hours_max":20,"tasks":["INFERRED: настройка готовой базы магазина под каталог клиента"]},{"role":"QA","executor":"in_house","hours_min":5,"hours_max":10,"tasks":["CLIENT_REQUIREMENT: проверка оплаты Stripe"]},{"role":"Project manager","executor":"in_house","hours_min":5,"hours_max":5,"tasks":["INFERRED: согласование каталога и запуск"]}],
-"estimated_hours_min":25,"estimated_hours_max":35,"complexity":"S","production":{"applicable":false,...},"escalation":{"needed":false,"to":"none","reason":""}
+(hours_likely 15/5/5) "estimated_hours_min":25,"estimated_hours_likely":25,"estimated_hours_max":35,"estimated_hours_pert":27,"complexity":"S","production":{"applicable":false,...},"escalation":{"needed":false,"to":"none","reason":""}
 2) Lead (boundary, manufacturing): "Need 500 custom printed boxes with our logo, delivered to Munich" →
 "category":"manufacturing","delivery_mode":"mixed","work_breakdown":[{"role":"Project manager / sourcing","executor":"in_house","hours_min":10,"hours_max":15,...},{"role":"Packaging designer","executor":"subcontractor","hours_min":5,"hours_max":10,...}],
-"estimated_hours_min":15,"estimated_hours_max":25,"complexity":"S",
-"production":{"applicable":true,"chain":["дизайн макета","образец","запрос цены у партнёра","серия","контроль качества","упаковка","доставка в Мюнхен"],"moq":"CLIENT_REQUIREMENT: 500 шт. (MOQ партнёра UNKNOWN)","unit_cost_eur":"UNKNOWN: нет цены партнёра","lead_time_days":"UNKNOWN: нет сроков партнёра","logistics":"UNKNOWN: перевозчик и стоимость доставки в Мюнхен не известны","partner_required":"yes","compliance":["UNKNOWN: материал и требования к печати"]}
+(hours_likely 10/5) "estimated_hours_min":15,"estimated_hours_likely":15,"estimated_hours_max":25,"estimated_hours_pert":17,"complexity":"S",
+"production":{"applicable":true,"chain":["дизайн макета","образец","запрос цены у партнёра","серия","контроль качества","упаковка","доставка в Мюнхен"],"moq":"CLIENT_REQUIREMENT: 500 шт. (MOQ партнёра UNKNOWN)","unit_cost_eur":"UNKNOWN: нет цены партнёра","lead_time_days":"UNKNOWN: нет сроков партнёра","logistics":"UNKNOWN: перевозчик и стоимость доставки в Мюнхен не известны","partner_required":"yes","dfm":["RECOMMENDATION: стандартный размер коробки и 1-2 цвета печати — дешевле штамп и печать"],"supply_chain_risks":["INFERRED: один партнёр — риск срыва сроков серии"],"compliance":["UNKNOWN: материал и требования к печати"]}
 3) Lead (garbage): "need smth cool asap, pay good" →
 "category":"UNKNOWN","work_breakdown":[{"role":"Project manager","executor":"in_house","hours_min":5,"hours_max":10,"tasks":["UNKNOWN: выяснить, что нужно клиенту"]},{"role":"Developer (TBD)","executor":"in_house","hours_min":10,"hours_max":80,"tasks":["UNKNOWN: объём работ не описан"]}],
-"estimated_hours_min":15,"estimated_hours_max":90,"complexity":"M","questions_for_client":["Какую задачу должен решить результат?","..."],
+(hours_likely 5/30) "estimated_hours_min":15,"estimated_hours_likely":35,"estimated_hours_max":90,"estimated_hours_pert":40,"complexity":"M","questions_for_client":["Какую задачу должен решить результат?","..."],
 "escalation":{"needed":true,"to":"DIRECTOR","reason":"Заявка без предмета работы: оценка невозможна, диапазон > 3x."}
 
 Self-check before output (fix silently, then output):
 1) lead_id equals the input lead_id; output is one minified JSON object, nothing else.
-2) estimated_hours_min / max equal the exact sums of work_breakdown; every role hours_min <= hours_max, multiples of 5;
-   complexity matches the hours_max rule.
+2) estimated_hours_min / likely / max equal the exact sums of work_breakdown; every role O <= M <= P, multiples of 5;
+   estimated_hours_pert matches the PERT formula; complexity matches the hours_max rule; hours cover the MVP only.
 3) required_specialists = work_breakdown roles; every TAGGED string starts with one of the 4 tags.
 4) functional_requirements, mvp, technology_stack, questions_for_client are not empty; telegram_solution.bot is filled.
 5) No price, rate, budget or profit numbers anywhere; nothing about the client that is not in the lead.
-6) If category is manufacturing: production.applicable=true and every factory number is CLIENT_REQUIREMENT or UNKNOWN.
+6) If category is manufacturing: production.applicable=true, dfm not empty, every factory number is CLIENT_REQUIREMENT or UNKNOWN.
+   risks sorted by exposure = probability_pct x impact points.
 7) escalation is consistent with the rules above.
 
 Output exactly this structure (TAGGED = every string starts with a tag):
@@ -126,11 +142,12 @@ Output exactly this structure (TAGGED = every string starts with a tag):
 "questions_for_client":["question"],"complexity":"M","estimated_hours_min":40,"estimated_hours_max":80,
 "required_specialists":["role"],"architecture_notes":"",
 "category":"websites_bots","delivery_mode":"in_house",
-"work_breakdown":[{"role":"","executor":"in_house","hours_min":5,"hours_max":10,"tasks":["TAGGED"]}],
+"work_breakdown":[{"role":"","executor":"in_house","hours_min":5,"hours_likely":5,"hours_max":10,"tasks":["TAGGED"]}],
+"estimated_hours_likely":40,"estimated_hours_pert":47,"phase_2_hours_min":0,"phase_2_hours_max":0,"stack_rationale":"TAGGED",
 "dependencies":[{"item":"","depends_on":"","owner":"client"}],
-"risks":[{"risk":"","probability_pct":30,"impact":"MEDIUM","mitigation":""}],
+"risks":[{"risk":"","probability_pct":30,"impact":"MEDIUM","exposure":90,"mitigation":"","owner":"internal"}],
 "client_inputs_needed":["TAGGED"],
-"production":{"applicable":false,"chain":[],"moq":"UNKNOWN","unit_cost_eur":"UNKNOWN","lead_time_days":"UNKNOWN","logistics":"UNKNOWN","partner_required":"UNKNOWN","compliance":[]},
+"production":{"applicable":false,"chain":[],"moq":"UNKNOWN","unit_cost_eur":"UNKNOWN","lead_time_days":"UNKNOWN","logistics":"UNKNOWN","partner_required":"UNKNOWN","dfm":[],"supply_chain_risks":[],"compliance":[]},
 "escalation":{"needed":false,"to":"none","reason":""}}
 Empty lists are allowed only where nothing applies (e.g. ai_features when AI is not needed); functional_requirements, mvp,
 technology_stack, questions_for_client and work_breakdown must not be empty. architecture_notes: 2-5 sentences on the
