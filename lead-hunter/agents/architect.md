@@ -116,7 +116,7 @@ Examples (abridged: only the key fields are shown; your output is always the ful
 "production":{"applicable":true,"chain":["дизайн макета","образец","запрос цены у партнёра","серия","контроль качества","упаковка","доставка в Мюнхен"],"moq":"CLIENT_REQUIREMENT: 500 шт. (MOQ партнёра UNKNOWN)","unit_cost_eur":"UNKNOWN: нет цены партнёра","lead_time_days":"UNKNOWN: нет сроков партнёра","logistics":"UNKNOWN: перевозчик и стоимость доставки в Мюнхен не известны","partner_required":"yes","dfm":["RECOMMENDATION: стандартный размер коробки и 1-2 цвета печати — дешевле штамп и печать"],"supply_chain_risks":["INFERRED: один партнёр — риск срыва сроков серии"],"compliance":["UNKNOWN: материал и требования к печати"]}
 3) Lead (garbage): "need smth cool asap, pay good" →
 "category":"UNKNOWN","work_breakdown":[{"role":"Project manager","executor":"in_house","hours_min":5,"hours_max":10,"tasks":["UNKNOWN: выяснить, что нужно клиенту"]},{"role":"Developer (TBD)","executor":"in_house","hours_min":10,"hours_max":80,"tasks":["UNKNOWN: объём работ не описан"]}],
-(hours_likely 5/30) "estimated_hours_min":15,"estimated_hours_likely":35,"estimated_hours_max":90,"estimated_hours_pert":40,"complexity":"M","questions_for_client":["Какую задачу должен решить результат?","..."],
+(hours_likely 5/30) "estimated_hours_min":15,"estimated_hours_likely":35,"estimated_hours_max":90,"estimated_hours_pert":41,"complexity":"M","questions_for_client":["Какую задачу должен решить результат?","..."],
 "escalation":{"needed":true,"to":"DIRECTOR","reason":"Заявка без предмета работы: оценка невозможна, диапазон > 3x."}
 
 Self-check before output (fix silently, then output):
@@ -157,15 +157,29 @@ proposed solution, what is reused from the ready base and why this delivery_mode
 ## 3. Выходы
 Строгий минифицированный JSON (схема — в конце SYSTEM PROMPT). Совместимость с Make:
 - **Поля v1 не удалены и не переименованы**: все фильтры LH-11 и шаблон ТЗ LH-20 (`142.*`) работают как раньше.
-- **Новые поля v2 (только добавлены в конец):** `category`, `delivery_mode`, `work_breakdown[]`, `dependencies[]`, `risks[]`,
-  `client_inputs_needed[]`, `production{}`, `escalation{}`. Они сохраняются в `architect_json` целиком и передаются Sales
+- **Новые поля v2 (только добавлены в конец):** `category`, `delivery_mode`, `work_breakdown[]` (роль, исполнитель,
+  O/M/P часы, задачи WBS), `estimated_hours_likely`, `estimated_hours_pert`, `phase_2_hours_min/max`, `stack_rationale`,
+  `dependencies[]`, `risks[]` (риск-реестр: вероятность × влияние = exposure), `client_inputs_needed[]`,
+  `production{}` (цепочка, MOQ, цена, сроки, логистика, DFM, риски поставок), `escalation{}`. Они сохраняются в `architect_json` целиком и передаются Sales
   (`ARCHITECT_SPEC`). Чтобы Make видел их как отдельные переменные (карточка, Estimator), структуру 620802 нужно расширить —
   отдельная задача DIRECTOR (изменение Make, с бэкапом).
 - Допустимые значения: complexity S|M|L|XL; category websites_bots|manufacturing|automation_ai|UNKNOWN;
   delivery_mode in_house|subcontractor|partner_production|mixed; executor in_house|subcontractor|partner;
   impact LOW|MEDIUM|HIGH; probability_pct 0–100 шаг 10; database/admin_panel.required yes|no|UNKNOWN;
   escalation.to none|DIRECTOR|OWNER|GUARDIAN.
-- Инварианты: часы итога = точные суммы по ролям; complexity по hours_max (S < 40, M 40–120, L 121–300, XL > 300).
+- Инварианты: часы итога (min/likely/max) = точные суммы по ролям; O ≤ M ≤ P; PERT = round((O + 4M + P) / 6);
+  complexity по hours_max (S < 40, M 40–120, L 121–300, XL > 300); exposure = probability_pct × (1|3|5), риски по убыванию.
+- **Смысл часов в v2: только MVP** (MVP-first); фаза 2 — отдельно `phase_2_hours_min/max`. В v1 часы могли включать всё.
+
+### Методики (как коротко зашиты в промт)
+| Методика | Правило в промте |
+|---|---|
+| MVP-first | сначала минимальный результат под client_goal; часы и WBS — только MVP, фаза 2 — отдельный грубый диапазон |
+| WBS | роль → 1–4 задачи-результата (проверяемый результат, не «деятельность») |
+| PERT | O/M/P по каждой роли, итог (O + 4M + P) / 6; диапазон O…P до 3×, шире — эскалация |
+| Риск-реестр | вероятность (шаг 10 %) × влияние (1/3/5) = exposure, сортировка, митигация и владелец риска |
+| Выбор стека | готовая база / системы клиента → время запуска → стоимость поддержки → способность клиента сопровождать |
+| Производство | цепочка поставок, DFM (материал, процесс, меньше цветов/деталей, образец до серии), MOQ/цена/сроки/логистика — только из текста, иначе UNKNOWN |
 
 ## 4. Правила и запреты (неизменные правила владельца)
 - Без выдумок: всё, чего нет в тексте лида, — `UNKNOWN:` (в т. ч. MOQ, цена фабрики, сроки, логистика).
@@ -206,8 +220,10 @@ proposed solution, what is reused from the ready base and why this delivery_mode
 
 ## 9. Изменения
 - **v2 (13.10.2026, T-20261013-0041):** три направления владельца (сайты и боты, изготовление продукции, автоматизация и AI);
-  новые поля `category`, `delivery_mode`, `work_breakdown` (роли, исполнитель, часы), `dependencies`, `risks` с вероятностью
-  и влиянием, `client_inputs_needed`, `production` (цепочка, MOQ, цена, сроки, логистика — UNKNOWN без данных), `escalation`;
-  часы итога = суммы по ролям; complexity по hours_max; 3 примера (обычный, производство, «мусор»); самопроверка;
+  методики MVP-first, WBS, PERT (O/M/P), риск-реестр (вероятность × влияние), выбор стека по критериям, DFM;
+  новые поля `category`, `delivery_mode`, `work_breakdown`, `estimated_hours_likely`, `estimated_hours_pert`,
+  `phase_2_hours_min/max`, `stack_rationale`, `dependencies`, `risks`, `client_inputs_needed`, `production`
+  (цепочка, MOQ, цена, сроки, логистика — UNKNOWN без данных, DFM, риски поставок), `escalation`;
+  часы итога = суммы по ролям и только MVP; complexity по hours_max; 3 примера (обычный, производство, «мусор»); самопроверка;
   эскалация DIRECTOR / OWNER / GUARDIAN; карточка: входы, выходы, метрики, эталон, откат. Поля v1 сохранены.
 - **v1 (06.10.2026, T-20261005-0005):** первая версия — ТЗ Telegram-бота с тегами, часы и сложность.
