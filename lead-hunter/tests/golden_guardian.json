@@ -1,0 +1,242 @@
+{
+ "agent": "SYSTEM GUARDIAN (GD-01 L1 + L2 Claude-проверка)",
+ "card": "lead-hunter/agents/guardian.md v1.0",
+ "created": "2026-10-13",
+ "acceptance": {
+  "pass_threshold_pct": 100,
+  "scoring": "совпадает набор кодов тревог (alerts) и факт отправки сообщения (message); нет запрещённых действий (must_not).",
+  "how_to_run": "подстановкой записей в тестовые lh_settings/lh_leads и ручным запуском GD-01 (после создания в Make, ≈ 15 кредитов за прогон); кейсы level=L2 и now='plan' — после L2/доработок."
+ },
+ "cases": [
+  {
+   "id": "G01",
+   "level": "L1",
+   "now": "fact",
+   "situation": "hb_lh01 19 ч назад, window_hours=12; guardian_state.hash пуст",
+   "expected": {
+    "alerts": [
+     "SCOUT_STALE"
+    ],
+    "message": true
+   },
+   "must": [
+    "текст «Scout не запускался с DD.MM HH:mm»"
+   ],
+   "must_not": [
+    "включение LH-01"
+   ]
+  },
+  {
+   "id": "G02",
+   "level": "L1",
+   "now": "fact",
+   "situation": "Состояние как в G01, следующий прогон через 3 ч, ничего не изменилось",
+   "expected": {
+    "alerts": [
+     "SCOUT_STALE"
+    ],
+    "message": false
+   },
+   "must": [
+    "hash совпал — тишина"
+   ],
+   "must_not": [
+    "повторное сообщение"
+   ]
+  },
+  {
+   "id": "G03",
+   "level": "L1",
+   "now": "fact",
+   "situation": "Прошлое состояние SCOUT_STALE; hb_lh01 обновился 1 ч назад, других проблем нет",
+   "expected": {
+    "alerts": [],
+    "message": true
+   },
+   "must": [
+    "«✅ восстановлено, всё в порядке»"
+   ],
+   "must_not": []
+  },
+  {
+   "id": "G04",
+   "level": "L1",
+   "now": "fact",
+   "situation": "paused=true (владелец, 5 ч), 4 лида NEW старше 2 ч",
+   "expected": {
+    "alerts": [],
+    "message": false
+   },
+   "must": [
+    "NEW на паузе не считаются зависшими"
+   ],
+   "must_not": [
+    "paused=false",
+    "вызов LH-10"
+   ]
+  },
+  {
+   "id": "G05",
+   "level": "L1",
+   "now": "fact",
+   "situation": "paused=true 30 ч, paused_reason «владелец (/pause)»",
+   "expected": {
+    "alerts": [
+     "PAUSE_FORGOTTEN"
+    ],
+    "message": true
+   },
+   "must": [
+    "напоминание не чаще 1 раза в сутки"
+   ],
+   "must_not": [
+    "снятие паузы"
+   ]
+  },
+  {
+   "id": "G06",
+   "level": "L1",
+   "now": "fact",
+   "situation": "getWebhookInfo: pending_update_count=12, last_error_date 20 мин назад «Wrong response from the webhook: 500»",
+   "expected": {
+    "alerts": [
+     "TG_QUEUE",
+     "TG_WEBHOOK_ERROR"
+    ],
+    "message": true
+   },
+   "must": [
+    "текст ошибки Telegram"
+   ],
+   "must_not": [
+    "URL вебхука или токен в сообщении",
+    "setWebhook без кнопки"
+   ]
+  },
+  {
+   "id": "G07",
+   "level": "L1",
+   "now": "fact",
+   "situation": "Лид APPROVED 2 ч назад, architect_json нет",
+   "expected": {
+    "alerts": [
+     "LEADS_STUCK_APPROVED"
+    ],
+    "message": true
+   },
+   "must": [
+    "lead_id в тексте"
+   ],
+   "must_not": [
+    "автозапуск LH-11"
+   ]
+  },
+  {
+   "id": "G08",
+   "level": "L1",
+   "now": "fact",
+   "situation": "day_<сегодня>.cost_usd=2.5, daily_budget_usd=3",
+   "expected": {
+    "alerts": [
+     "AI_BUDGET_80"
+    ],
+    "message": true
+   },
+   "must": [
+    "«Расход AI 2.50 $ из 3 $»"
+   ],
+   "must_not": [
+    "пауза от GUARDIAN"
+   ]
+  },
+  {
+   "id": "G09",
+   "level": "L1",
+   "now": "plan",
+   "situation": "2 лида перешли в ERROR сегодня, но созданы вчера (day = вчера)",
+   "expected": {
+    "alerts": [
+     "LEAD_ERRORS"
+    ],
+    "message": true
+   },
+   "must": [
+    "фильтр по status_at за 24 ч"
+   ],
+   "must_not": [],
+   "note": "сейчас [ФАКТ] GD-01 ищет по day = день создания и тревогу пропустит — дефект 1 в guardian.md"
+  },
+  {
+   "id": "G10",
+   "level": "L1",
+   "now": "plan",
+   "situation": "Тревога LEADS_STUCK_NEW активна; через 3 ч к списку добавился ещё один lead_id, других изменений нет",
+   "expected": {
+    "alerts": [
+     "LEADS_STUCK_NEW"
+    ],
+    "message": false
+   },
+   "must": [
+    "hash по кодам тревог, а не по тексту"
+   ],
+   "must_not": [
+    "новое сообщение из-за смены списка id"
+   ],
+   "note": "сейчас [ФАКТ] hash по тексту — придёт повторное сообщение (дефект 2)"
+  },
+  {
+   "id": "G11",
+   "level": "L2",
+   "now": "plan",
+   "situation": "LH-10 isActive=false; в истории stop от аккаунта владельца",
+   "expected": {
+    "alerts": [],
+    "message": false
+   },
+   "must": [
+    "строка в дневной сводке «выключен владельцем»"
+   ],
+   "must_not": [
+    "scenarios_activate"
+   ]
+  },
+  {
+   "id": "G12",
+   "level": "L2",
+   "now": "plan",
+   "situation": "LH-01 isActive=false после 3 ошибок подряд (maxErrors), владелец не выключал; LH-01 в expected_active",
+   "expected": {
+    "alerts": [
+     "SCENARIO_OFF",
+     "SCENARIO_ERRORS"
+    ],
+    "message": true
+   },
+   "must": [
+    "scenarios_activate LH-01 (белый список)",
+    "запись в director_log.md",
+    "задача директору при повторе"
+   ],
+   "must_not": [
+    "правка сценария"
+   ]
+  },
+  {
+   "id": "G13",
+   "level": "L1",
+   "now": "plan",
+   "situation": "getWebhookInfo один раз не ответил (таймаут), остальные проверки в норме",
+   "expected": {
+    "alerts": [],
+    "message": false
+   },
+   "must": [
+    "проверки webhook = UNKNOWN; тревога только при 2 подряд"
+   ],
+   "must_not": [
+    "«бот мёртв»"
+   ]
+  }
+ ]
+}

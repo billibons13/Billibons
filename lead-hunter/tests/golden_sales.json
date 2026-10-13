@@ -1,0 +1,1009 @@
+{
+ "meta": {
+  "agent": "Sales",
+  "prompt_version": "SALES_v2",
+  "task": "T-20261013-0041",
+  "created": "2026-10-13",
+  "synthetic": true,
+  "warning": "СИНТЕТИКА: вымышленный лид для эталона, НЕ реальный заказ. URL — example.com.",
+  "threshold_pct": 85,
+  "scoring": "Кейс засчитан, если выполнены ВСЕ global_must и все must кейса. Б = засчитанные / всего × 100. Порог приёмки: Б ≥ 85 % (10 из 11). Ожидаемые числа economics, не зависящие от цены, посчитаны скриптом по формулам SALES_v2 (round half up, ceil10); зависящие от цены — проверяются формулами global_must по числам самого ответа.",
+  "rounding": "round_half_up; ceil10 = округление вверх до 10",
+  "how_to_run": "Только по решению DIRECTOR (стоит кредиты): settings → блок SETTINGS, cost_inputs → COST_INPUTS, lead → lead_block, architect_spec → ARCHITECT_SPEC; промт SALES_v2. Не запускать generate_lh.py ради теста.",
+  "boevoy_ball": "не измерен"
+ },
+ "global_must": [
+  {
+   "id": "lead_id",
+   "check": "lead_id == input.lead_id"
+  },
+  {
+   "id": "json_only",
+   "check": "ответ — один минифицированный JSON без текста"
+  },
+  {
+   "id": "make_filters",
+   "check": "estimated_cost, recommended_price, target_price, minimum_acceptable_price, packages.*.price — целые числа; minimum_acceptable_price ≥ minimum_order_eur; minimum ≤ recommended ≤ target; basic < professional < premium; win_probability 0–100; commercial_potential ∈ LOW|MEDIUM|HIGH; client_message и client_message_ru непусты"
+  },
+  {
+   "id": "v1_fields",
+   "check": "все поля v1 присутствуют (схема SALES_v1 не нарушена)"
+  },
+  {
+   "id": "price_basis",
+   "check": "economics.price_basis_eur == recommended_price == packages.professional.price"
+  },
+  {
+   "id": "floor",
+   "check": "minimum_acceptable_price ≥ economics.break_even_price_eur (если число) и ≥ estimated_cost; packages.basic.price ≥ minimum_order_eur"
+  },
+  {
+   "id": "econ_arith",
+   "check": "executor_costs_eur == сумма breakdown[*].cost_eur; platform_fee_eur == round_half_up(price × pct/100); risk_reserve_eur == round_half_up(executor × reserve_pct/100); total == executor + fee + tools_ai + other + reserve; net == price − total; margin_pct == round(net/price×100, 1); допуск ±1 € / ±0,1 п. п.; UNKNOWN распространяется на итоги"
+  },
+  {
+   "id": "verdict_rules",
+   "check": "verdict == первое сработавшее правило 1–6 SALES_v2 по собственным числам ответа; verdict ∈ GO|CHECK|NO-GO; verdict_reason непуст"
+  },
+  {
+   "id": "budget_not_profit",
+   "check": "net_profit_eur не равен budget_client_eur − 0 и не считается от бюджета клиента (price_basis = наша цена)"
+  },
+  {
+   "id": "no_invention",
+   "check": "ставки, комиссия, курс, цены партнёра — только из SETTINGS/COST_INPUTS, иначе UNKNOWN"
+  },
+  {
+   "id": "message_formula",
+   "check": "client_message: 80–160 слов, ровно один знак вопроса (¿…? считается за один), цена помечена как предварительная, нет выдуманного портфолио/отзывов/цифр; client_message_ru — перевод"
+  },
+  {
+   "id": "limits",
+   "check": "objections ≤ 3; upsells ≤ 5; assumptions ≤ 5; included/excluded ≤ 5"
+  }
+ ],
+ "cases": [
+  {
+   "id": "S01",
+   "synthetic": true,
+   "kind": "normal",
+   "title": "GO: магазин-бот из готовой базы, бюджет 1200 EUR",
+   "input": {
+    "lead": {
+     "lead_id": "LH-GOLD-S01",
+     "language": "de",
+     "client_budget_from_lead": "1200 EUR (fixed)",
+     "description_original": "[TEST] Telegram-Bot für Onlineshop (Katalog, Warenkorb, Stripe). Budget 1.200 EUR."
+    },
+    "settings": {
+     "currency": "EUR",
+     "minimum_order_eur": 500,
+     "internal_hourly_rate_eur": 35,
+     "platform_fee_pct": 10,
+     "tools_cost_eur": 20,
+     "ai_cost_lead_eur": 1,
+     "risk_buffer_pct": 15,
+     "min_margin_pct": 30,
+     "risk_flags": []
+    },
+    "architect_spec": {
+     "category": "websites_bots",
+     "complexity": "S",
+     "estimated_hours_min": 10,
+     "estimated_hours_likely": 10,
+     "estimated_hours_max": 15,
+     "work_breakdown": [
+      {
+       "role": "Telegram bot developer (Make)",
+       "executor": "in_house",
+       "hours_min": 5,
+       "hours_likely": 5,
+       "hours_max": 10,
+       "tasks": [
+        "INFERRED: …"
+       ]
+      },
+      {
+       "role": "QA",
+       "executor": "in_house",
+       "hours_min": 5,
+       "hours_likely": 5,
+       "hours_max": 5,
+       "tasks": [
+        "INFERRED: …"
+       ]
+      }
+     ],
+     "mvp": [
+      "CLIENT_REQUIREMENT: …"
+     ],
+     "phase_2": [
+      "RECOMMENDATION: …"
+     ],
+     "questions_for_client": [
+      "…?"
+     ],
+     "production": {
+      "applicable": false
+     },
+     "escalation": {
+      "needed": false,
+      "to": "none",
+      "reason": ""
+     }
+    }
+   },
+   "must": [
+    "economics.executor_costs_eur == 525",
+    "economics.tools_ai_costs_eur == 21",
+    "economics.other_costs_eur == 0",
+    "economics.risk_reserve_pct == 15",
+    "economics.risk_reserve_eur == 79",
+    "economics.break_even_price_eur == 700",
+    "economics.price_floor_min_margin_eur == 1050",
+    "economics.budget_client_eur == 1200",
+    "economics.platform_fee_pct == 10",
+    "economics.min_margin_pct == 30",
+    "economics.unknowns == []"
+   ],
+   "should": [
+    "recommended_price ∈ [1050, 1200] → verdict GO (эталонный ответ из промта: 1200, total 745, net 455, margin 37.9, GO)"
+   ]
+  },
+  {
+   "id": "S02",
+   "synthetic": true,
+   "kind": "unknown_rate",
+   "title": "CHECK: ставка и комиссия неизвестны, бюджет £800 без курса",
+   "input": {
+    "lead": {
+     "lead_id": "LH-GOLD-S02",
+     "language": "en",
+     "client_budget_from_lead": "800 GBP (fixed)",
+     "description_original": "[TEST] Telegram support bot for a London cafe chain, FAQ + handover to staff. Budget £800."
+    },
+    "settings": {
+     "currency": "EUR",
+     "minimum_order_eur": 500,
+     "internal_hourly_rate_eur": "UNKNOWN"
+    },
+    "architect_spec": {
+     "category": "websites_bots",
+     "complexity": "M",
+     "estimated_hours_min": 30,
+     "estimated_hours_likely": 40,
+     "estimated_hours_max": 60,
+     "work_breakdown": [
+      {
+       "role": "Telegram bot developer (Make)",
+       "executor": "in_house",
+       "hours_min": 20,
+       "hours_likely": 30,
+       "hours_max": 40,
+       "tasks": [
+        "INFERRED: …"
+       ]
+      },
+      {
+       "role": "QA",
+       "executor": "in_house",
+       "hours_min": 5,
+       "hours_likely": 5,
+       "hours_max": 10,
+       "tasks": [
+        "INFERRED: …"
+       ]
+      },
+      {
+       "role": "Project manager",
+       "executor": "in_house",
+       "hours_min": 5,
+       "hours_likely": 5,
+       "hours_max": 10,
+       "tasks": [
+        "INFERRED: …"
+       ]
+      }
+     ],
+     "mvp": [
+      "CLIENT_REQUIREMENT: …"
+     ],
+     "phase_2": [
+      "RECOMMENDATION: …"
+     ],
+     "questions_for_client": [
+      "…?"
+     ],
+     "production": {
+      "applicable": false
+     },
+     "escalation": {
+      "needed": false,
+      "to": "none",
+      "reason": ""
+     }
+    }
+   },
+   "must": [
+    "economics.verdict == CHECK",
+    "economics.budget_client_eur == UNKNOWN",
+    "economics.executor_costs_eur == UNKNOWN",
+    "economics.platform_fee_pct == UNKNOWN",
+    "economics.total_costs_eur == UNKNOWN",
+    "economics.net_profit_eur == UNKNOWN",
+    "economics.margin_pct == UNKNOWN",
+    "economics.unknowns ⊇ {internal_hourly_rate_eur, platform_fee_pct, tools_cost_eur, min_margin_pct}",
+    "assumptions содержит предположение о ставке с пометкой «утверждает владелец»",
+    "estimated_cost — число"
+   ],
+   "should": [
+    "economics.unknowns содержит fx_to_eur.GBP"
+   ]
+  },
+  {
+   "id": "S03",
+   "synthetic": true,
+   "kind": "garbage_budget",
+   "title": "NO-GO: бюджет 150 EUR ниже минимума",
+   "input": {
+    "lead": {
+     "lead_id": "LH-GOLD-S03",
+     "language": "es",
+     "client_budget_from_lead": "150 EUR (fixed)",
+     "description_original": "[TEST] Bot de Telegram que envíe notificaciones de pedidos. Presupuesto 150 EUR."
+    },
+    "settings": {
+     "currency": "EUR",
+     "minimum_order_eur": 500,
+     "internal_hourly_rate_eur": 35,
+     "platform_fee_pct": 10,
+     "tools_cost_eur": 20,
+     "ai_cost_lead_eur": 1,
+     "risk_buffer_pct": 15,
+     "min_margin_pct": 30,
+     "risk_flags": []
+    },
+    "architect_spec": {
+     "category": "websites_bots",
+     "complexity": "S",
+     "estimated_hours_min": 10,
+     "estimated_hours_likely": 10,
+     "estimated_hours_max": 15,
+     "work_breakdown": [
+      {
+       "role": "Telegram bot developer (Make)",
+       "executor": "in_house",
+       "hours_min": 5,
+       "hours_likely": 5,
+       "hours_max": 10,
+       "tasks": [
+        "INFERRED: …"
+       ]
+      },
+      {
+       "role": "QA",
+       "executor": "in_house",
+       "hours_min": 5,
+       "hours_likely": 5,
+       "hours_max": 5,
+       "tasks": [
+        "INFERRED: …"
+       ]
+      }
+     ],
+     "mvp": [
+      "CLIENT_REQUIREMENT: …"
+     ],
+     "phase_2": [
+      "RECOMMENDATION: …"
+     ],
+     "questions_for_client": [
+      "…?"
+     ],
+     "production": {
+      "applicable": false
+     },
+     "escalation": {
+      "needed": false,
+      "to": "none",
+      "reason": ""
+     }
+    }
+   },
+   "must": [
+    "economics.executor_costs_eur == 525",
+    "economics.tools_ai_costs_eur == 21",
+    "economics.other_costs_eur == 0",
+    "economics.risk_reserve_pct == 15",
+    "economics.risk_reserve_eur == 79",
+    "economics.break_even_price_eur == 700",
+    "economics.price_floor_min_margin_eur == 1050",
+    "economics.budget_client_eur == 150",
+    "economics.verdict == NO-GO (правило 1: 150 < minimum_acceptable_price ≥ 500)",
+    "escalation.to == DIRECTOR",
+    "win_probability ≤ 20",
+    "price_reasoning говорит, что бюджет ниже минимума"
+   ],
+   "should": []
+  },
+  {
+   "id": "S04",
+   "synthetic": true,
+   "kind": "currency",
+   "title": "Валюта с курсом: £800 → 936 EUR, ниже безубыточности",
+   "input": {
+    "lead": {
+     "lead_id": "LH-GOLD-S04",
+     "language": "en",
+     "client_budget_from_lead": "800 GBP (fixed)",
+     "description_original": "[TEST] Telegram support bot for a cafe, FAQ + handover to staff. Budget £800."
+    },
+    "settings": {
+     "currency": "EUR",
+     "minimum_order_eur": 500,
+     "internal_hourly_rate_eur": 35,
+     "platform_fee_pct": 10,
+     "tools_cost_eur": 20,
+     "ai_cost_lead_eur": 1,
+     "risk_buffer_pct": 15,
+     "min_margin_pct": 30,
+     "risk_flags": [],
+     "fx_to_eur": {
+      "GBP": 1.17
+     }
+    },
+    "architect_spec": {
+     "category": "websites_bots",
+     "complexity": "S",
+     "estimated_hours_min": 20,
+     "estimated_hours_likely": 25,
+     "estimated_hours_max": 30,
+     "work_breakdown": [
+      {
+       "role": "Telegram bot developer (Make)",
+       "executor": "in_house",
+       "hours_min": 10,
+       "hours_likely": 15,
+       "hours_max": 20,
+       "tasks": [
+        "INFERRED: …"
+       ]
+      },
+      {
+       "role": "QA",
+       "executor": "in_house",
+       "hours_min": 5,
+       "hours_likely": 5,
+       "hours_max": 5,
+       "tasks": [
+        "INFERRED: …"
+       ]
+      },
+      {
+       "role": "Project manager",
+       "executor": "in_house",
+       "hours_min": 5,
+       "hours_likely": 5,
+       "hours_max": 5,
+       "tasks": [
+        "INFERRED: …"
+       ]
+      }
+     ],
+     "mvp": [
+      "CLIENT_REQUIREMENT: …"
+     ],
+     "phase_2": [
+      "RECOMMENDATION: …"
+     ],
+     "questions_for_client": [
+      "…?"
+     ],
+     "production": {
+      "applicable": false
+     },
+     "escalation": {
+      "needed": false,
+      "to": "none",
+      "reason": ""
+     }
+    }
+   },
+   "must": [
+    "economics.executor_costs_eur == 1050",
+    "economics.tools_ai_costs_eur == 21",
+    "economics.other_costs_eur == 0",
+    "economics.risk_reserve_pct == 15",
+    "economics.risk_reserve_eur == 158",
+    "economics.break_even_price_eur == 1370",
+    "economics.price_floor_min_margin_eur == 2050",
+    "economics.budget_client_eur == 936",
+    "economics.verdict == NO-GO (правило 1: 936 < minimum_acceptable ≥ break_even 1370)"
+   ],
+   "should": []
+  },
+  {
+   "id": "S05",
+   "synthetic": true,
+   "kind": "hourly",
+   "title": "Почасовой бюджет $25/h → budget_client_eur UNKNOWN",
+   "input": {
+    "lead": {
+     "lead_id": "LH-GOLD-S05",
+     "language": "en",
+     "client_budget_from_lead": "25 USD (hourly)",
+     "description_original": "[TEST] Need a Telegram bot for a fitness studio: class schedule, booking, reminders. Paying $25/hr."
+    },
+    "settings": {
+     "currency": "EUR",
+     "minimum_order_eur": 500,
+     "internal_hourly_rate_eur": 35,
+     "platform_fee_pct": 10,
+     "tools_cost_eur": 20,
+     "ai_cost_lead_eur": 1,
+     "risk_buffer_pct": 15,
+     "min_margin_pct": 30,
+     "risk_flags": []
+    },
+    "architect_spec": {
+     "category": "websites_bots",
+     "complexity": "M",
+     "estimated_hours_min": 20,
+     "estimated_hours_likely": 25,
+     "estimated_hours_max": 40,
+     "work_breakdown": [
+      {
+       "role": "Telegram bot developer (Make)",
+       "executor": "in_house",
+       "hours_min": 15,
+       "hours_likely": 20,
+       "hours_max": 30,
+       "tasks": [
+        "INFERRED: …"
+       ]
+      },
+      {
+       "role": "QA",
+       "executor": "in_house",
+       "hours_min": 5,
+       "hours_likely": 5,
+       "hours_max": 10,
+       "tasks": [
+        "INFERRED: …"
+       ]
+      }
+     ],
+     "mvp": [
+      "CLIENT_REQUIREMENT: …"
+     ],
+     "phase_2": [
+      "RECOMMENDATION: …"
+     ],
+     "questions_for_client": [
+      "…?"
+     ],
+     "production": {
+      "applicable": false
+     },
+     "escalation": {
+      "needed": false,
+      "to": "none",
+      "reason": ""
+     }
+    }
+   },
+   "must": [
+    "economics.executor_costs_eur == 1400",
+    "economics.tools_ai_costs_eur == 21",
+    "economics.other_costs_eur == 0",
+    "economics.risk_reserve_pct == 15",
+    "economics.risk_reserve_eur == 210",
+    "economics.break_even_price_eur == 1820",
+    "economics.price_floor_min_margin_eur == 2720",
+    "economics.budget_client_eur == UNKNOWN",
+    "verdict ∈ {GO, CHECK, NO-GO} строго по правилам 1–6 (правила 1 и 5 не применяются)",
+    "price_reasoning упоминает почасовую ставку клиента"
+   ],
+   "should": []
+  },
+  {
+   "id": "S06",
+   "synthetic": true,
+   "kind": "manufacturing",
+   "title": "Производство с ценой партнёра: 500 коробок, бюджет 4000 EUR",
+   "input": {
+    "lead": {
+     "lead_id": "LH-GOLD-S06",
+     "language": "en",
+     "client_budget_from_lead": "4000 EUR (fixed)",
+     "description_original": "[TEST] Need 500 custom printed boxes with our logo, delivered to Munich. Budget 4000 EUR."
+    },
+    "settings": {
+     "currency": "EUR",
+     "minimum_order_eur": 500,
+     "internal_hourly_rate_eur": 35,
+     "platform_fee_pct": 10,
+     "tools_cost_eur": 20,
+     "ai_cost_lead_eur": 1,
+     "risk_buffer_pct": 15,
+     "min_margin_pct": 30,
+     "risk_flags": [],
+     "role_rates_eur": {
+      "Packaging designer": 40
+     }
+    },
+    "architect_spec": {
+     "category": "manufacturing",
+     "complexity": "S",
+     "estimated_hours_min": 10,
+     "estimated_hours_likely": 15,
+     "estimated_hours_max": 25,
+     "work_breakdown": [
+      {
+       "role": "Project manager / sourcing",
+       "executor": "in_house",
+       "hours_min": 5,
+       "hours_likely": 10,
+       "hours_max": 15,
+       "tasks": [
+        "INFERRED: …"
+       ]
+      },
+      {
+       "role": "Packaging designer",
+       "executor": "subcontractor",
+       "hours_min": 5,
+       "hours_likely": 5,
+       "hours_max": 10,
+       "tasks": [
+        "INFERRED: …"
+       ]
+      }
+     ],
+     "mvp": [
+      "CLIENT_REQUIREMENT: …"
+     ],
+     "phase_2": [
+      "RECOMMENDATION: …"
+     ],
+     "questions_for_client": [
+      "…?"
+     ],
+     "production": {
+      "applicable": true,
+      "moq": "CLIENT_REQUIREMENT: 500 шт.",
+      "unit_cost_eur": "UNKNOWN",
+      "logistics": "UNKNOWN"
+     },
+     "escalation": {
+      "needed": false,
+      "to": "none",
+      "reason": ""
+     }
+    },
+    "cost_inputs": {
+     "production_costs_eur": 1500,
+     "logistics_costs_eur": 150
+    }
+   },
+   "must": [
+    "economics.executor_costs_eur == 925",
+    "economics.tools_ai_costs_eur == 21",
+    "economics.other_costs_eur == 1650",
+    "economics.risk_reserve_pct == 15",
+    "economics.risk_reserve_eur == 139",
+    "economics.break_even_price_eur == 3040",
+    "economics.price_floor_min_margin_eur == 4560",
+    "economics.budget_client_eur == 4000",
+    "economics.unit_economics.units == 500",
+    "economics.unit_economics.cost_per_unit_eur == round(total_costs_eur/500, 2)",
+    "verdict ∈ {CHECK, NO-GO} по правилам (GO невозможен: при цене ≥ 4560 бюджет 4000 < цены → правило 5; при цене ниже — маржа < 30 % → правило 4)"
+   ],
+   "should": [
+    "verdict == CHECK",
+    "packages.basic.included — урезанный тираж/дизайн, не скидка"
+   ]
+  },
+  {
+   "id": "S07",
+   "synthetic": true,
+   "kind": "manufacturing_unknown",
+   "title": "Производство без логистики → other_costs UNKNOWN → CHECK",
+   "input": {
+    "lead": {
+     "lead_id": "LH-GOLD-S07",
+     "language": "en",
+     "client_budget_from_lead": "not stated",
+     "description_original": "[TEST] Need 500 custom printed boxes with our logo, delivered to Munich."
+    },
+    "settings": {
+     "currency": "EUR",
+     "minimum_order_eur": 500,
+     "internal_hourly_rate_eur": 35,
+     "platform_fee_pct": 10,
+     "tools_cost_eur": 20,
+     "ai_cost_lead_eur": 1,
+     "risk_buffer_pct": 15,
+     "min_margin_pct": 30,
+     "risk_flags": [],
+     "role_rates_eur": {
+      "Packaging designer": 40
+     }
+    },
+    "architect_spec": {
+     "category": "manufacturing",
+     "complexity": "S",
+     "estimated_hours_min": 10,
+     "estimated_hours_likely": 15,
+     "estimated_hours_max": 25,
+     "work_breakdown": [
+      {
+       "role": "Project manager / sourcing",
+       "executor": "in_house",
+       "hours_min": 5,
+       "hours_likely": 10,
+       "hours_max": 15,
+       "tasks": [
+        "INFERRED: …"
+       ]
+      },
+      {
+       "role": "Packaging designer",
+       "executor": "subcontractor",
+       "hours_min": 5,
+       "hours_likely": 5,
+       "hours_max": 10,
+       "tasks": [
+        "INFERRED: …"
+       ]
+      }
+     ],
+     "mvp": [
+      "CLIENT_REQUIREMENT: …"
+     ],
+     "phase_2": [
+      "RECOMMENDATION: …"
+     ],
+     "questions_for_client": [
+      "…?"
+     ],
+     "production": {
+      "applicable": true,
+      "moq": "CLIENT_REQUIREMENT: 500 шт.",
+      "unit_cost_eur": "UNKNOWN",
+      "logistics": "UNKNOWN"
+     },
+     "escalation": {
+      "needed": false,
+      "to": "none",
+      "reason": ""
+     }
+    },
+    "cost_inputs": {
+     "production_costs_eur": 1500
+    }
+   },
+   "must": [
+    "economics.executor_costs_eur == 925",
+    "economics.tools_ai_costs_eur == 21",
+    "economics.other_costs_eur == \"UNKNOWN\"",
+    "economics.risk_reserve_pct == 15",
+    "economics.risk_reserve_eur == 139",
+    "economics.budget_client_eur == UNKNOWN",
+    "economics.total_costs_eur == UNKNOWN",
+    "economics.verdict == CHECK",
+    "economics.unknowns содержит logistics_costs_eur"
+   ],
+   "should": []
+  },
+  {
+   "id": "S08",
+   "synthetic": true,
+   "kind": "subcontractor_unknown",
+   "title": "Субподрядчик без ставки → executor UNKNOWN → CHECK",
+   "input": {
+    "lead": {
+     "lead_id": "LH-GOLD-S08",
+     "language": "de",
+     "client_budget_from_lead": "not stated",
+     "description_original": "[TEST] Telegram Mini App für ein Restaurant: Menü, Bestellung, Abholung."
+    },
+    "settings": {
+     "currency": "EUR",
+     "minimum_order_eur": 500,
+     "internal_hourly_rate_eur": 35,
+     "platform_fee_pct": 10,
+     "tools_cost_eur": 20,
+     "ai_cost_lead_eur": 1,
+     "risk_buffer_pct": 15,
+     "min_margin_pct": 30,
+     "risk_flags": []
+    },
+    "architect_spec": {
+     "category": "websites_bots",
+     "complexity": "M",
+     "estimated_hours_min": 20,
+     "estimated_hours_likely": 30,
+     "estimated_hours_max": 40,
+     "work_breakdown": [
+      {
+       "role": "Telegram bot developer (Make)",
+       "executor": "in_house",
+       "hours_min": 10,
+       "hours_likely": 15,
+       "hours_max": 20,
+       "tasks": [
+        "INFERRED: …"
+       ]
+      },
+      {
+       "role": "Frontend (Mini App)",
+       "executor": "subcontractor",
+       "hours_min": 10,
+       "hours_likely": 15,
+       "hours_max": 20,
+       "tasks": [
+        "INFERRED: …"
+       ]
+      }
+     ],
+     "mvp": [
+      "CLIENT_REQUIREMENT: …"
+     ],
+     "phase_2": [
+      "RECOMMENDATION: …"
+     ],
+     "questions_for_client": [
+      "…?"
+     ],
+     "production": {
+      "applicable": false
+     },
+     "escalation": {
+      "needed": false,
+      "to": "none",
+      "reason": ""
+     }
+    }
+   },
+   "must": [
+    "economics.executor_costs_eur == \"UNKNOWN\"",
+    "economics.tools_ai_costs_eur == 21",
+    "economics.other_costs_eur == 0",
+    "economics.risk_reserve_pct == 15",
+    "economics.risk_reserve_eur == \"UNKNOWN\"",
+    "economics.executor_costs_breakdown содержит Frontend (Mini App) с rate_eur == UNKNOWN",
+    "economics.verdict == CHECK",
+    "economics.unknowns содержит ставку Frontend (Mini App)"
+   ],
+   "should": []
+  },
+  {
+   "id": "S09",
+   "synthetic": true,
+   "kind": "risk_flags",
+   "title": "Флаги риска → резерв ×1,5",
+   "input": {
+    "lead": {
+     "lead_id": "LH-GOLD-S09",
+     "language": "en",
+     "client_budget_from_lead": "not stated",
+     "description_original": "[TEST] Simple Telegram bot for a shop catalog; prefer to pay outside the platform."
+    },
+    "settings": {
+     "currency": "EUR",
+     "minimum_order_eur": 500,
+     "internal_hourly_rate_eur": 35,
+     "platform_fee_pct": 10,
+     "tools_cost_eur": 20,
+     "ai_cost_lead_eur": 1,
+     "risk_buffer_pct": 15,
+     "min_margin_pct": 30,
+     "risk_flags": [
+      "off_platform_payment"
+     ]
+    },
+    "architect_spec": {
+     "category": "websites_bots",
+     "complexity": "S",
+     "estimated_hours_min": 10,
+     "estimated_hours_likely": 10,
+     "estimated_hours_max": 15,
+     "work_breakdown": [
+      {
+       "role": "Telegram bot developer (Make)",
+       "executor": "in_house",
+       "hours_min": 5,
+       "hours_likely": 5,
+       "hours_max": 10,
+       "tasks": [
+        "INFERRED: …"
+       ]
+      },
+      {
+       "role": "QA",
+       "executor": "in_house",
+       "hours_min": 5,
+       "hours_likely": 5,
+       "hours_max": 5,
+       "tasks": [
+        "INFERRED: …"
+       ]
+      }
+     ],
+     "mvp": [
+      "CLIENT_REQUIREMENT: …"
+     ],
+     "phase_2": [
+      "RECOMMENDATION: …"
+     ],
+     "questions_for_client": [
+      "…?"
+     ],
+     "production": {
+      "applicable": false
+     },
+     "escalation": {
+      "needed": false,
+      "to": "none",
+      "reason": ""
+     }
+    }
+   },
+   "must": [
+    "economics.executor_costs_eur == 525",
+    "economics.tools_ai_costs_eur == 21",
+    "economics.other_costs_eur == 0",
+    "economics.risk_reserve_pct == 22.5",
+    "economics.risk_reserve_eur == 118",
+    "economics.break_even_price_eur == 740",
+    "economics.price_floor_min_margin_eur == 1110",
+    "verdict строго по правилам 1–6"
+   ],
+   "should": [
+    "objections или escalation учитывают оплату вне площадки"
+   ]
+  },
+  {
+   "id": "S10",
+   "synthetic": true,
+   "kind": "legacy_v1",
+   "title": "ТЗ v1 без work_breakdown → одна строка «все роли»",
+   "input": {
+    "lead": {
+     "lead_id": "LH-GOLD-S10",
+     "language": "en",
+     "client_budget_from_lead": "3000 EUR (fixed)",
+     "description_original": "[TEST] Booking bot for a barbershop with reminders. Budget 3000 EUR."
+    },
+    "settings": {
+     "currency": "EUR",
+     "minimum_order_eur": 500,
+     "internal_hourly_rate_eur": 35,
+     "platform_fee_pct": 10,
+     "tools_cost_eur": 20,
+     "ai_cost_lead_eur": 1,
+     "risk_buffer_pct": 15,
+     "min_margin_pct": 30,
+     "risk_flags": []
+    },
+    "architect_spec": {
+     "_note": "ТЗ ARCHITECT_v1 без work_breakdown",
+     "complexity": "M",
+     "estimated_hours_min": 25,
+     "estimated_hours_max": 40,
+     "mvp": [
+      "CLIENT_REQUIREMENT: бот записи с напоминаниями"
+     ],
+     "phase_2": [
+      "RECOMMENDATION: оплата онлайн"
+     ],
+     "questions_for_client": [
+      "Сколько мастеров?"
+     ]
+    }
+   },
+   "must": [
+    "economics.executor_costs_eur == 1400",
+    "economics.tools_ai_costs_eur == 21",
+    "economics.other_costs_eur == 0",
+    "economics.risk_reserve_pct == 15",
+    "economics.risk_reserve_eur == 210",
+    "economics.break_even_price_eur == 1820",
+    "economics.price_floor_min_margin_eur == 2720",
+    "len(economics.executor_costs_breakdown) == 1",
+    "economics.executor_costs_breakdown[0].hours == 40",
+    "economics.budget_client_eur == 3000"
+   ],
+   "should": []
+  },
+  {
+   "id": "S11",
+   "synthetic": true,
+   "kind": "language_ru",
+   "title": "Русский лид, бюджет 50 000 RUB → 550 EUR < безубыточности",
+   "input": {
+    "lead": {
+     "lead_id": "LH-GOLD-S11",
+     "language": "ru",
+     "client_budget_from_lead": "50000 RUB (fixed)",
+     "description_original": "[TEST] Нужен Telegram-бот для приёма заказов в кофейне, меню и корзина. Бюджет 50 000 руб."
+    },
+    "settings": {
+     "currency": "EUR",
+     "minimum_order_eur": 500,
+     "internal_hourly_rate_eur": 35,
+     "platform_fee_pct": 10,
+     "tools_cost_eur": 20,
+     "ai_cost_lead_eur": 1,
+     "risk_buffer_pct": 15,
+     "min_margin_pct": 30,
+     "risk_flags": [],
+     "fx_to_eur": {
+      "RUB": 0.011
+     }
+    },
+    "architect_spec": {
+     "category": "websites_bots",
+     "complexity": "S",
+     "estimated_hours_min": 10,
+     "estimated_hours_likely": 10,
+     "estimated_hours_max": 15,
+     "work_breakdown": [
+      {
+       "role": "Telegram bot developer (Make)",
+       "executor": "in_house",
+       "hours_min": 5,
+       "hours_likely": 5,
+       "hours_max": 10,
+       "tasks": [
+        "INFERRED: …"
+       ]
+      },
+      {
+       "role": "QA",
+       "executor": "in_house",
+       "hours_min": 5,
+       "hours_likely": 5,
+       "hours_max": 5,
+       "tasks": [
+        "INFERRED: …"
+       ]
+      }
+     ],
+     "mvp": [
+      "CLIENT_REQUIREMENT: …"
+     ],
+     "phase_2": [
+      "RECOMMENDATION: …"
+     ],
+     "questions_for_client": [
+      "…?"
+     ],
+     "production": {
+      "applicable": false
+     },
+     "escalation": {
+      "needed": false,
+      "to": "none",
+      "reason": ""
+     }
+    }
+   },
+   "must": [
+    "economics.executor_costs_eur == 525",
+    "economics.tools_ai_costs_eur == 21",
+    "economics.other_costs_eur == 0",
+    "economics.risk_reserve_pct == 15",
+    "economics.risk_reserve_eur == 79",
+    "economics.break_even_price_eur == 700",
+    "economics.price_floor_min_margin_eur == 1050",
+    "economics.budget_client_eur == 550",
+    "economics.verdict == NO-GO (правило 1: 550 < minimum_acceptable ≥ 700)",
+    "client_language == ru",
+    "client_message_ru == client_message"
+   ],
+   "should": []
+  }
+ ]
+}

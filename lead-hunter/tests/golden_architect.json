@@ -1,0 +1,301 @@
+{
+ "meta": {
+  "agent": "Architect",
+  "prompt_version": "ARCHITECT_v2",
+  "task": "T-20261013-0041",
+  "created": "2026-10-13",
+  "synthetic": true,
+  "warning": "СИНТЕТИКА: вымышленный лид для эталона, НЕ реальный заказ. URL — example.com.",
+  "threshold_pct": 85,
+  "scoring": "Кейс засчитан, если выполнены ВСЕ global_must и все must кейса. Б = засчитанные / всего × 100. should — для разбора, на балл не влияют. Порог приёмки: Б ≥ 85 % (9 из 10).",
+  "how_to_run": "Только по решению DIRECTOR (стоит кредиты): подать каждый input как lead_block LH-11 с промтом ARCHITECT_v2, проверить ответ. Не запускать generate_lh.py ради теста — он перезаписывает блюпринты.",
+  "boevoy_ball": "не измерен"
+ },
+ "global_must": [
+  {
+   "id": "lead_id",
+   "check": "lead_id == input.lead_id"
+  },
+  {
+   "id": "json_only",
+   "check": "ответ — один минифицированный JSON-объект без текста и ```"
+  },
+  {
+   "id": "make_filters",
+   "check": "complexity ∈ S|M|L|XL; estimated_hours_min/max — целые; min ≤ max; project_summary, telegram_solution.bot, database.required, admin_panel.required заполнены; functional_requirements, mvp, technology_stack, questions_for_client непусты"
+  },
+  {
+   "id": "wbs_sums",
+   "check": "estimated_hours_min/likely/max == суммам work_breakdown[*].hours_min/likely/max; у каждой роли O ≤ M ≤ P, кратно 5, ≥ 5"
+  },
+  {
+   "id": "pert",
+   "check": "estimated_hours_pert == round_half_up((min + 4*likely + max)/6)"
+  },
+  {
+   "id": "complexity_rule",
+   "check": "S если max < 40; M 40–120; L 121–300; XL > 300"
+  },
+  {
+   "id": "specialists",
+   "check": "required_specialists == work_breakdown[*].role (тот же порядок)"
+  },
+  {
+   "id": "tags",
+   "check": "все TAGGED-строки начинаются с CLIENT_REQUIREMENT: | INFERRED: | RECOMMENDATION: | UNKNOWN:"
+  },
+  {
+   "id": "risk_register",
+   "check": "risks[*].exposure == probability_pct × (LOW 1 | MEDIUM 3 | HIGH 5); отсортированы по убыванию; ≤ 6"
+  },
+  {
+   "id": "enums",
+   "check": "category ∈ websites_bots|manufacturing|automation_ai|UNKNOWN; delivery_mode ∈ in_house|subcontractor|partner_production|mixed; executor ∈ in_house|subcontractor|partner; escalation.to ∈ none|DIRECTOR|OWNER|GUARDIAN"
+  },
+  {
+   "id": "no_money",
+   "check": "нет цен/ставок/прибыли: regex (€|EUR|USD|\\$|£|руб)\\s?\\d|\\d\\s?(€|EUR|USD|\\$|£) не встречается (кроме дословной цитаты требований клиента с тегом CLIENT_REQUIREMENT)"
+  },
+  {
+   "id": "questions_limit",
+   "check": "len(questions_for_client) ≤ 10"
+  }
+ ],
+ "cases": [
+  {
+   "id": "A01",
+   "synthetic": true,
+   "kind": "normal",
+   "title": "Магазин-бот DE, Stripe, бюджет 1200 EUR",
+   "input": {
+    "lead_id": "LH-GOLD-A01",
+    "language": "de",
+    "country": "DE",
+    "bot_type": "shop",
+    "client_budget_from_lead": "1200 EUR (fixed)",
+    "description_original": "[TEST] Wir suchen einen Entwickler für einen Telegram-Bot für unseren Onlineshop (Katalog, Warenkorb, Bezahlung mit Stripe). Budget 1.200 EUR, Start nächste Woche. https://example.com/jobs/t1"
+   },
+   "must": [
+    "category == websites_bots",
+    "complexity ∈ {S, M}",
+    "telegram_solution.payments начинается с CLIENT_REQUIREMENT: и упоминает Stripe",
+    "escalation.needed == false",
+    "production.applicable == false"
+   ],
+   "should": [
+    "delivery_mode == in_house",
+    "architecture_notes упоминает готовую базу магазина"
+   ]
+  },
+  {
+   "id": "A02",
+   "synthetic": true,
+   "kind": "normal",
+   "title": "Запись в барбершоп US, без бюджета",
+   "input": {
+    "lead_id": "LH-GOLD-A02",
+    "language": "en",
+    "country": "US",
+    "bot_type": "booking",
+    "client_budget_from_lead": "not stated",
+    "description_original": "[TEST] Need a Telegram bot for booking appointments in my barbershop in Austin, TX. Google Calendar sync, reminders. https://example.com/jobs/t2"
+   },
+   "must": [
+    "category == websites_bots",
+    "integrations содержит CLIENT_REQUIREMENT с Google Calendar",
+    "notifications или functional_requirements содержит напоминания (CLIENT_REQUIREMENT)",
+    "complexity ∈ {S, M}"
+   ],
+   "should": [
+    "missing_information содержит UNKNOWN про количество мастеров/услуг"
+   ]
+  },
+  {
+   "id": "A03",
+   "synthetic": true,
+   "kind": "normal",
+   "title": "Бот поддержки кафе UK, £800",
+   "input": {
+    "lead_id": "LH-GOLD-A03",
+    "language": "en",
+    "country": "GB",
+    "bot_type": "support",
+    "client_budget_from_lead": "800 GBP (fixed)",
+    "description_original": "[TEST] Looking for someone to build a Telegram support bot for a London cafe chain, FAQ + handover to staff. Budget £800."
+   },
+   "must": [
+    "category == websites_bots",
+    "functional_requirements содержит FAQ и передачу оператору с тегом CLIENT_REQUIREMENT",
+    "нет выдуманного числа кафе/пользователей (только UNKNOWN)"
+   ],
+   "should": [
+    "ai_features содержит RECOMMENDATION или пусто — не CLIENT_REQUIREMENT"
+   ]
+  },
+  {
+   "id": "A04",
+   "synthetic": true,
+   "kind": "boundary",
+   "title": "Уведомления о заказах ES, 150 EUR (мелкий)",
+   "input": {
+    "lead_id": "LH-GOLD-A04",
+    "language": "es",
+    "country": "ES",
+    "bot_type": "notifications",
+    "client_budget_from_lead": "150 EUR (fixed)",
+    "description_original": "[TEST] Busco desarrollador para un bot de Telegram que envíe notificaciones de pedidos. Presupuesto 150 EUR. https://example.com/jobs/t4"
+   },
+   "must": [
+    "complexity == S",
+    "estimated_hours_max < 40",
+    "escalation.to != OWNER (бюджет — забота Sales)",
+    "missing_information содержит UNKNOWN про источник заказов (магазин/CRM)"
+   ],
+   "should": []
+  },
+  {
+   "id": "A05",
+   "synthetic": true,
+   "kind": "suspicious",
+   "title": "Подозрительный: крипто-сигналы, ставки, оплата вне площадки",
+   "input": {
+    "lead_id": "LH-GOLD-A05",
+    "language": "en",
+    "country": "PL",
+    "bot_type": "other",
+    "client_budget_from_lead": "5000 USD (fixed)",
+    "description_original": "[TEST] Telegram bot for crypto signals and betting, payment only after unpaid test task, contact me on WhatsApp off-platform. Budget $5000. https://example.com/jobs/t5"
+   },
+   "must": [
+    "escalation.needed == true",
+    "escalation.to == DIRECTOR",
+    "risks содержит риск оплаты вне площадки или бесплатного тестового задания",
+    "ответ — полный JSON (все поля, фильтры Make проходят)"
+   ],
+   "should": [
+    "risks[0].impact == HIGH"
+   ]
+  },
+  {
+   "id": "A06",
+   "synthetic": true,
+   "kind": "manufacturing",
+   "title": "Производство: 500 коробок с логотипом, доставка в Мюнхен",
+   "input": {
+    "lead_id": "LH-GOLD-A06",
+    "language": "en",
+    "country": "unknown",
+    "bot_type": "other",
+    "client_budget_from_lead": "not stated",
+    "description_original": "[TEST] Need 500 custom printed boxes with our logo for our candle shop, delivered to Munich. https://example.com/jobs/m1"
+   },
+   "must": [
+    "category == manufacturing",
+    "delivery_mode ∈ {partner_production, mixed}",
+    "production.applicable == true",
+    "production.moq начинается с CLIENT_REQUIREMENT: и содержит 500",
+    "production.unit_cost_eur начинается с UNKNOWN:",
+    "production.lead_time_days начинается с UNKNOWN:",
+    "production.logistics начинается с UNKNOWN:",
+    "production.dfm непуст",
+    "production.chain содержит образец до серии",
+    "work_breakdown не содержит часов фабрики (только наши роли)"
+   ],
+   "should": [
+    "questions_for_client содержит вопрос про материал/размер коробки"
+   ]
+  },
+  {
+   "id": "A07",
+   "synthetic": true,
+   "kind": "manufacturing",
+   "title": "Производство с данными клиента: MOQ 1000, поставщик в Польше",
+   "input": {
+    "lead_id": "LH-GOLD-A07",
+    "language": "de",
+    "country": "DE",
+    "bot_type": "other",
+    "client_budget_from_lead": "not stated",
+    "description_original": "[TEST] Wir brauchen bedruckte Baumwoll-Taschen, Mindestmenge 1000 Stück, Lieferant in Polen ist vorhanden, Lieferzeit 4 Wochen. Wir suchen jemanden für Design und Koordination."
+   },
+   "must": [
+    "category == manufacturing",
+    "production.moq начинается с CLIENT_REQUIREMENT: и содержит 1000",
+    "production.lead_time_days начинается с CLIENT_REQUIREMENT: (4 недели)",
+    "production.partner_required ∈ {yes, no} с опорой на текст (поставщик есть)",
+    "production.unit_cost_eur начинается с UNKNOWN:"
+   ],
+   "should": [
+    "delivery_mode == mixed или in_house (координация + существующий поставщик)"
+   ]
+  },
+  {
+   "id": "A08",
+   "synthetic": true,
+   "kind": "automation",
+   "title": "Автоматизация + AI: счета из почты в Google Sheets",
+   "input": {
+    "lead_id": "LH-GOLD-A08",
+    "language": "en",
+    "country": "unknown",
+    "bot_type": "automation",
+    "client_budget_from_lead": "not stated",
+    "description_original": "[TEST] We receive ~200 PDF invoices per month by email. Need automation that extracts supplier, date, amount and puts them into Google Sheets, with a Telegram alert for amounts over 1000 EUR."
+   },
+   "must": [
+    "category == automation_ai",
+    "ai_features непуст (извлечение данных из PDF)",
+    "integrations содержит Google Sheets и почту с тегом CLIENT_REQUIREMENT",
+    "stack_rationale непуст и называет альтернативу",
+    "no_money: «1000 EUR» допустим только внутри CLIENT_REQUIREMENT (порог уведомления)"
+   ],
+   "should": [
+    "risks содержит риск качества распознавания PDF"
+   ]
+  },
+  {
+   "id": "A09",
+   "synthetic": true,
+   "kind": "garbage",
+   "title": "Мусор: без предмета работы",
+   "input": {
+    "lead_id": "LH-GOLD-A09",
+    "language": "en",
+    "country": "unknown",
+    "bot_type": "unknown",
+    "client_budget_from_lead": "not stated",
+    "description_original": "[TEST] need smth cool asap, pay good"
+   },
+   "must": [
+    "category == UNKNOWN",
+    "escalation.needed == true",
+    "escalation.to == DIRECTOR",
+    "missing_information непуст",
+    "все поля присутствуют, фильтры Make проходят",
+    "нет выдуманных функций с тегом CLIENT_REQUIREMENT"
+   ],
+   "should": []
+  },
+  {
+   "id": "A10",
+   "synthetic": true,
+   "kind": "off_profile",
+   "title": "Вне профиля: перевод текстов",
+   "input": {
+    "lead_id": "LH-GOLD-A10",
+    "language": "en",
+    "country": "unknown",
+    "bot_type": "other",
+    "client_budget_from_lead": "300 EUR (fixed)",
+    "description_original": "[TEST] Translate 20 pages of a technical manual from German to English. Budget 300 EUR."
+   },
+   "must": [
+    "category == UNKNOWN",
+    "escalation.to == DIRECTOR",
+    "escalation.reason упоминает «вне профиля» / не наше направление",
+    "telegram_solution.bot начинается с INFERRED: не применимо или RECOMMENDATION: нет"
+   ],
+   "should": []
+  }
+ ]
+}

@@ -1,0 +1,237 @@
+{
+ "agent": "DIRECTOR runtime (бывш. Delivery Manager) — детерминированная логика LH-03/10/11/20, цель LH-30",
+ "card": "lead-hunter/agents/delivery.md v2.0",
+ "created": "2026-10-13",
+ "acceptance": {
+  "pass_threshold_pct": 100,
+  "scoring": "совпадают new_status и decision; выполнены must, нет must_not. Логика детерминированная — любой промах = дефект.",
+  "how_to_run": "в Make тестовыми лидами [TEST] (TEST_DATA.md) или подстановкой записей lh_leads; стоит кредиты — по решению директора. Кейсы с now='plan' проверяются после LH-30."
+ },
+ "decision_values": [
+  "NEXT_AGENT",
+  "MORE_ANALYSIS",
+  "REWORK",
+  "ARCHIVE",
+  "TO_OWNER_G1",
+  "TO_OWNER_G2",
+  "ESCALATE_OWNER",
+  "ESCALATE_GUARDIAN",
+  "HOLD",
+  "CLOSE",
+  "NOOP"
+ ],
+ "cases": [
+  {
+   "id": "R01",
+   "now": "fact",
+   "situation": "NEW, paused=false, расход дня 40 %; Analyst вернул валидный JSON, score 72, WARM",
+   "expected": {
+    "new_status": "SENT_TO_TELEGRAM",
+    "decision": "TO_OWNER_G1"
+   },
+   "must": [
+    "события ANALYST_COMPLETED, SCORE_CALCULATED, TELEGRAM_SENT",
+    "tg_message_id записан",
+    "кнопки ap|rj|ma с lead_id"
+   ],
+   "must_not": [
+    "вызов LH-11"
+   ]
+  },
+  {
+   "id": "R02",
+   "now": "fact",
+   "situation": "NEW; Analyst валиден, score 33, REJECT",
+   "expected": {
+    "new_status": "ARCHIVED",
+    "decision": "ARCHIVE"
+   },
+   "must": [
+    "одна строка владельцу с причиной (cap или худший критерий)"
+   ],
+   "must_not": [
+    "полная карточка"
+   ]
+  },
+  {
+   "id": "R03",
+   "now": "fact",
+   "situation": "NEW; Analyst 3 раза подряд вернул не-JSON, max_retry_attempts=3",
+   "expected": {
+    "new_status": "ERROR",
+    "decision": "ESCALATE_OWNER",
+    "error_code": "ANALYST_FAILED"
+   },
+   "must": [
+    "2 события ANALYST_RETRY",
+    "3 записи runs FAILED",
+    "сообщение «лид сохранён»"
+   ],
+   "must_not": [
+    "4-я попытка"
+   ]
+  },
+  {
+   "id": "R04",
+   "now": "fact",
+   "situation": "paused=true (владелец /pause); пришёл новый лид",
+   "expected": {
+    "new_status": "NEW",
+    "decision": "HOLD"
+   },
+   "must": [
+    "сообщение «⏸ Пауза: сохранён в очередь»"
+   ],
+   "must_not": [
+    "вызов Analyst",
+    "paused=false"
+   ]
+  },
+  {
+   "id": "R05",
+   "now": "fact",
+   "situation": "Двойное нажатие ✅ Approve: второй callback через 3 с, architect_run_id уже записан, статус APPROVED",
+   "expected": {
+    "new_status": "APPROVED",
+    "decision": "NOOP"
+   },
+   "must": [
+    "ответ «Уже одобрен…»",
+    "ровно 1 OWNER_APPROVED и 1 вызов LH-11"
+   ],
+   "must_not": [
+    "второй run_id",
+    "второй вызов LH-11"
+   ]
+  },
+  {
+   "id": "R06",
+   "now": "fact",
+   "situation": "APPROVED 25 мин назад, architect_json нет; владелец снова жмёт ✅",
+   "expected": {
+    "new_status": "APPROVED",
+    "decision": "NEXT_AGENT"
+   },
+   "must": [
+    "новый run_id в architect_run_id",
+    "вызов LH-11 с новым run_id"
+   ],
+   "must_not": [
+    "отказ «уже одобрен»"
+   ]
+  },
+  {
+   "id": "R07",
+   "now": "fact",
+   "situation": "✅ Approve при расходе дня 100 % (или paused=true)",
+   "expected": {
+    "new_status": "ERROR",
+    "decision": "ESCALATE_OWNER",
+    "error_code": "BUDGET_OR_PAUSED"
+   },
+   "must": [
+    "сообщение с кнопкой «🔁 Повторить Architect + Sales»",
+    "событие ARCHITECT_ERROR"
+   ],
+   "must_not": [
+    "вызов Claude",
+    "снятие паузы"
+   ]
+  },
+  {
+   "id": "R08",
+   "now": "fact",
+   "situation": "Во время углублённого прогона (mx) владелец нажал 🏆 Won; затем Sales завершился успешно",
+   "expected": {
+    "new_status": "WON",
+    "decision": "NOOP"
+   },
+   "must": [
+    "событие COMMERCIAL_SENT_TO_OWNER с «статус владельца WON сохранён»"
+   ],
+   "must_not": [
+    "статус SENT_TO_TELEGRAM поверх WON"
+   ]
+  },
+  {
+   "id": "R09",
+   "now": "fact",
+   "situation": "Вызов LH-11 с неверным internal token",
+   "expected": {
+    "new_status": "(без изменений)",
+    "decision": "NOOP"
+   },
+   "must": [
+    "событие SECURITY_DENIED с token_present=yes|no"
+   ],
+   "must_not": [
+    "значение токена в журнале",
+    "вызов Claude"
+   ]
+  },
+  {
+   "id": "R10",
+   "now": "plan",
+   "situation": "ANALYZED, WARM 68, language=de, description_ru пуст, первый раз",
+   "expected": {
+    "new_status": "ANALYZED",
+    "decision": "MORE_ANALYSIS",
+    "stage_owner": "analyst"
+   },
+   "must": [
+    "missing содержит description_ru",
+    "DIRECTOR_DECISION в lh_log"
+   ],
+   "must_not": [
+    "карточка владельцу без перевода"
+   ]
+  },
+  {
+   "id": "R11",
+   "now": "plan",
+   "situation": "тот же лид после повторного Analyst: description_ru снова пуст",
+   "expected": {
+    "new_status": "ARCHIVED",
+    "decision": "ARCHIVE"
+   },
+   "must": [
+    "reason «неполные данные», видно в /today"
+   ],
+   "must_not": [
+    "третий вызов Analyst"
+   ]
+  },
+  {
+   "id": "R12",
+   "now": "plan",
+   "situation": "Карточка 2 (commercial_message_id есть), владелец дважды нажал 🚀 В работу",
+   "expected": {
+    "new_status": "IN_EXECUTION",
+    "decision": "ASSIGN_TASK"
+   },
+   "must": [
+    "один exec_run_id, один чек-лист владельцу"
+   ],
+   "must_not": [
+    "сообщение клиенту",
+    "второй план задач"
+   ]
+  },
+  {
+   "id": "R13",
+   "now": "plan",
+   "situation": "Лид WON; владелец по ошибке нажал 📦 Archive",
+   "expected": {
+    "new_status": "WON",
+    "decision": "NOOP"
+   },
+   "must": [
+    "ответ «лид уже WON — переход запрещён»"
+   ],
+   "must_not": [
+    "ARCHIVED поверх WON"
+   ],
+   "note": "сейчас [ФАКТ] кнопка ar статус не проверяет и перезапишет WON — кейс фиксирует пробел"
+  }
+ ]
+}
