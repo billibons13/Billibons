@@ -28,7 +28,8 @@ def gate(p, s=DEFAULT_SEARCH):
     if not re.search(s["include_regex"], text, RX):
         return False, "no_keyword"
     floor = s["budget_fixed_min_eur"] if p.get("type") == "fixed" else s["budget_hourly_min_eur"]
-    if (p.get("budget_max_eur") or 0) < floor:
+    # 14.10: порог по минимуму диапазона (как в LH-01); нет минимума → максимум
+    if (p.get("budget_min_eur") or p.get("budget_max_eur") or 0) < floor:
         return False, "budget<%s" % floor
     if (p.get("bid_count") or 0) > s["max_bids"]:
         return False, "bids>%s" % s["max_bids"]

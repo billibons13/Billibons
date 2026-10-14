@@ -174,7 +174,7 @@
        "b": "fixed"
       },
       {
-       "a": "{{round(3.budget.maximum * 3.currency.exchange_rate / first(map(1.data.result.currencies; \"exchange_rate\")))}}",
+       "a": "{{round(ifempty(3.budget.minimum; 3.budget.maximum) * 3.currency.exchange_rate / first(map(1.data.result.currencies; \"exchange_rate\")))}}",
        "o": "number:greaterorequal",
        "b": "{{20.budget_fixed_min_eur}}"
       },
@@ -206,7 +206,7 @@
        "b": "hourly"
       },
       {
-       "a": "{{round(3.budget.maximum * 3.currency.exchange_rate / first(map(1.data.result.currencies; \"exchange_rate\")))}}",
+       "a": "{{round(ifempty(3.budget.minimum; 3.budget.maximum) * 3.currency.exchange_rate / first(map(1.data.result.currencies; \"exchange_rate\")))}}",
        "o": "number:greaterorequal",
        "b": "{{20.budget_hourly_min_eur}}"
       },

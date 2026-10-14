@@ -23,6 +23,8 @@ f[2]["mapper"]["url"] = ("https://www.freelancer.com/api/projects/0.1/projects/a
     "&full_description=true&compact=true&from_time={{formatDate(addHours(now; 0 - 20.window_hours); \"X\")}}")
 
 EUR = "{{round(3.budget.maximum * 3.currency.exchange_rate / first(map(1.data.result.currencies; \"exchange_rate\")))}}"
+# 14.10 (решение владельца): порог бюджета — по МИНИМУМУ диапазона (раньше по максимуму: «1500–12500 INR» = 14–120 € проходил порог 100 €)
+EUR_MIN = EUR.replace("3.budget.maximum", "ifempty(3.budget.minimum; 3.budget.maximum)")
 TEXT = "{{lower(3.title)}} {{lower(substring(ifempty(3.description; \"\"); 0; 2000))}}"
 common = [
     {"a": "{{if(contains(split(20.languages_csv; \",\"); 3.language); \"yes\"; \"no\")}}", "o": "text:equal", "b": "yes"},
@@ -32,8 +34,8 @@ common = [
 ]
 f[6]["filter"] = {"name": "Gatekeeper: язык, тема (regex), не мусор, бюджет, ставки — из /search_settings",
     "conditions": [
-        [{"a": "{{3.type}}", "o": "text:equal", "b": "fixed"}, {"a": EUR, "o": "number:greaterorequal", "b": "{{20.budget_fixed_min_eur}}"}] + common,
-        [{"a": "{{3.type}}", "o": "text:equal", "b": "hourly"}, {"a": EUR, "o": "number:greaterorequal", "b": "{{20.budget_hourly_min_eur}}"}] + common]}
+        [{"a": "{{3.type}}", "o": "text:equal", "b": "fixed"}, {"a": EUR_MIN, "o": "number:greaterorequal", "b": "{{20.budget_fixed_min_eur}}"}] + common,
+        [{"a": "{{3.type}}", "o": "text:equal", "b": "hourly"}, {"a": EUR_MIN, "o": "number:greaterorequal", "b": "{{20.budget_hourly_min_eur}}"}] + common]}
 f[9]["filter"] = {"name": "Не больше max_per_run за запуск", "conditions": [[{"a": "{{7.i}}", "o": "number:lessorequal", "b": "{{20.max_per_run}}"}]]}
 f[11]["mapper"]["data"]["verification"] = ("API: status={{3.status}}, nonpublic={{3.nonpublic}}, deleted={{3.deleted}}; "
                                            "Gatekeeper ok (search v{{20.version}}); передан в LH-03")
