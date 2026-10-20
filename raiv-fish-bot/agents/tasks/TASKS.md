@@ -11,7 +11,7 @@
 - ACTION: каталог `match-ai/`: Next.js App Router + TS + Tailwind + Lucide; конфиг бренда, тарифов (лимиты/цены — конфиг, цены = ПРЕДЛОЖЕНИЕ), тексты в словаре (i18n-ready); дизайн-система; лендинг (Hero, Trust, How it works, Demo с пометкой demo, Features, Pricing, FAQ, Final CTA); /privacy /terms /imprint (шаблоны без гарантий); SEO (metadata, OG, robots, sitemap, иконка); .env.example; архитектура и заготовки слоёв lib/ai (AIProvider + dev-адаптер без фейковых чисел), lib/db, lib/stripe, схема БД (миграция Supabase с RLS) — как основа следующих этапов.
 - EXPECTED_OUTPUT: build/lint/typecheck/тесты зелёные; отчёт COMPLETED/FILES/TEST/NEXT; список того, что должен подключить владелец (Supabase, OpenAI, Stripe, домен, Vercel).
 - DEADLINE: 20.10.2026
-- STATUS: ASSIGNED
+- STATUS: DONE (REVIEW директора 20.10) — lint/typecheck/42 теста/build повторены директором: зелёные; запрещённых обещаний и секретов в коде нет; скриншоты проверены. Следующее — этап 2–5 (нужны Supabase и ключ OpenAI владельца).
 - Решения директора: (1) отдельный каталог `match-ai/` в этом репозитории, ветка `claude/ai-match-analyzer-saas-cmmhvn`; (2) стек — по мастер-промту; (3) цены тарифов не утверждаем — плейсхолдер-конфиг с пометкой, решение владельца при этапе 9 (Stripe); (4) ключи и аккаунты не придумываем — только точки подключения.
 
 ## T-20261005-0011 · Презентация «О проекте и монетизация»
