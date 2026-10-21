@@ -16,6 +16,7 @@ BRAND = "FishDeck" if FISHDECK else OLD_BRAND
 BOT_USER = os.environ.get("FD_BOT_USER", "Fish_Deck_bot") if FISHDECK else OLD_BOT
 CONN = int(os.environ.get("FD_CONN", "12180688")) if FISHDECK else None   # None — оставить подключение генератора
 INSTAGRAM = "https://www.instagram.com/fish.deck_/" if FISHDECK else None
+GROUP = "-1004468791786" if FISHDECK else None   # канал заказов «Fish_Deck» (бот — админ, проверено getUpdates 21.10)
 
 REPLACE = [(OLD_BRAND, BRAND), (OLD_BOT, BOT_USER), ("RAIV_Fish", "FishDeck")] if FISHDECK else []
 

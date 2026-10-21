@@ -2,7 +2,7 @@ import json, re, os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import brand  # BRAND_PROFILE=fishdeck — сборка FishDeck (T-0044)
 CONN = (brand.CONN or 0) if brand.FISHDECK else 11456488  # RAIV_Fish Telegram Bot; FishDeck — подключение нового бота (FD_CONN)
-GROUP = "-1004438320479"  # канал RAIVFISH
+GROUP = brand.GROUP or "-1004438320479"  # канал RAIVFISH; FishDeck — свой канал заказов
 HOOK = 3818482  # v2 webhook (рабочий)
 cats = [
  ("a","🐟 Икра вяленая (100 г)",[("Икра толстолоба","6",1),("Икра кеты","8.5",1),("Икра форели","8.5",1),("Икра судака","6.5",0),("Икра щуки","7",1),("Икра плотвы","7",0),("Икра минтая","6.5",0)]),
