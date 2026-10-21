@@ -13,7 +13,7 @@ FISHDECK = PROFILE == "fishdeck"
 OLD_BRAND, OLD_BOT = "RAIV FISH", "RAIV_FISH_bot"
 BRAND = "FishDeck" if FISHDECK else OLD_BRAND
 # новый бот (решение владельца 21.10: вариант B) — username и подключение Make появятся после BotFather
-BOT_USER = os.environ.get("FD_BOT_USER", "FishDeck_TBD_bot") if FISHDECK else OLD_BOT
+BOT_USER = os.environ.get("FD_BOT_USER", "Fish_Deck_bot") if FISHDECK else OLD_BOT
 CONN = int(os.environ.get("FD_CONN", "12180688")) if FISHDECK else None   # None — оставить подключение генератора
 INSTAGRAM = "https://www.instagram.com/fish.deck_/" if FISHDECK else None
 
