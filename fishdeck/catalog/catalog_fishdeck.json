@@ -1,0 +1,159 @@
+{
+ "version": "2026-10-21",
+ "currency": "UAH",
+ "unit": "kg",
+ "qty_steps": [
+  "0.5",
+  "1",
+  "1.5",
+  "2"
+ ],
+ "custom_weight": true,
+ "source": "решения владельца 21.10 (опросник): цены из поста «Асортимент» 21.10 + позиции истории «Ціни» 03.06",
+ "categories": [
+  {
+   "code": "t",
+   "title": "🐟 Тарань",
+   "items": [
+    {
+     "code": "t1",
+     "name": "Тарань ікряна",
+     "price_uah_kg": 600,
+     "in_stock": true
+    },
+    {
+     "code": "t2",
+     "name": "Тарань крупна (без ікри)",
+     "price_uah_kg": 550,
+     "in_stock": true
+    },
+    {
+     "code": "t3",
+     "name": "Тарань середня",
+     "price_uah_kg": 400,
+     "in_stock": true
+    }
+   ]
+  },
+  {
+   "code": "r",
+   "title": "🐠 В'ялена риба",
+   "items": [
+    {
+     "code": "r1",
+     "name": "Густера в'ялена",
+     "price_uah_kg": 250,
+     "in_stock": true
+    },
+    {
+     "code": "r2",
+     "name": "Синець в'ялений",
+     "price_uah_kg": 400,
+     "in_stock": true
+    },
+    {
+     "code": "r3",
+     "name": "Верховодка (під замовлення)",
+     "price_uah_kg": 800,
+     "in_stock": true
+    },
+    {
+     "code": "r4",
+     "name": "Лящ з ікрою",
+     "price_uah_kg": 550,
+     "in_stock": true
+    },
+    {
+     "code": "r5",
+     "name": "Лящ без ікри",
+     "price_uah_kg": 250,
+     "in_stock": true
+    },
+    {
+     "code": "r6",
+     "name": "Судак патраний",
+     "price_uah_kg": 600,
+     "in_stock": true
+    },
+    {
+     "code": "r7",
+     "name": "Бичок балтійський",
+     "price_uah_kg": 650,
+     "in_stock": true
+    },
+    {
+     "code": "r8",
+     "name": "Окунь «Метелик»",
+     "price_uah_kg": 450,
+     "in_stock": true
+    }
+   ]
+  },
+  {
+   "code": "b",
+   "title": "🥩 Балики",
+   "items": [
+    {
+     "code": "b1",
+     "name": "Балик сома",
+     "price_uah_kg": 550,
+     "in_stock": true
+    },
+    {
+     "code": "b2",
+     "name": "Балик коропа (сазана) wild catch",
+     "price_uah_kg": 520,
+     "in_stock": true
+    },
+    {
+     "code": "b3",
+     "name": "Балик коропа, напівпласт",
+     "price_uah_kg": 470,
+     "in_stock": true
+    },
+    {
+     "code": "b4",
+     "name": "Балик амура, напівпласт",
+     "price_uah_kg": 470,
+     "in_stock": true
+    },
+    {
+     "code": "b5",
+     "name": "Балик товстолоба в'ялений (хвостова частина)",
+     "price_uah_kg": 450,
+     "in_stock": true
+    },
+    {
+     "code": "b6",
+     "name": "Медовий стейк",
+     "price_uah_kg": 400,
+     "in_stock": true
+    }
+   ]
+  },
+  {
+   "code": "k",
+   "title": "🔥 Холодне копчення",
+   "items": [
+    {
+     "code": "k1",
+     "name": "Балик судака х/к",
+     "price_uah_kg": 650,
+     "in_stock": true
+    },
+    {
+     "code": "k2",
+     "name": "Чехонь х/к",
+     "price_uah_kg": 670,
+     "in_stock": true
+    },
+    {
+     "code": "k3",
+     "name": "Балик товстолоба х/к, напівпласт",
+     "price_uah_kg": 530,
+     "in_stock": true
+    }
+   ]
+  }
+ ]
+}
