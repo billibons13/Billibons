@@ -1,5 +1,7 @@
-import json, re
-CONN = 11456488  # RAIV_Fish Telegram Bot
+import json, re, os, sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import brand  # BRAND_PROFILE=fishdeck — сборка FishDeck (T-0044)
+CONN = (brand.CONN or 0) if brand.FISHDECK else 11456488  # RAIV_Fish Telegram Bot; FishDeck — подключение нового бота (FD_CONN)
 GROUP = "-1004438320479"  # канал RAIVFISH
 HOOK = 3818482  # v2 webhook (рабочий)
 cats = [
@@ -463,7 +465,7 @@ routes.append([api(106,900,-2300,"sendMessage",[("chat_id",CHAT),("text",T("🎁
 # контакты и медиа (новые ссылки — строкой в CONTACT_LINKS: подпись, url)
 CONTACT_LINKS = [   # v9.6: подпись — (ru, de, es, uk)
   (("🎵 TikTok — видео","🎵 TikTok — Videos","🎵 TikTok — vídeos","🎵 TikTok — відео"), "https://www.tiktok.com/@vasya_raivfish"),
-  (("📸 Instagram — фото","📸 Instagram — Fotos","📸 Instagram — fotos","📸 Instagram — фото"), "https://www.instagram.com/vasya_ivanchuk_/"),
+  (("📸 Instagram — фото","📸 Instagram — Fotos","📸 Instagram — fotos","📸 Instagram — фото"), brand.INSTAGRAM or "https://www.instagram.com/vasya_ivanchuk_/"),
   (("👍 Facebook",)*4, "https://www.facebook.com/share/1K6wTjKZx9/"),
   (("📣 Telegram-канал @raiv_fish1","📣 Telegram-Kanal @raiv_fish1","📣 Canal de Telegram @raiv_fish1","📣 Telegram-канал @raiv_fish1"), "https://t.me/raiv_fish1"),
   (("🐟 Поставщик — Василий","🐟 Lieferant — Wassili","🐟 Proveedor — Vasili","🐟 Постачальник — Василь"), "https://t.me/vasyaivancuk"),
@@ -899,6 +901,9 @@ def collect(flow):
         ids.append(m["id"]); [ids.append(e["id"]) for e in m.get("onerror",[])]
         for r in m.get("routes",[]): collect(r["flow"])
 collect(bp["flow"]); assert len(ids)==len(set(ids)), sorted(ids)
+if brand.FISHDECK:
+    bp=json.loads(brand.apply(json.dumps(bp,ensure_ascii=False)))
+    for _w in brand.check(json.dumps(bp,ensure_ascii=False)): print("⚠️ FishDeck:", _w)
 out = sys.argv[1] if len(sys.argv)>1 else "bp.json"
 json.dump(bp,open(out,"w"),ensure_ascii=False)
 print("ok", len(s), "modules", len(ids))
